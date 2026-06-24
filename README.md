@@ -34,9 +34,9 @@ Sistema de gerenciamento de checklists interno da operação Kenkyo com controle
 
 | Perfil | Usuário | Senha |
 |--------|---------|-------|
-| Gestor | Admin | 1234 |
-| Gerente | João Silva | 1234 |
-| Líder | Maria Santos | 1234 |
+| Gestor | Admin | 2624 |
+| Gerente | Ana Sara | 1411 |
+| Líder | Lucas | 1234 |
 
 ## 💾 Dados
 
