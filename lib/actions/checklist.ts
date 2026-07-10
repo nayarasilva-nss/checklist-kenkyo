@@ -2,7 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth/dal";
+import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import {
   checklistTypes,
@@ -22,7 +22,7 @@ function revalidateChecklistViews() {
 }
 
 export async function createChecklistFromTemplate(formData: FormData) {
-  await getCurrentUser();
+  await requireGestor();
 
   const templateId = Number(formData.get("templateId"));
   const type = String(formData.get("type"));
@@ -49,6 +49,7 @@ export async function createChecklistFromTemplate(formData: FormData) {
       name: template.name,
       description: template.description,
       type,
+      jobFunctionId: template.jobFunctionId,
     })
     .returning({ id: checklistTypes.id });
 

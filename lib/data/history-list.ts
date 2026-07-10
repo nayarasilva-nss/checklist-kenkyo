@@ -3,7 +3,10 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { history, users } from "@/lib/db/schema";
 
-export async function getHistoryEntries(limit = 100) {
+export async function getHistoryEntries(
+  unitId: number | null,
+  limit = 100,
+) {
   return db
     .select({
       id: history.id,
@@ -14,6 +17,7 @@ export async function getHistoryEntries(limit = 100) {
     })
     .from(history)
     .innerJoin(users, eq(users.id, history.userId))
+    .where(unitId ? eq(users.unitId, unitId) : undefined)
     .orderBy(desc(history.createdAt))
     .limit(limit);
 }

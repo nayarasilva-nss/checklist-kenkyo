@@ -19,6 +19,26 @@ export const completionStatusEnum = pgEnum("completion_status", [
 ]);
 export const historyStatusEnum = pgEnum("history_status", ["completed", "pending"]);
 
+export const units = pgTable(
+  "units",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("units_name_idx").on(table.name)],
+);
+
+export const jobFunctions = pgTable(
+  "job_functions",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("job_functions_name_idx").on(table.name)],
+);
+
 export const users = pgTable(
   "users",
   {
@@ -27,6 +47,13 @@ export const users = pgTable(
     username: varchar("username", { length: 255 }).notNull(),
     passwordHash: text("password_hash").notNull(),
     profile: profileEnum("profile").notNull(),
+    unitId: integer("unit_id").references(() => units.id, {
+      onDelete: "set null",
+    }),
+    jobFunctionId: integer("job_function_id").references(
+      () => jobFunctions.id,
+      { onDelete: "set null" },
+    ),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("users_username_idx").on(table.username)],
@@ -37,6 +64,10 @@ export const checklistTypes = pgTable("checklist_types", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull().default(""),
   type: checklistTypeEnum("type").notNull(),
+  jobFunctionId: integer("job_function_id").references(
+    () => jobFunctions.id,
+    { onDelete: "set null" },
+  ),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -53,6 +84,10 @@ export const templates = pgTable("templates", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull().default(""),
+  jobFunctionId: integer("job_function_id").references(
+    () => jobFunctions.id,
+    { onDelete: "set null" },
+  ),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -12,19 +12,35 @@ import {
 
 export type CompletionStatus = (typeof completionStatusEnum.enumValues)[number];
 
+export type Viewer = {
+  profile: string;
+  jobFunctionId: number | null;
+};
+
+function visibleToViewer(jobFunctionId: number | null, viewer: Viewer) {
+  return (
+    viewer.profile === "gestor" ||
+    jobFunctionId === null ||
+    jobFunctionId === viewer.jobFunctionId
+  );
+}
+
 export function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export async function getTemplates() {
+export async function getTemplates(viewer: Viewer) {
   const rows = await db
     .select({
       id: templates.id,
       name: templates.name,
       description: templates.description,
+      jobFunctionId: templates.jobFunctionId,
     })
     .from(templates)
     .orderBy(asc(templates.id));
+
+  const visible = rows.filter((t) => visibleToViewer(t.jobFunctionId, viewer));
 
   const items = await db
     .select({
@@ -41,7 +57,7 @@ export async function getTemplates() {
     );
   }
 
-  return rows.map((t) => ({
+  return visible.map((t) => ({
     ...t,
     itemCount: countByTemplate.get(t.id) ?? 0,
   }));
@@ -49,14 +65,18 @@ export async function getTemplates() {
 
 export async function getChecklistsForUser(
   type: "daily" | "weekly",
-  userId: number,
+  viewer: Viewer & { id: number },
   date: string = todayISO(),
 ) {
-  const types = await db
+  const allTypes = await db
     .select()
     .from(checklistTypes)
     .where(eq(checklistTypes.type, type))
     .orderBy(asc(checklistTypes.id));
+
+  const types = allTypes.filter((t) =>
+    visibleToViewer(t.jobFunctionId, viewer),
+  );
 
   if (types.length === 0) return [];
 
@@ -78,7 +98,7 @@ export async function getChecklistsForUser(
           .where(
             and(
               inArray(checklistCompletions.itemId, itemIds),
-              eq(checklistCompletions.userId, userId),
+              eq(checklistCompletions.userId, viewer.id),
               eq(checklistCompletions.date, date),
             ),
           )

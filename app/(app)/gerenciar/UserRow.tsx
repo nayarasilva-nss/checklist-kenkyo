@@ -10,14 +10,28 @@ const PROFILE_LABELS: Record<string, string> = {
   lider: "Líder",
 };
 
+type Option = { id: number; name: string };
+
 type User = {
   id: number;
   name: string;
   username: string;
   profile: string;
+  unitId: number | null;
+  unitName: string | null;
+  jobFunctionId: number | null;
+  jobFunctionName: string | null;
 };
 
-export function UserRow({ user }: { user: User }) {
+export function UserRow({
+  user,
+  units,
+  jobFunctions,
+}: {
+  user: User;
+  units: Option[];
+  jobFunctions: Option[];
+}) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -29,6 +43,10 @@ export function UserRow({ user }: { user: User }) {
           <h4>{user.name}</h4>
           <p>
             @{user.username} • {PROFILE_LABELS[user.profile] ?? user.profile}
+            {" • "}
+            {user.unitName ?? "Sem unidade"}
+            {" • "}
+            {user.jobFunctionName ?? "Sem função"}
           </p>
         </div>
         <div className="list-item-actions">
@@ -94,6 +112,36 @@ export function UserRow({ user }: { user: User }) {
           <option value="lider">Líder</option>
           <option value="gerente">Gerente</option>
           <option value="gestor">Gestor</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label htmlFor={`editUserUnit-${user.id}`}>Unidade</label>
+        <select
+          id={`editUserUnit-${user.id}`}
+          name="unitId"
+          defaultValue={user.unitId ?? ""}
+        >
+          <option value="">Sem unidade</option>
+          {units.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label htmlFor={`editUserJobFunction-${user.id}`}>Função</label>
+        <select
+          id={`editUserJobFunction-${user.id}`}
+          name="jobFunctionId"
+          defaultValue={user.jobFunctionId ?? ""}
+        >
+          <option value="">Sem função</option>
+          {jobFunctions.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
         </select>
       </div>
       <div className="form-group">

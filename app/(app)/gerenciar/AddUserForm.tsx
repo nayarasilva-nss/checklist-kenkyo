@@ -3,7 +3,15 @@
 import { useRef, useState, useTransition } from "react";
 import { createUser } from "@/lib/actions/manage";
 
-export function AddUserForm() {
+type Option = { id: number; name: string };
+
+export function AddUserForm({
+  units,
+  jobFunctions,
+}: {
+  units: Option[];
+  jobFunctions: Option[];
+}) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -54,6 +62,28 @@ export function AddUserForm() {
           <option value="lider">Líder</option>
           <option value="gerente">Gerente</option>
           <option value="gestor">Gestor</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label htmlFor="newUserUnit">Unidade</label>
+        <select id="newUserUnit" name="unitId" defaultValue="">
+          <option value="">Sem unidade</option>
+          {units.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label htmlFor="newUserJobFunction">Função</label>
+        <select id="newUserJobFunction" name="jobFunctionId" defaultValue="">
+          <option value="">Sem função</option>
+          {jobFunctions.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
         </select>
       </div>
       <div className="form-group">

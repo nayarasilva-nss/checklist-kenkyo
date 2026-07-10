@@ -3,7 +3,13 @@
 import { useRef, useState, useTransition } from "react";
 import { createChecklistType } from "@/lib/actions/manage";
 
-export function AddChecklistTypeForm() {
+type Option = { id: number; name: string };
+
+export function AddChecklistTypeForm({
+  jobFunctions,
+}: {
+  jobFunctions: Option[];
+}) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -56,6 +62,17 @@ export function AddChecklistTypeForm() {
         <select id="newChecklistType" name="type" defaultValue="daily">
           <option value="daily">Diário</option>
           <option value="weekly">Semanal</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label htmlFor="newChecklistJobFunction">Função (opcional)</label>
+        <select id="newChecklistJobFunction" name="jobFunctionId" defaultValue="">
+          <option value="">Todas as funções</option>
+          {jobFunctions.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
         </select>
       </div>
       {error && <p className="login-error">{error}</p>}

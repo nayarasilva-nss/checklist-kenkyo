@@ -3,7 +3,9 @@
 import { useRef, useState, useTransition } from "react";
 import { createTemplate } from "@/lib/actions/manage";
 
-export function AddTemplateForm() {
+type Option = { id: number; name: string };
+
+export function AddTemplateForm({ jobFunctions }: { jobFunctions: Option[] }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -50,6 +52,24 @@ export function AddTemplateForm() {
           name="description"
           placeholder="Descrição do modelo"
         />
+      </div>
+      <div className="form-group">
+        <label htmlFor="templateJobFunction">Função</label>
+        <select
+          id="templateJobFunction"
+          name="jobFunctionId"
+          defaultValue=""
+          required
+        >
+          <option value="" disabled>
+            Selecione a função...
+          </option>
+          {jobFunctions.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="form-group">
         <label htmlFor="templateItems">Tarefas (uma por linha)</label>

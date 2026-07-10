@@ -1,18 +1,42 @@
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getDashboardStats, getRanking } from "@/lib/data/dashboard";
+import { getUnits, resolveUnitScope } from "@/lib/data/units";
+import { UnitFilter } from "../UnitFilter";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
-export default async function DashboardPage() {
-  await getCurrentUser();
-  const [stats, ranking] = await Promise.all([
-    getDashboardStats(),
-    getRanking(),
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ unit?: string }>;
+}) {
+  const user = await getCurrentUser();
+  const isGestor = user.profile === "gestor";
+  const { unit: rawUnit } = await searchParams;
+  const requestedUnitId = rawUnit ? Number(rawUnit) : null;
+  const unitId = resolveUnitScope(user, requestedUnitId);
+
+  const [stats, ranking, units] = await Promise.all([
+    getDashboardStats(unitId),
+    getRanking(unitId),
+    isGestor ? getUnits() : Promise.resolve([]),
   ]);
 
   return (
     <>
       <h2>Dashboard</h2>
+
+      {isGestor && (
+        <UnitFilter units={units} value={requestedUnitId} />
+      )}
+
+      {!isGestor && user.unitId === null && (
+        <p className="empty-state">
+          Sua unidade ainda não foi definida. Peça a um Gestor para atribuir
+          sua unidade no cadastro.
+        </p>
+      )}
+
       <div className="dashboard-grid">
         <div className="card">
           <h3>Checklists Totais</h3>
@@ -49,6 +73,7 @@ export default async function DashboardPage() {
             <tr>
               <th>Posição</th>
               <th>Colaborador</th>
+              <th>Unidade</th>
               <th>Checklists Completos</th>
               <th>Taxa de Conformidade</th>
             </tr>
@@ -60,6 +85,7 @@ export default async function DashboardPage() {
                   {MEDALS[idx] ?? "•"} {idx + 1}º
                 </td>
                 <td>{row.name}</td>
+                <td>{row.unitName ?? "-"}</td>
                 <td>{row.completions}</td>
                 <td>{row.complianceRate}%</td>
               </tr>

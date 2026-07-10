@@ -1,5 +1,5 @@
 import "server-only";
-import { asc } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   users,
@@ -7,7 +7,11 @@ import {
   checklistTypeItems,
   templates,
   templateItems,
+  units,
+  jobFunctions,
 } from "@/lib/db/schema";
+
+export { getUnits, getJobFunctions } from "./units";
 
 export async function getUsers() {
   return db
@@ -16,15 +20,29 @@ export async function getUsers() {
       name: users.name,
       username: users.username,
       profile: users.profile,
+      unitId: users.unitId,
+      unitName: units.name,
+      jobFunctionId: users.jobFunctionId,
+      jobFunctionName: jobFunctions.name,
     })
     .from(users)
+    .leftJoin(units, eq(units.id, users.unitId))
+    .leftJoin(jobFunctions, eq(jobFunctions.id, users.jobFunctionId))
     .orderBy(asc(users.id));
 }
 
 export async function getChecklistTypesWithCounts() {
   const types = await db
-    .select()
+    .select({
+      id: checklistTypes.id,
+      name: checklistTypes.name,
+      description: checklistTypes.description,
+      type: checklistTypes.type,
+      jobFunctionId: checklistTypes.jobFunctionId,
+      jobFunctionName: jobFunctions.name,
+    })
     .from(checklistTypes)
+    .leftJoin(jobFunctions, eq(jobFunctions.id, checklistTypes.jobFunctionId))
     .orderBy(asc(checklistTypes.id));
   const items = await db.select().from(checklistTypeItems);
 
@@ -43,7 +61,17 @@ export async function getChecklistTypesWithCounts() {
 }
 
 export async function getTemplatesWithCounts() {
-  const rows = await db.select().from(templates).orderBy(asc(templates.id));
+  const rows = await db
+    .select({
+      id: templates.id,
+      name: templates.name,
+      description: templates.description,
+      jobFunctionId: templates.jobFunctionId,
+      jobFunctionName: jobFunctions.name,
+    })
+    .from(templates)
+    .leftJoin(jobFunctions, eq(jobFunctions.id, templates.jobFunctionId))
+    .orderBy(asc(templates.id));
   const items = await db.select().from(templateItems);
 
   const countByTemplate = new Map<number, number>();

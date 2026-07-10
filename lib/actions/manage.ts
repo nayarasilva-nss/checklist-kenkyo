@@ -11,6 +11,8 @@ import {
   checklistTypeItems,
   templates,
   templateItems,
+  units,
+  jobFunctions,
 } from "@/lib/db/schema";
 
 export type ActionState = { error?: string } | undefined;
@@ -19,6 +21,15 @@ function revalidateManageViews() {
   revalidatePath("/gerenciar");
   revalidatePath("/checklist");
   revalidatePath("/dashboard");
+  revalidatePath("/relatorio");
+  revalidatePath("/historico");
+}
+
+function parseOptionalId(formData: FormData, key: string): number | null {
+  const raw = String(formData.get(key) ?? "").trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 const PROFILES = ["gestor", "gerente", "lider"] as const;
@@ -35,6 +46,8 @@ export async function createUser(
     .toLowerCase();
   const profile = String(formData.get("profile") ?? "");
   const password = String(formData.get("password") ?? "");
+  const unitId = parseOptionalId(formData, "unitId");
+  const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
 
   if (
     !name ||
@@ -60,6 +73,8 @@ export async function createUser(
     username,
     passwordHash,
     profile: profile as (typeof PROFILES)[number],
+    unitId,
+    jobFunctionId,
   });
 
   revalidateManageViews();
@@ -78,6 +93,8 @@ export async function updateUser(
     .toLowerCase();
   const profile = String(formData.get("profile") ?? "");
   const password = String(formData.get("password") ?? "");
+  const unitId = parseOptionalId(formData, "unitId");
+  const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
 
   if (
     !id ||
@@ -105,6 +122,8 @@ export async function updateUser(
       name,
       username,
       profile: profile as (typeof PROFILES)[number],
+      unitId,
+      jobFunctionId,
       ...(passwordHash ? { passwordHash } : {}),
     })
     .where(eq(users.id, id));
@@ -120,6 +139,70 @@ export async function deleteUser(formData: FormData) {
   revalidateManageViews();
 }
 
+export async function createUnit(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireGestor();
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) {
+    return { error: "Preencha o nome da unidade" };
+  }
+
+  const existing = await db
+    .select({ id: units.id })
+    .from(units)
+    .where(eq(units.name, name))
+    .limit(1);
+  if (existing.length > 0) {
+    return { error: "Já existe uma unidade com esse nome" };
+  }
+
+  await db.insert(units).values({ name });
+  revalidateManageViews();
+}
+
+export async function deleteUnit(formData: FormData) {
+  await requireGestor();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await db.delete(units).where(eq(units.id, id));
+  revalidateManageViews();
+}
+
+export async function createJobFunction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireGestor();
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) {
+    return { error: "Preencha o nome da função" };
+  }
+
+  const existing = await db
+    .select({ id: jobFunctions.id })
+    .from(jobFunctions)
+    .where(eq(jobFunctions.name, name))
+    .limit(1);
+  if (existing.length > 0) {
+    return { error: "Já existe uma função com esse nome" };
+  }
+
+  await db.insert(jobFunctions).values({ name });
+  revalidateManageViews();
+}
+
+export async function deleteJobFunction(formData: FormData) {
+  await requireGestor();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await db.delete(jobFunctions).where(eq(jobFunctions.id, id));
+  revalidateManageViews();
+}
+
 export async function createChecklistType(
   _prevState: ActionState,
   formData: FormData,
@@ -129,12 +212,15 @@ export async function createChecklistType(
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const type = String(formData.get("type") ?? "");
+  const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
 
   if (!name || (type !== "daily" && type !== "weekly")) {
     return { error: "Preencha o nome do checklist" };
   }
 
-  await db.insert(checklistTypes).values({ name, description, type });
+  await db
+    .insert(checklistTypes)
+    .values({ name, description, type, jobFunctionId });
   revalidateManageViews();
 }
 
@@ -184,18 +270,19 @@ export async function createTemplate(
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const itemsText = String(formData.get("items") ?? "");
+  const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
   const items = itemsText
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
 
-  if (!name || items.length === 0) {
-    return { error: "Preencha o nome e as tarefas" };
+  if (!name || items.length === 0 || !jobFunctionId) {
+    return { error: "Preencha o nome, a função e as tarefas" };
   }
 
   const [template] = await db
     .insert(templates)
-    .values({ name, description })
+    .values({ name, description, jobFunctionId })
     .returning({ id: templates.id });
 
   await db.insert(templateItems).values(

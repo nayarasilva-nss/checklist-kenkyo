@@ -26,6 +26,8 @@ export const getCurrentUser = cache(async () => {
       name: users.name,
       username: users.username,
       profile: users.profile,
+      unitId: users.unitId,
+      jobFunctionId: users.jobFunctionId,
     })
     .from(users)
     .where(eq(users.id, session.userId))
