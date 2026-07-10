@@ -1,92 +1,82 @@
-# 🎯 Checklist Kenkyo
+# Checklist Kenkyo
 
-Sistema de gerenciamento de checklists interno da operação Kenkyo com controle de acesso por perfil.
+Sistema de gerenciamento de checklists interno da operação Kenkyo — checklists diários e semanais, controle de acesso por perfil, dashboard de conformidade, relatórios e painel de gestão.
 
-## 🚀 Funcionalidades
+Reconstrução em stack real do [protótipo estático original](https://github.com/nayarasilva-nss/checklist-kenkyo) (HTML/CSS/JS com `localStorage`), agora com banco de dados, autenticação real e dados isolados por usuário/data.
 
-- **Autenticação**: Login com 3 perfis (Gestor, Gerente, Líder)
-- **Dashboard**: Métricas de conformidade em tempo real
-- **Checklists**: Execução de checklists diários e semanais
-- **Histórico**: Rastreamento de todas as atividades
-- **Gerenciamento**: Painel administrativo para Gestores
-- **Offline**: Funciona 100% offline com sincronização automática
-- **Responsivo**: Interface mobile-friendly
+## Stack
 
-## 👥 Perfis de Acesso
+- **Next.js** (App Router, TypeScript) — deploy no Vercel
+- **Postgres** (via [Neon](https://neon.tech), integrado ao Vercel) + **Drizzle ORM**
+- **Autenticação própria**: sessão em cookie assinado (JWT via `jose`), sem persistência entre reinícios do navegador (login exigido a cada nova sessão do navegador), senhas com hash `bcrypt`
 
-### Gestor
-- ✅ Ver todos os checklists e histórico
-- ✅ Adicionar/editar/deletar usuários
-- ✅ Adicionar/editar/deletar checklists
-- ✅ Acessar painel de gerenciamento
+## Perfis de acesso
 
-### Gerente
-- ✅ Executar checklists
-- ✅ Ver histórico de atividades
-- ✅ Ver dashboard
+Três perfis hierárquicos: **Gestor > Gerente > Líder**.
 
-### Líder
-- ✅ Executar checklists
-- ✅ Ver histórico de atividades
-- ✅ Ver dashboard
+- **Gestor**: acesso total — executa checklists, vê dashboard/relatórios/histórico e acessa o painel **Gerenciar** (usuários, tipos de checklist, tarefas, modelos).
+- **Gerente / Líder**: executam checklists e veem dashboard/relatórios/histórico. Sem acesso ao painel Gerenciar.
 
-## 🔐 Credenciais de Teste
+## Desenvolvimento local
 
-| Perfil | Usuário | Senha |
-|--------|---------|-------|
-| Gestor | Admin | 2624 |
-| Gerente | Ana Sara | 1411 |
-| Líder | Lucas | 1234 |
+### 1. Banco de dados
 
-## 💾 Dados
-
-Todos os dados são salvos automaticamente no `localStorage` do navegador. Nenhum dado é enviado para servidor.
-
-## 🌐 Deploy
-
-### Vercel (Recomendado)
-
-1. Faça login em [vercel.com](https://vercel.com)
-2. Clique em "New Project"
-3. Selecione este repositório GitHub
-4. Clique em "Deploy"
-5. Pronto! Seu app estará online
-
-### Netlify
-
-1. Faça login em [netlify.com](https://netlify.com)
-2. Clique em "New site from Git"
-3. Selecione este repositório
-4. Clique em "Deploy site"
-
-## 📋 Estrutura
-
-```
-.
-├── index.html          # App principal
-├── README.md          # Este arquivo
-└── vercel.json        # Configuração Vercel (opcional)
-```
-
-## 🛠️ Desenvolvimento Local
+Use um Postgres local ou uma branch de desenvolvimento do Neon. Configure `.env.local` (não committado):
 
 ```bash
-# Clone o repositório
-git clone https://github.com/nayarasilva-nss/checklist-kenkyo.git
-
-# Abra o arquivo index.html no navegador
-open index.html
+DATABASE_URL="postgresql://usuario@localhost:5432/kenkyo_dev"
+AUTH_SECRET="uma-string-aleatoria-longa"        # ex: openssl rand -base64 32
+SEED_ADMIN_USERNAME="admin"
+SEED_ADMIN_PASSWORD="defina-uma-senha-forte"
 ```
 
-## 📝 Roadmap
+### 2. Instalar dependências e migrar
 
-- [ ] Exportar para PDF
-- [ ] Exportar para Excel
-- [ ] Sincronização com servidor
-- [ ] Notificações em tempo real
-- [ ] Relatórios avançados
-- [ ] Integração com sistemas externos
+```bash
+npm install
+npm run db:generate   # gera migrations a partir de lib/db/schema.ts
+npm run db:migrate     # aplica migrations no banco
+npm run db:seed        # cria o usuário Gestor inicial + templates padrão
+```
 
-## 📄 Licença
+O seed cria **apenas um usuário Gestor** (a partir das env vars acima). Os demais usuários devem ser criados pelo próprio painel **Gerenciar** após o primeiro login — nenhuma senha fica hardcoded no código ou no histórico do git.
 
-Privado - Kenkyo Operations
+### 3. Rodar o app
+
+```bash
+npm run dev
+```
+
+Acesse [http://localhost:3000](http://localhost:3000).
+
+## Deploy (Vercel)
+
+1. No dashboard do Vercel, conecte este repositório e provisione um banco **Postgres (Neon)** pela aba Storage do projeto — isso preenche `DATABASE_URL` automaticamente nas env vars do projeto.
+2. Defina as demais env vars do projeto (Production/Preview): `AUTH_SECRET`, `SEED_ADMIN_USERNAME`, `SEED_ADMIN_PASSWORD`.
+3. Rode as migrations e o seed contra o banco de produção (`npm run db:migrate` / `npm run db:seed` com o `DATABASE_URL` de produção).
+4. Deploy normalmente pelo Vercel — o build usa `next build` (framework detectado automaticamente).
+
+## Escopo (v1)
+
+Deixados para uma iteração futura, por decisão explícita ao planejar esta reconstrução:
+
+- **Modo offline** (fila local sincronizando quando a conexão volta) — hoje o app assume conexão de rede.
+- **PDF real** — o botão "Enviar PDF" ainda gera um HTML estilizado para impressão/download (como no protótipo original), não um PDF binário.
+- **Exportação para Excel**.
+
+## Estrutura
+
+```
+app/
+  login/                    tela de login
+  (app)/                    grupo de rotas autenticadas (header + tabs)
+    dashboard/  checklist/  relatorio/  historico/  gerenciar/
+  api/checklists/[id]/export/   exportação HTML do checklist preenchido
+lib/
+  db/                       schema Drizzle + client de conexão
+  auth/                     sessão (jose), DAL (verifySession/getCurrentUser), actions de login/logout
+  data/                     queries de leitura por página
+  actions/                  server actions de mutação (checklist, gerenciar)
+proxy.ts                    redireciona não-autenticados e restringe /gerenciar ao perfil Gestor
+scripts/seed.ts             cria o usuário Gestor inicial + templates padrão
+```

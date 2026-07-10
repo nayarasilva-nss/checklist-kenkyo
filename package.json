@@ -1,0 +1,38 @@
+{
+  "name": "kenkyo-checklist",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
+    "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
+    "db:seed": "dotenv -e .env.local -- tsx scripts/seed.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.2",
+    "jose": "^6.2.3",
+    "next": "16.2.10",
+    "pg": "^8.22.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "tsx": "^4.23.0",
+    "typescript": "^5"
+  }
+}
