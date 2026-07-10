@@ -7,8 +7,10 @@ type Option = { id: number; name: string };
 
 export function AddChecklistTypeForm({
   jobFunctions,
+  users,
 }: {
   jobFunctions: Option[];
+  users: Option[];
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -71,6 +73,23 @@ export function AddChecklistTypeForm({
           {jobFunctions.map((f) => (
             <option key={f.id} value={f.id}>
               {f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label htmlFor="newChecklistAssignedUser">
+          Atribuir a (opcional)
+        </label>
+        <select
+          id="newChecklistAssignedUser"
+          name="assignedUserId"
+          defaultValue=""
+        >
+          <option value="">Todos da função</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
             </option>
           ))}
         </select>

@@ -26,6 +26,8 @@ export async function createChecklistFromTemplate(formData: FormData) {
 
   const templateId = Number(formData.get("templateId"));
   const type = String(formData.get("type"));
+  const assignedUserIdRaw = String(formData.get("assignedUserId") ?? "").trim();
+  const assignedUserId = assignedUserIdRaw ? Number(assignedUserIdRaw) : null;
   if (!templateId || (type !== "daily" && type !== "weekly")) {
     throw new Error("Dados inválidos");
   }
@@ -50,6 +52,7 @@ export async function createChecklistFromTemplate(formData: FormData) {
       description: template.description,
       type,
       jobFunctionId: template.jobFunctionId,
+      assignedUserId,
     })
     .returning({ id: checklistTypes.id });
 

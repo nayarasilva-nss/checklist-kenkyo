@@ -100,7 +100,7 @@ export default async function GerenciarPage() {
 
       <div className="manage-section">
         <h3>Tipos de Checklists</h3>
-        <AddChecklistTypeForm jobFunctions={jobFunctions} />
+        <AddChecklistTypeForm jobFunctions={jobFunctions} users={users} />
         {checklistTypes.map((c) => (
           <div className="list-item" key={c.id}>
             <div className="info">
@@ -108,6 +108,7 @@ export default async function GerenciarPage() {
               <p>
                 {c.itemCount} itens • {TYPE_LABELS[c.type]} •{" "}
                 {c.jobFunctionName ?? "Todas as funções"}
+                {c.assignedUserName ? ` • Atribuído a: ${c.assignedUserName}` : ""}
               </p>
             </div>
             <div className="list-item-actions">

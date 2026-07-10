@@ -1,5 +1,6 @@
 import "server-only";
 import { asc, eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
 import {
   users,
@@ -10,6 +11,8 @@ import {
   units,
   jobFunctions,
 } from "@/lib/db/schema";
+
+const assignedUsers = alias(users, "assigned_users");
 
 export { getUnits, getJobFunctions } from "./units";
 
@@ -40,9 +43,12 @@ export async function getChecklistTypesWithCounts() {
       type: checklistTypes.type,
       jobFunctionId: checklistTypes.jobFunctionId,
       jobFunctionName: jobFunctions.name,
+      assignedUserId: checklistTypes.assignedUserId,
+      assignedUserName: assignedUsers.name,
     })
     .from(checklistTypes)
     .leftJoin(jobFunctions, eq(jobFunctions.id, checklistTypes.jobFunctionId))
+    .leftJoin(assignedUsers, eq(assignedUsers.id, checklistTypes.assignedUserId))
     .orderBy(asc(checklistTypes.id));
   const items = await db.select().from(checklistTypeItems);
 

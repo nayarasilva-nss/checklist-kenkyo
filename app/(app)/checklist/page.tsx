@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getChecklistsForUser, getTemplates } from "@/lib/data/checklists";
+import { getUsers } from "@/lib/data/manage";
 import { createChecklistFromTemplate } from "@/lib/actions/checklist";
 import { ChecklistItemRow } from "./ChecklistItemRow";
 
@@ -21,9 +22,10 @@ export default async function ChecklistPage({
     profile: user.profile,
     jobFunctionId: user.jobFunctionId,
   };
-  const [checklists, templates] = await Promise.all([
+  const [checklists, templates, users] = await Promise.all([
     getChecklistsForUser(type, viewer),
     isGestor ? getTemplates(viewer) : Promise.resolve([]),
+    isGestor ? getUsers() : Promise.resolve([]),
   ]);
 
   return (
@@ -53,19 +55,55 @@ export default async function ChecklistPage({
             </p>
           )}
           <div className="templates-grid">
-            {templates.map((template) => (
-              <form key={template.id} action={createChecklistFromTemplate}>
-                <input type="hidden" name="templateId" value={template.id} />
-                <input type="hidden" name="type" value={type} />
-                <button type="submit" className="template-card">
+            {templates.map((template) => {
+              const eligibleUsers = template.jobFunctionId
+                ? users.filter(
+                    (u) => u.jobFunctionId === template.jobFunctionId,
+                  )
+                : users;
+
+              return (
+                <form
+                  key={template.id}
+                  action={createChecklistFromTemplate}
+                  className="template-card"
+                >
+                  <input
+                    type="hidden"
+                    name="templateId"
+                    value={template.id}
+                  />
+                  <input type="hidden" name="type" value={type} />
                   <h4>{template.name}</h4>
                   <p>{template.description}</p>
                   <div className="items-count">
                     {template.itemCount} tarefas
                   </div>
-                </button>
-              </form>
-            ))}
+                  <div className="form-group" style={{ marginTop: 12 }}>
+                    <label htmlFor={`assignedUser-${template.id}`}>
+                      Atribuir a
+                    </label>
+                    <select
+                      id={`assignedUser-${template.id}`}
+                      name="assignedUserId"
+                      defaultValue=""
+                    >
+                      <option value="">
+                        Todos da função (sem atribuição específica)
+                      </option>
+                      {eligibleUsers.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button type="submit" className="btn-save" style={{ marginTop: 12 }}>
+                    Criar Checklist
+                  </button>
+                </form>
+              );
+            })}
           </div>
         </div>
       )}
@@ -83,6 +121,11 @@ export default async function ChecklistPage({
               <div>
                 <h3>{checklist.name}</h3>
                 <p>{checklist.description}</p>
+                {checklist.assignedUserName && (
+                  <p className="items-count">
+                    Atribuído a: {checklist.assignedUserName}
+                  </p>
+                )}
               </div>
               <a
                 className="btn-pdf"

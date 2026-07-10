@@ -15,6 +15,13 @@
       "when": 1783717244478,
       "tag": "0001_oval_johnny_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783721758975,
+      "tag": "0002_large_wind_dancer",
+      "breakpoints": true
     }
   ]
 }

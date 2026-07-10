@@ -68,6 +68,9 @@ export const checklistTypes = pgTable("checklist_types", {
     () => jobFunctions.id,
     { onDelete: "set null" },
   ),
+  assignedUserId: integer("assigned_user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

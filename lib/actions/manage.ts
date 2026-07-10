@@ -213,6 +213,7 @@ export async function createChecklistType(
   const description = String(formData.get("description") ?? "").trim();
   const type = String(formData.get("type") ?? "");
   const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
+  const assignedUserId = parseOptionalId(formData, "assignedUserId");
 
   if (!name || (type !== "daily" && type !== "weekly")) {
     return { error: "Preencha o nome do checklist" };
@@ -220,7 +221,7 @@ export async function createChecklistType(
 
   await db
     .insert(checklistTypes)
-    .values({ name, description, type, jobFunctionId });
+    .values({ name, description, type, jobFunctionId, assignedUserId });
   revalidateManageViews();
 }
 

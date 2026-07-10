@@ -7,6 +7,7 @@ import {
   checklistCompletions,
   templates,
   templateItems,
+  users,
   type completionStatusEnum,
 } from "@/lib/db/schema";
 
@@ -23,6 +24,17 @@ function visibleToViewer(jobFunctionId: number | null, viewer: Viewer) {
     jobFunctionId === null ||
     jobFunctionId === viewer.jobFunctionId
   );
+}
+
+function checklistVisibleToViewer(
+  checklistType: { jobFunctionId: number | null; assignedUserId: number | null },
+  viewer: Viewer & { id: number },
+) {
+  if (viewer.profile === "gestor") return true;
+  if (checklistType.assignedUserId !== null) {
+    return checklistType.assignedUserId === viewer.id;
+  }
+  return visibleToViewer(checklistType.jobFunctionId, viewer);
 }
 
 export function todayISO() {
@@ -74,13 +86,25 @@ export async function getChecklistsForUser(
     .where(eq(checklistTypes.type, type))
     .orderBy(asc(checklistTypes.id));
 
-  const types = allTypes.filter((t) =>
-    visibleToViewer(t.jobFunctionId, viewer),
-  );
+  const types = allTypes.filter((t) => checklistVisibleToViewer(t, viewer));
 
   if (types.length === 0) return [];
 
   const typeIds = types.map((t) => t.id);
+
+  const assignedUserIds = types
+    .map((t) => t.assignedUserId)
+    .filter((id): id is number => id !== null);
+  const assignedUsers =
+    assignedUserIds.length > 0
+      ? await db
+          .select({ id: users.id, name: users.name })
+          .from(users)
+          .where(inArray(users.id, assignedUserIds))
+      : [];
+  const assignedUserNameById = new Map(
+    assignedUsers.map((u) => [u.id, u.name]),
+  );
 
   const items = await db
     .select()
@@ -116,6 +140,9 @@ export async function getChecklistsForUser(
     id: checklistType.id,
     name: checklistType.name,
     description: checklistType.description,
+    assignedUserName: checklistType.assignedUserId
+      ? (assignedUserNameById.get(checklistType.assignedUserId) ?? null)
+      : null,
     items: (itemsByType.get(checklistType.id) ?? []).map((item) => {
       const completion = completionByItem.get(item.id);
       return {
