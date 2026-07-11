@@ -1,5 +1,5 @@
 import "server-only";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { restoIngestaRecords, units, users } from "@/lib/db/schema";
 
@@ -43,4 +43,16 @@ export async function getRestoIngestaRecords(unitId: number | null) {
       desperdicioPorPessoaKg,
     };
   });
+}
+
+export async function getRestoIngestaMonthlySummary(unitId: number | null) {
+  const unitFilter = unitId !== null ? sql`and unit_id = ${unitId}` : sql``;
+  const result = await db.execute<{ avg_waste: string | null }>(sql`
+    select avg(desperdicio_kg / nullif(experiencias_vendidas, 0))::text as avg_waste
+    from resto_ingesta_records
+    where date_trunc('month', date) = date_trunc('month', current_date)
+    ${unitFilter}
+  `);
+  const raw = result.rows[0]?.avg_waste;
+  return { avgWastePerPersonKg: raw != null ? Number(raw) : null };
 }

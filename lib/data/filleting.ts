@@ -1,5 +1,5 @@
 import "server-only";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { filletingRecords, units, users } from "@/lib/db/schema";
 
@@ -58,4 +58,19 @@ export async function getFilletingRecords(unitId: number | null) {
       perdaPercent,
     };
   });
+}
+
+export async function getFilletingMonthlySummary(unitId: number | null) {
+  const unitFilter = unitId !== null ? sql`and unit_id = ${unitId}` : sql``;
+  const result = await db.execute<{ avg_loss: string | null }>(sql`
+    select avg(
+      (recebido_kg - file_kg - ponta_clara_kg - ponta_escura_kg - peles_kg - raspas_kg)
+      / nullif(recebido_kg, 0) * 100
+    )::text as avg_loss
+    from filleting_records
+    where date_trunc('month', date) = date_trunc('month', current_date)
+    ${unitFilter}
+  `);
+  const raw = result.rows[0]?.avg_loss;
+  return { avgLossPercent: raw != null ? Number(raw) : null };
 }

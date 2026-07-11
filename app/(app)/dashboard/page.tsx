@@ -1,5 +1,7 @@
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getDashboardStats, getRanking } from "@/lib/data/dashboard";
+import { getFilletingMonthlySummary } from "@/lib/data/filleting";
+import { getRestoIngestaMonthlySummary } from "@/lib/data/resto-ingesta";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { UnitFilter } from "../UnitFilter";
 
@@ -16,11 +18,14 @@ export default async function DashboardPage({
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const unitId = resolveUnitScope(user, requestedUnitId);
 
-  const [stats, ranking, units] = await Promise.all([
-    getDashboardStats(unitId),
-    getRanking(unitId),
-    isGestor ? getUnits() : Promise.resolve([]),
-  ]);
+  const [stats, ranking, units, filletingSummary, restoIngestaSummary] =
+    await Promise.all([
+      getDashboardStats(unitId),
+      getRanking(unitId),
+      isGestor ? getUnits() : Promise.resolve([]),
+      getFilletingMonthlySummary(unitId),
+      getRestoIngestaMonthlySummary(unitId),
+    ]);
 
   return (
     <>
@@ -59,6 +64,24 @@ export default async function DashboardPage({
             {stats.complianceRate === null ? "-" : `${stats.complianceRate}%`}
           </div>
           <div className="subtitle">mês atual</div>
+        </div>
+        <div className="card">
+          <h3>🐟 Perda na Filetagem</h3>
+          <div className="value">
+            {filletingSummary.avgLossPercent === null
+              ? "-"
+              : `${filletingSummary.avgLossPercent.toFixed(1)}%`}
+          </div>
+          <div className="subtitle">média do mês atual</div>
+        </div>
+        <div className="card">
+          <h3>🍽️ Resto Ingesta</h3>
+          <div className="value">
+            {restoIngestaSummary.avgWastePerPersonKg === null
+              ? "-"
+              : `${restoIngestaSummary.avgWastePerPersonKg.toFixed(3)} kg`}
+          </div>
+          <div className="subtitle">desperdício médio por pessoa · mês atual</div>
         </div>
       </div>
 
