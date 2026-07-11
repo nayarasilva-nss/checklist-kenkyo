@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { logout } from "@/lib/auth/actions";
-import { Tabs } from "./Tabs";
 
 const PROFILE_LABELS: Record<string, string> = {
   gestor: "Gestor",
@@ -20,6 +20,9 @@ export default async function AppLayout({
       <div className="header">
         <h1>🎯 Kenkyo - Checklists</h1>
         <div className="user-info">
+          <Link href="/inicio" className="btn-home">
+            🏠 Início
+          </Link>
           <span>
             {user.name} ({PROFILE_LABELS[user.profile] ?? user.profile})
           </span>
@@ -30,8 +33,6 @@ export default async function AppLayout({
           </form>
         </div>
       </div>
-
-      <Tabs showManage={user.profile === "gestor"} />
 
       <div className="content">
         <div className="tab-content">{children}</div>

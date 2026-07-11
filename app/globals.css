@@ -188,36 +188,56 @@ button {
   flex-direction: column;
 }
 
-.tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 2px solid var(--border);
-  background: var(--surface);
-  padding: 0 20px;
-  overflow-x: auto;
-}
-
-.tab-link {
-  padding: 16px 20px;
-  border: none;
-  background: none;
+.btn-home {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-muted);
-  border-bottom: 3px solid transparent;
-  transition: all 0.3s;
-  white-space: nowrap;
-  display: inline-block;
+  transition: background 0.3s;
 }
 
-.tab-link.active {
-  color: var(--kenkyo-red);
-  border-bottom-color: var(--kenkyo-red);
+.btn-home:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
-.tab-link:hover {
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px;
+  max-width: 700px;
+}
+
+.home-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 16px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 12px;
   color: var(--text);
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.home-tile:hover {
+  border-color: var(--kenkyo-red);
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.15);
+  transform: translateY(-2px);
+}
+
+.home-tile-icon {
+  font-size: 40px;
+}
+
+.home-tile-label {
+  font-size: 15px;
 }
 
 .tab-content {
