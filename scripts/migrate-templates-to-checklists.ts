@@ -48,6 +48,8 @@ async function main() {
       );
     }
 
+    existingChecklistNames.add(template.name);
+
     console.log(
       `"${template.name}" migrado para checklist (tipo: diário, ${items.length} tarefas).`,
     );
