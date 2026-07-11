@@ -1,7 +1,8 @@
 "use server";
 
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth/dal";
+import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { restoIngestaRecords } from "@/lib/db/schema";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
@@ -59,5 +60,13 @@ export async function createRestoIngestaRecord(
     "completed",
   );
 
+  revalidatePath("/resto-ingesta");
+}
+
+export async function deleteRestoIngestaRecord(formData: FormData) {
+  await requireGestor();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await db.delete(restoIngestaRecords).where(eq(restoIngestaRecords.id, id));
   revalidatePath("/resto-ingesta");
 }

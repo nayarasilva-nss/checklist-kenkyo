@@ -3,8 +3,10 @@ import {
   canSubmitRestoIngesta,
   getRestoIngestaRecords,
 } from "@/lib/data/resto-ingesta";
+import { deleteRestoIngestaRecord } from "@/lib/actions/resto-ingesta";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { UnitFilter } from "../UnitFilter";
+import { DeleteButton } from "../gerenciar/DeleteButton";
 import { RestoIngestaForm } from "./RestoIngestaForm";
 
 export default async function RestoIngestaPage({
@@ -63,9 +65,18 @@ export default async function RestoIngestaPage({
                   {record.experienciasVendidas} experiências · {record.desperdicioKg.toFixed(2)} kg de desperdício
                 </div>
               </div>
-              <span className="count">
-                {record.desperdicioPorPessoaKg.toFixed(3)} kg/pessoa
-              </span>
+              <div className="report-item-actions">
+                <span className="count">
+                  {record.desperdicioPorPessoaKg.toFixed(3)} kg/pessoa
+                </span>
+                {isGestor && (
+                  <DeleteButton
+                    action={deleteRestoIngestaRecord}
+                    id={record.id}
+                    confirmText={`Remover o registro de ${new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR")}?`}
+                  />
+                )}
+              </div>
             </div>
           ))
         )}

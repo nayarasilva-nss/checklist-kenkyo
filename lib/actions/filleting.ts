@@ -1,7 +1,8 @@
 "use server";
 
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth/dal";
+import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { filletingRecords } from "@/lib/db/schema";
 import { canSubmitFilleting } from "@/lib/data/filleting";
@@ -84,5 +85,13 @@ export async function createFilletingRecord(
     "completed",
   );
 
+  revalidatePath("/filetagem");
+}
+
+export async function deleteFilletingRecord(formData: FormData) {
+  await requireGestor();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await db.delete(filletingRecords).where(eq(filletingRecords.id, id));
   revalidatePath("/filetagem");
 }

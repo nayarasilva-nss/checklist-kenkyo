@@ -1,7 +1,9 @@
 import { getCurrentUser } from "@/lib/auth/dal";
 import { canSubmitFilleting, getFilletingRecords } from "@/lib/data/filleting";
+import { deleteFilletingRecord } from "@/lib/actions/filleting";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { UnitFilter } from "../UnitFilter";
+import { DeleteButton } from "../gerenciar/DeleteButton";
 import { FiletagemForm } from "./FiletagemForm";
 
 export default async function FiletagemPage({
@@ -63,7 +65,16 @@ export default async function FiletagemPage({
                   {record.perdaKg.toFixed(2)} kg
                 </div>
               </div>
-              <span className="count">{record.perdaPercent.toFixed(1)}% de perda</span>
+              <div className="report-item-actions">
+                <span className="count">{record.perdaPercent.toFixed(1)}% de perda</span>
+                {isGestor && (
+                  <DeleteButton
+                    action={deleteFilletingRecord}
+                    id={record.id}
+                    confirmText={`Remover o registro de ${record.fishType} de ${new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR")}?`}
+                  />
+                )}
+              </div>
             </div>
           ))
         )}
