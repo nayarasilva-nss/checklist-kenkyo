@@ -2,17 +2,24 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
+import { getCurrentUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import {
   checklistTypes,
   checklistTypeItems,
   checklistCompletions,
-  templates,
-  templateItems,
 } from "@/lib/db/schema";
 import { addHistoryEntry } from "@/lib/data/history";
 import { todayISO } from "@/lib/data/checklists";
+
+const STATUS_VALUES = ["conforme", "nao-conforme", "nao-se-aplica"] as const;
+type Status = (typeof STATUS_VALUES)[number];
+
+const STATUS_LABELS: Record<Status, string> = {
+  conforme: "Conforme",
+  "nao-conforme": "Não Conforme",
+  "nao-se-aplica": "Não se Aplica",
+};
 
 function revalidateChecklistViews() {
   revalidatePath("/checklist");
@@ -21,58 +28,11 @@ function revalidateChecklistViews() {
   revalidatePath("/relatorio");
 }
 
-export async function createChecklistFromTemplate(formData: FormData) {
-  await requireGestor();
-
-  const templateId = Number(formData.get("templateId"));
-  const type = String(formData.get("type"));
-  const assignedUserIdRaw = String(formData.get("assignedUserId") ?? "").trim();
-  const assignedUserId = assignedUserIdRaw ? Number(assignedUserIdRaw) : null;
-  if (!templateId || (type !== "daily" && type !== "weekly")) {
-    throw new Error("Dados inválidos");
-  }
-
-  const [template] = await db
-    .select()
-    .from(templates)
-    .where(eq(templates.id, templateId))
-    .limit(1);
-  if (!template) throw new Error("Modelo não encontrado");
-
-  const items = await db
-    .select()
-    .from(templateItems)
-    .where(eq(templateItems.templateId, templateId))
-    .orderBy(templateItems.position);
-
-  const [checklistType] = await db
-    .insert(checklistTypes)
-    .values({
-      name: template.name,
-      description: template.description,
-      type,
-      jobFunctionId: template.jobFunctionId,
-      assignedUserId,
-    })
-    .returning({ id: checklistTypes.id });
-
-  if (items.length > 0) {
-    await db.insert(checklistTypeItems).values(
-      items.map((item, position) => ({
-        checklistTypeId: checklistType.id,
-        label: item.label,
-        position,
-      })),
-    );
-  }
-
-  revalidateChecklistViews();
-}
-
 async function getItemContext(itemId: number, checklistTypeId: number) {
   const [row] = await db
     .select({
       itemLabel: checklistTypeItems.label,
+      requiresPhoto: checklistTypeItems.requiresPhoto,
       checklistName: checklistTypes.name,
     })
     .from(checklistTypeItems)
@@ -90,56 +50,33 @@ async function getItemContext(itemId: number, checklistTypeId: number) {
   return row;
 }
 
-export async function markConforme(formData: FormData) {
+export type SetItemStatusState = { error?: string } | undefined;
+
+export async function setChecklistItemStatus(
+  _prevState: SetItemStatusState,
+  formData: FormData,
+): Promise<SetItemStatusState> {
   const user = await getCurrentUser();
   const itemId = Number(formData.get("itemId"));
   const checklistTypeId = Number(formData.get("checklistTypeId"));
-
-  const context = await getItemContext(itemId, checklistTypeId);
-  if (!context) throw new Error("Item não encontrado");
-
-  const date = todayISO();
-  await db
-    .insert(checklistCompletions)
-    .values({
-      checklistTypeId,
-      itemId,
-      userId: user.id,
-      date,
-      status: "conforme",
-      justification: null,
-      completedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [
-        checklistCompletions.itemId,
-        checklistCompletions.userId,
-        checklistCompletions.date,
-      ],
-      set: { status: "conforme", justification: null, completedAt: new Date() },
-    });
-
-  await addHistoryEntry(
-    user.id,
-    `${context.itemLabel} (${context.checklistName}) marcado como Conforme`,
-    "completed",
-  );
-
-  revalidateChecklistViews();
-}
-
-export async function markNaoConforme(formData: FormData) {
-  const user = await getCurrentUser();
-  const itemId = Number(formData.get("itemId"));
-  const checklistTypeId = Number(formData.get("checklistTypeId"));
+  const status = String(formData.get("status") ?? "");
   const justification = String(formData.get("justification") ?? "").trim();
+  const photoUrl = String(formData.get("photoUrl") ?? "").trim() || null;
 
-  if (!justification) {
-    throw new Error("Justificativa é obrigatória");
+  if (!STATUS_VALUES.includes(status as Status)) {
+    return { error: "Status inválido" };
+  }
+
+  if (status === "nao-conforme" && !justification) {
+    return { error: "Justificativa é obrigatória" };
   }
 
   const context = await getItemContext(itemId, checklistTypeId);
-  if (!context) throw new Error("Item não encontrado");
+  if (!context) return { error: "Item não encontrado" };
+
+  if (context.requiresPhoto && !photoUrl) {
+    return { error: "Essa tarefa exige uma foto de evidência" };
+  }
 
   const date = todayISO();
   await db
@@ -149,8 +86,9 @@ export async function markNaoConforme(formData: FormData) {
       itemId,
       userId: user.id,
       date,
-      status: "nao-conforme",
-      justification,
+      status: status as Status,
+      justification: status === "nao-conforme" ? justification : null,
+      photoUrl,
       completedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -160,16 +98,17 @@ export async function markNaoConforme(formData: FormData) {
         checklistCompletions.date,
       ],
       set: {
-        status: "nao-conforme",
-        justification,
+        status: status as Status,
+        justification: status === "nao-conforme" ? justification : null,
+        photoUrl,
         completedAt: new Date(),
       },
     });
 
   await addHistoryEntry(
     user.id,
-    `${context.itemLabel} (${context.checklistName}) marcado como Não Conforme`,
-    "pending",
+    `${context.itemLabel} (${context.checklistName}) marcado como ${STATUS_LABELS[status as Status]}`,
+    status === "nao-conforme" ? "pending" : "completed",
   );
 
   revalidateChecklistViews();

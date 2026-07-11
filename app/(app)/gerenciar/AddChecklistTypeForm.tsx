@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { createChecklistType } from "@/lib/actions/manage";
+import { ChecklistItemsEditor } from "./ChecklistItemsEditor";
 
 type Option = { id: number; name: string };
 
@@ -20,7 +21,7 @@ export function AddChecklistTypeForm({
   if (!open) {
     return (
       <button className="btn-add" type="button" onClick={() => setOpen(true)}>
-        + Adicionar Tipo
+        + Criar Modelo
       </button>
     );
   }
@@ -42,7 +43,7 @@ export function AddChecklistTypeForm({
 
   return (
     <form className="inline-form" ref={formRef} onSubmit={handleSubmit}>
-      <h4>Adicionar Tipo de Checklist</h4>
+      <h4>Criar Modelo de Checklist</h4>
       <div className="form-group">
         <label htmlFor="newChecklistName">Nome</label>
         <input
@@ -94,6 +95,7 @@ export function AddChecklistTypeForm({
           ))}
         </select>
       </div>
+      <ChecklistItemsEditor name="itemsJson" initialItems={[]} />
       {error && <p className="login-error">{error}</p>}
       <div className="inline-form-buttons">
         <button

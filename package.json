@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && next build",
+    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && tsx scripts/migrate-templates-to-checklists.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
@@ -14,6 +14,7 @@
     "db:seed:gerente": "dotenv -e .env.local -- tsx scripts/seed-gerente-routine.ts"
   },
   "dependencies": {
+    "@vercel/blob": "^2.6.1",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "jose": "^6.2.3",

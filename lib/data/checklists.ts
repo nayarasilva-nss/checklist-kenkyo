@@ -5,8 +5,6 @@ import {
   checklistTypes,
   checklistTypeItems,
   checklistCompletions,
-  templates,
-  templateItems,
   users,
   type completionStatusEnum,
 } from "@/lib/db/schema";
@@ -39,40 +37,6 @@ function checklistVisibleToViewer(
 
 export function todayISO() {
   return new Date().toISOString().slice(0, 10);
-}
-
-export async function getTemplates(viewer: Viewer) {
-  const rows = await db
-    .select({
-      id: templates.id,
-      name: templates.name,
-      description: templates.description,
-      jobFunctionId: templates.jobFunctionId,
-    })
-    .from(templates)
-    .orderBy(asc(templates.id));
-
-  const visible = rows.filter((t) => visibleToViewer(t.jobFunctionId, viewer));
-
-  const items = await db
-    .select({
-      templateId: templateItems.templateId,
-      label: templateItems.label,
-    })
-    .from(templateItems);
-
-  const countByTemplate = new Map<number, number>();
-  for (const item of items) {
-    countByTemplate.set(
-      item.templateId,
-      (countByTemplate.get(item.templateId) ?? 0) + 1,
-    );
-  }
-
-  return visible.map((t) => ({
-    ...t,
-    itemCount: countByTemplate.get(t.id) ?? 0,
-  }));
 }
 
 export async function getChecklistsForUser(
@@ -148,8 +112,10 @@ export async function getChecklistsForUser(
       return {
         id: item.id,
         label: item.label,
+        requiresPhoto: item.requiresPhoto,
         status: (completion?.status ?? "pending") as CompletionStatus,
         justification: completion?.justification ?? null,
+        photoUrl: completion?.photoUrl ?? null,
       };
     }),
   }));
@@ -199,6 +165,7 @@ export async function getChecklistExportData(
         label: item.label,
         status: (completion?.status ?? "pending") as CompletionStatus,
         justification: completion?.justification ?? null,
+        photoUrl: completion?.photoUrl ?? null,
         completedAt: completion?.completedAt ?? null,
       };
     }),

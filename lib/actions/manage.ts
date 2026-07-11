@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, ne, max } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { requireGestor } from "@/lib/auth/dal";
@@ -9,8 +9,6 @@ import {
   users,
   checklistTypes,
   checklistTypeItems,
-  templates,
-  templateItems,
   units,
   jobFunctions,
 } from "@/lib/db/schema";
@@ -203,6 +201,26 @@ export async function deleteJobFunction(formData: FormData) {
   revalidateManageViews();
 }
 
+type ParsedItem = { label: string; requiresPhoto: boolean };
+
+function parseItems(formData: FormData): ParsedItem[] {
+  const raw = String(formData.get("itemsJson") ?? "[]");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed
+    .map((entry) => ({
+      label: typeof entry?.label === "string" ? entry.label.trim() : "",
+      requiresPhoto: Boolean(entry?.requiresPhoto),
+    }))
+    .filter((item) => item.label.length > 0);
+}
+
 export async function createChecklistType(
   _prevState: ActionState,
   formData: FormData,
@@ -214,14 +232,95 @@ export async function createChecklistType(
   const type = String(formData.get("type") ?? "");
   const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
   const assignedUserId = parseOptionalId(formData, "assignedUserId");
+  const items = parseItems(formData);
 
-  if (!name || (type !== "daily" && type !== "weekly")) {
-    return { error: "Preencha o nome do checklist" };
+  if (!name || (type !== "daily" && type !== "weekly") || items.length === 0) {
+    return { error: "Preencha o nome, o tipo e as tarefas" };
+  }
+
+  const [checklistType] = await db
+    .insert(checklistTypes)
+    .values({ name, description, type, jobFunctionId, assignedUserId })
+    .returning({ id: checklistTypes.id });
+
+  await db.insert(checklistTypeItems).values(
+    items.map((item, position) => ({
+      checklistTypeId: checklistType.id,
+      label: item.label,
+      requiresPhoto: item.requiresPhoto,
+      position,
+    })),
+  );
+
+  revalidateManageViews();
+}
+
+export async function updateChecklistType(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireGestor();
+
+  const id = Number(formData.get("id"));
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const type = String(formData.get("type") ?? "");
+  const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
+  const assignedUserId = parseOptionalId(formData, "assignedUserId");
+  const items = parseItems(formData);
+
+  if (
+    !id ||
+    !name ||
+    (type !== "daily" && type !== "weekly") ||
+    items.length === 0
+  ) {
+    return { error: "Preencha o nome, o tipo e as tarefas" };
   }
 
   await db
-    .insert(checklistTypes)
-    .values({ name, description, type, jobFunctionId, assignedUserId });
+    .update(checklistTypes)
+    .set({ name, description, type, jobFunctionId, assignedUserId })
+    .where(eq(checklistTypes.id, id));
+
+  // Reconcile by position instead of replacing wholesale, so unchanged
+  // tasks keep their id and don't lose their conformidade history.
+  const existingItems = await db
+    .select()
+    .from(checklistTypeItems)
+    .where(eq(checklistTypeItems.checklistTypeId, id))
+    .orderBy(asc(checklistTypeItems.position));
+
+  for (let position = 0; position < items.length; position++) {
+    const item = items[position];
+    const existing = existingItems[position];
+    if (existing) {
+      if (
+        existing.label !== item.label ||
+        existing.requiresPhoto !== item.requiresPhoto
+      ) {
+        await db
+          .update(checklistTypeItems)
+          .set({ label: item.label, requiresPhoto: item.requiresPhoto })
+          .where(eq(checklistTypeItems.id, existing.id));
+      }
+    } else {
+      await db.insert(checklistTypeItems).values({
+        checklistTypeId: id,
+        label: item.label,
+        requiresPhoto: item.requiresPhoto,
+        position,
+      });
+    }
+  }
+
+  if (existingItems.length > items.length) {
+    const removedIds = existingItems.slice(items.length).map((i) => i.id);
+    await db
+      .delete(checklistTypeItems)
+      .where(inArray(checklistTypeItems.id, removedIds));
+  }
+
   revalidateManageViews();
 }
 
@@ -230,77 +329,5 @@ export async function deleteChecklistType(formData: FormData) {
   const id = Number(formData.get("id"));
   if (!id) return;
   await db.delete(checklistTypes).where(eq(checklistTypes.id, id));
-  revalidateManageViews();
-}
-
-export async function createTask(
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  await requireGestor();
-
-  const checklistTypeId = Number(formData.get("checklistTypeId"));
-  const label = String(formData.get("label") ?? "").trim();
-
-  if (!checklistTypeId || !label) {
-    return { error: "Selecione o checklist e preencha o nome da tarefa" };
-  }
-
-  const [row] = await db
-    .select({ maxPosition: max(checklistTypeItems.position) })
-    .from(checklistTypeItems)
-    .where(eq(checklistTypeItems.checklistTypeId, checklistTypeId));
-
-  const nextPosition = (row?.maxPosition ?? -1) + 1;
-
-  await db.insert(checklistTypeItems).values({
-    checklistTypeId,
-    label,
-    position: nextPosition,
-  });
-
-  revalidateManageViews();
-}
-
-export async function createTemplate(
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  await requireGestor();
-
-  const name = String(formData.get("name") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const itemsText = String(formData.get("items") ?? "");
-  const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
-  const items = itemsText
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (!name || items.length === 0 || !jobFunctionId) {
-    return { error: "Preencha o nome, a função e as tarefas" };
-  }
-
-  const [template] = await db
-    .insert(templates)
-    .values({ name, description, jobFunctionId })
-    .returning({ id: templates.id });
-
-  await db.insert(templateItems).values(
-    items.map((label, position) => ({
-      templateId: template.id,
-      label,
-      position,
-    })),
-  );
-
-  revalidateManageViews();
-}
-
-export async function deleteTemplate(formData: FormData) {
-  await requireGestor();
-  const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(templates).where(eq(templates.id, id));
   revalidateManageViews();
 }

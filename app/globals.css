@@ -1,7 +1,7 @@
 :root {
-  --kenkyo-red: #e63946;
-  --kenkyo-red-dark: #c1121f;
-  --kenkyo-gradient: linear-gradient(135deg, #e63946 0%, #c1121f 100%);
+  --kenkyo-red: #1a1a1a;
+  --kenkyo-red-dark: #000000;
+  --kenkyo-gradient: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
   --bg: #f5f5f5;
   --surface: #ffffff;
   --text: #333333;
@@ -228,7 +228,7 @@ button {
 
 .home-tile:hover {
   border-color: var(--kenkyo-red);
-  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
 }
 
@@ -270,7 +270,7 @@ button {
 
 .card:hover {
   border-color: var(--kenkyo-red);
-  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .card h3 {
@@ -382,43 +382,10 @@ button {
   color: white;
 }
 
-.template-card {
-  background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
-  cursor: pointer;
-  transition: all 0.3s;
-  text-align: left;
-  width: 100%;
-}
-
-.template-card:hover {
-  border-color: var(--kenkyo-red);
-  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.1);
-}
-
-.template-card h4 {
-  margin-bottom: 8px;
-}
-
-.template-card p {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 12px;
-}
-
-.template-card .items-count {
+.items-count {
   font-size: 12px;
   color: var(--kenkyo-red);
   font-weight: 600;
-}
-
-.templates-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
 }
 
 .checklist-block {
@@ -482,6 +449,11 @@ button {
   border-color: var(--danger);
 }
 
+.checklist-item.status-nao-se-aplica {
+  background: var(--bg);
+  border-color: var(--text-muted);
+}
+
 .item-button-row {
   display: flex;
   gap: 8px;
@@ -518,6 +490,25 @@ button {
 .btn-status-nao-conforme.active {
   background: var(--danger);
   color: white;
+}
+
+.btn-status-nao-se-aplica {
+  border: 2px solid var(--text-muted);
+  color: var(--text-muted);
+}
+
+.btn-status-nao-se-aplica.active {
+  background: var(--text-muted);
+  color: white;
+}
+
+.requires-photo-badge {
+  font-size: 11px;
+  color: var(--warning);
+  font-weight: 600;
+  background: var(--warning-bg);
+  padding: 4px 8px;
+  border-radius: 12px;
 }
 
 .item-text {
@@ -688,6 +679,39 @@ button {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+}
+
+.item-editor-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.item-editor-row input[type="text"] {
+  flex: 1;
+  min-width: 160px;
+  padding: 8px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.item-editor-checkbox {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.item-editor-checkbox input {
+  width: auto;
+  flex-shrink: 0;
 }
 
 .btn-cancel {

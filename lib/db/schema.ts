@@ -7,6 +7,7 @@ import {
   date,
   timestamp,
   pgEnum,
+  boolean,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
@@ -15,6 +16,7 @@ export const checklistTypeEnum = pgEnum("checklist_type_kind", ["daily", "weekly
 export const completionStatusEnum = pgEnum("completion_status", [
   "conforme",
   "nao-conforme",
+  "nao-se-aplica",
   "pending",
 ]);
 export const historyStatusEnum = pgEnum("history_status", ["completed", "pending"]);
@@ -81,8 +83,14 @@ export const checklistTypeItems = pgTable("checklist_type_items", {
     .references(() => checklistTypes.id, { onDelete: "cascade" }),
   label: text("label").notNull(),
   position: integer("position").notNull(),
+  requiresPhoto: boolean("requires_photo").notNull().default(false),
 });
 
+// Deprecated: superseded by checklistTypes/checklistTypeItems, which now
+// hold everything a "Modelo de Checklist" needs (including a fixed tipo).
+// Kept only so the one-off migrate-templates-to-checklists.ts script can
+// copy any leftover rows before these tables are dropped in a follow-up
+// migration.
 export const templates = pgTable("templates", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -119,6 +127,7 @@ export const checklistCompletions = pgTable(
     date: date("date").notNull(),
     status: completionStatusEnum("status").notNull().default("pending"),
     justification: text("justification"),
+    photoUrl: text("photo_url"),
     completedAt: timestamp("completed_at"),
   },
   (table) => [

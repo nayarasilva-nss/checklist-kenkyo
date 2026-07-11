@@ -6,8 +6,6 @@ import {
   users,
   checklistTypes,
   checklistTypeItems,
-  templates,
-  templateItems,
   units,
   jobFunctions,
 } from "@/lib/db/schema";
@@ -50,69 +48,27 @@ export async function getChecklistTypesWithCounts() {
     .leftJoin(jobFunctions, eq(jobFunctions.id, checklistTypes.jobFunctionId))
     .leftJoin(assignedUsers, eq(assignedUsers.id, checklistTypes.assignedUserId))
     .orderBy(asc(checklistTypes.id));
-  const items = await db.select().from(checklistTypeItems);
-
-  const countByType = new Map<number, number>();
-  for (const item of items) {
-    countByType.set(
-      item.checklistTypeId,
-      (countByType.get(item.checklistTypeId) ?? 0) + 1,
-    );
-  }
-
-  return types.map((t) => ({
-    ...t,
-    itemCount: countByType.get(t.id) ?? 0,
-  }));
-}
-
-export async function getTemplatesWithCounts() {
-  const rows = await db
-    .select({
-      id: templates.id,
-      name: templates.name,
-      description: templates.description,
-      jobFunctionId: templates.jobFunctionId,
-      jobFunctionName: jobFunctions.name,
-    })
-    .from(templates)
-    .leftJoin(jobFunctions, eq(jobFunctions.id, templates.jobFunctionId))
-    .orderBy(asc(templates.id));
-  const items = await db.select().from(templateItems);
-
-  const countByTemplate = new Map<number, number>();
-  for (const item of items) {
-    countByTemplate.set(
-      item.templateId,
-      (countByTemplate.get(item.templateId) ?? 0) + 1,
-    );
-  }
-
-  return rows.map((t) => ({
-    ...t,
-    itemCount: countByTemplate.get(t.id) ?? 0,
-  }));
-}
-
-export async function getChecklistTypeItemsGrouped() {
-  const types = await db
-    .select()
-    .from(checklistTypes)
-    .orderBy(asc(checklistTypes.id));
   const items = await db
     .select()
     .from(checklistTypeItems)
     .orderBy(asc(checklistTypeItems.position));
 
-  const itemsByType = new Map<number, typeof items>();
+  const itemsByType = new Map<
+    number,
+    { label: string; requiresPhoto: boolean }[]
+  >();
   for (const item of items) {
     const list = itemsByType.get(item.checklistTypeId) ?? [];
-    list.push(item);
+    list.push({ label: item.label, requiresPhoto: item.requiresPhoto });
     itemsByType.set(item.checklistTypeId, list);
   }
 
-  return types.map((t) => ({
-    ...t,
-    items: itemsByType.get(t.id) ?? [],
-  }));
+  return types.map((t) => {
+    const typeItems = itemsByType.get(t.id) ?? [];
+    return {
+      ...t,
+      items: typeItems,
+      itemCount: typeItems.length,
+    };
+  });
 }

@@ -4,6 +4,7 @@ import { getChecklistExportData } from "@/lib/data/checklists";
 const STATUS_LABELS = {
   conforme: "✓ Conforme",
   "nao-conforme": "✗ Não Conforme",
+  "nao-se-aplica": "➖ Não se aplica",
   pending: "○ Pendente",
 } as const;
 
@@ -31,6 +32,11 @@ export async function GET(
       <td>${STATUS_LABELS[item.status]}</td>
       <td>${escapeHtml(item.justification ?? "")}</td>
       <td>${
+        item.photoUrl
+          ? `<a href="${escapeHtml(item.photoUrl)}" target="_blank" rel="noopener noreferrer">Ver foto</a>`
+          : ""
+      }</td>
+      <td>${
         item.completedAt
           ? new Date(item.completedAt).toLocaleTimeString("pt-BR", {
               hour: "2-digit",
@@ -49,10 +55,10 @@ export async function GET(
   <title>${escapeHtml(data.checklistType.name)}</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { color: #E63946; }
+    h1 { color: #1a1a1a; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-    th { background-color: #E63946; color: white; }
+    th { background-color: #1a1a1a; color: white; }
     .header { margin-bottom: 30px; }
     .footer { margin-top: 30px; font-size: 12px; color: #999; }
   </style>
@@ -65,7 +71,7 @@ export async function GET(
   </div>
   <table>
     <thead>
-      <tr><th>Item</th><th>Status</th><th>Justificativa</th><th>Hora</th></tr>
+      <tr><th>Item</th><th>Status</th><th>Justificativa</th><th>Evidência</th><th>Hora</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>
