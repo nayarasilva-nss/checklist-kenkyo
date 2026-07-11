@@ -165,6 +165,23 @@ export const filletingRecords = pgTable("filleting_records", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const restoIngestaRecords = pgTable("resto_ingesta_records", {
+  id: serial("id").primaryKey(),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => units.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  experienciasVendidas: integer("experiencias_vendidas").notNull(),
+  desperdicioKg: numeric("desperdicio_kg", {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const history = pgTable("history", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")

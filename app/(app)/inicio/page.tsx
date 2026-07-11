@@ -7,6 +7,7 @@ const TILES = [
   { href: "/relatorio", icon: "📈", label: "Relatório" },
   { href: "/historico", icon: "📋", label: "Histórico" },
   { href: "/filetagem", icon: "🐟", label: "Filetagem" },
+  { href: "/resto-ingesta", icon: "🍽️", label: "Resto Ingesta" },
 ] as const;
 
 export default async function InicioPage() {

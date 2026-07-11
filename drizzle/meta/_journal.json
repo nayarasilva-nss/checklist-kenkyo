@@ -36,6 +36,13 @@
       "when": 1783800857993,
       "tag": "0004_bent_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783801871930,
+      "tag": "0005_brave_jackal",
+      "breakpoints": true
     }
   ]
 }
