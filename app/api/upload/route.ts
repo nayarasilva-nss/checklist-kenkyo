@@ -15,11 +15,33 @@ export async function POST(request: Request): Promise<NextResponse> {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: ["image/jpeg", "image/png", "image/webp", "image/heic"],
-        addRandomSuffix: true,
-        maximumSizeInBytes: 10 * 1024 * 1024,
-      }),
+      onBeforeGenerateToken: async (pathname) => {
+        if (pathname.startsWith("documentos/")) {
+          if (session.profile !== "gestor") {
+            throw new Error("Apenas o Gestor pode enviar documentos");
+          }
+          return {
+            allowedContentTypes: [
+              "application/pdf",
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+            ],
+            addRandomSuffix: true,
+            maximumSizeInBytes: 20 * 1024 * 1024,
+          };
+        }
+        return {
+          allowedContentTypes: [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/heic",
+          ],
+          addRandomSuffix: true,
+          maximumSizeInBytes: 10 * 1024 * 1024,
+        };
+      },
     });
 
     return NextResponse.json(jsonResponse);

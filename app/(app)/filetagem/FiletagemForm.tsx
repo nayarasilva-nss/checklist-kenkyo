@@ -7,7 +7,11 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function FiletagemForm() {
+export function FiletagemForm({
+  defaultResponsavel,
+}: {
+  defaultResponsavel: string;
+}) {
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -32,6 +36,16 @@ export function FiletagemForm() {
       <div className="form-group">
         <label htmlFor="fdate">Data</label>
         <input id="fdate" name="date" type="date" defaultValue={todayISO()} required />
+      </div>
+      <div className="form-group">
+        <label htmlFor="responsavel">Responsável</label>
+        <input
+          id="responsavel"
+          name="responsavel"
+          defaultValue={defaultResponsavel}
+          placeholder="Nome do responsável"
+          required
+        />
       </div>
       <div className="form-group">
         <label htmlFor="fishType">Pescado</label>

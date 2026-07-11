@@ -33,7 +33,7 @@ export default async function FiletagemPage({
 
       {canSubmitFilleting(user) && (
         <div className="report-section">
-          <FiletagemForm />
+          <FiletagemForm defaultResponsavel={user.name} />
         </div>
       )}
 
@@ -56,7 +56,7 @@ export default async function FiletagemPage({
                   {record.fishType} — {record.unitName}
                 </span>
                 <div className="item-text">
-                  {new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR")} · lançado por {record.userName}
+                  {new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR")} · responsável: {record.responsavel ?? record.userName}
                 </div>
                 <div className="item-text">
                   Recebido {record.recebidoKg.toFixed(2)} kg · Perda{" "}

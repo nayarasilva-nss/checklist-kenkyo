@@ -33,9 +33,11 @@ export async function createFilletingRecord(
 
   const fishType = String(formData.get("fishType") ?? "").trim();
   const date = String(formData.get("date") ?? "").trim();
+  const responsavel = String(formData.get("responsavel") ?? "").trim();
 
   if (!fishType) return { error: "Informe o pescado" };
   if (!date) return { error: "Informe a data" };
+  if (!responsavel) return { error: "Informe o responsável" };
 
   const recebidoKg = parseKg(formData, "recebidoKg");
   const fileKg = parseKg(formData, "fileKg");
@@ -66,6 +68,7 @@ export async function createFilletingRecord(
     unitId: user.unitId,
     userId: user.id,
     date,
+    responsavel,
     fishType,
     recebidoKg: recebidoKg.toFixed(2),
     fileKg: fileKg.toFixed(2),

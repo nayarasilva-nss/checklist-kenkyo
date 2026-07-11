@@ -21,6 +21,10 @@ export const completionStatusEnum = pgEnum("completion_status", [
   "pending",
 ]);
 export const historyStatusEnum = pgEnum("history_status", ["completed", "pending"]);
+export const documentCategoryEnum = pgEnum("document_category", [
+  "ficha_tecnica",
+  "pop",
+]);
 
 export const units = pgTable(
   "units",
@@ -149,6 +153,7 @@ export const filletingRecords = pgTable("filleting_records", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   date: date("date").notNull(),
+  responsavel: varchar("responsavel", { length: 255 }),
   fishType: varchar("fish_type", { length: 255 }).notNull(),
   recebidoKg: numeric("recebido_kg", { precision: 10, scale: 2 }).notNull(),
   fileKg: numeric("file_kg", { precision: 10, scale: 2 }).notNull(),
@@ -179,6 +184,17 @@ export const restoIngestaRecords = pgTable("resto_ingesta_records", {
     precision: 10,
     scale: 2,
   }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  category: documentCategoryEnum("category").notNull(),
+  fileUrl: text("file_url").notNull(),
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

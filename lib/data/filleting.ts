@@ -18,6 +18,7 @@ export async function getFilletingRecords(unitId: number | null) {
     .select({
       id: filletingRecords.id,
       date: filletingRecords.date,
+      responsavel: filletingRecords.responsavel,
       fishType: filletingRecords.fishType,
       recebidoKg: filletingRecords.recebidoKg,
       fileKg: filletingRecords.fileKg,
