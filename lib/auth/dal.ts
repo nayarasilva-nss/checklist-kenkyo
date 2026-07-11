@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, jobFunctions } from "@/lib/db/schema";
 import { decrypt, getSessionCookie, type Profile } from "./session";
 
 export const verifySession = cache(async () => {
@@ -28,8 +28,10 @@ export const getCurrentUser = cache(async () => {
       profile: users.profile,
       unitId: users.unitId,
       jobFunctionId: users.jobFunctionId,
+      jobFunctionName: jobFunctions.name,
     })
     .from(users)
+    .leftJoin(jobFunctions, eq(users.jobFunctionId, jobFunctions.id))
     .where(eq(users.id, session.userId))
     .limit(1);
 

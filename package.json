@@ -5,13 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && tsx scripts/migrate-templates-to-checklists.ts && next build",
+    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && tsx scripts/seed-chefe-function.ts && tsx scripts/migrate-templates-to-checklists.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
     "db:seed": "dotenv -e .env.local -- tsx scripts/seed.ts",
-    "db:seed:gerente": "dotenv -e .env.local -- tsx scripts/seed-gerente-routine.ts"
+    "db:seed:gerente": "dotenv -e .env.local -- tsx scripts/seed-gerente-routine.ts",
+    "db:seed:chefe": "dotenv -e .env.local -- tsx scripts/seed-chefe-function.ts"
   },
   "dependencies": {
     "@vercel/blob": "^2.6.1",

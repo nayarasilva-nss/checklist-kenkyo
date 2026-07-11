@@ -8,6 +8,7 @@ import {
   timestamp,
   pgEnum,
   boolean,
+  numeric,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
@@ -138,6 +139,31 @@ export const checklistCompletions = pgTable(
     ),
   ],
 );
+
+export const filletingRecords = pgTable("filleting_records", {
+  id: serial("id").primaryKey(),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => units.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  fishType: varchar("fish_type", { length: 255 }).notNull(),
+  recebidoKg: numeric("recebido_kg", { precision: 10, scale: 2 }).notNull(),
+  fileKg: numeric("file_kg", { precision: 10, scale: 2 }).notNull(),
+  pontaClaraKg: numeric("ponta_clara_kg", {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
+  pontaEscuraKg: numeric("ponta_escura_kg", {
+    precision: 10,
+    scale: 2,
+  }).notNull(),
+  pelesKg: numeric("peles_kg", { precision: 10, scale: 2 }).notNull(),
+  raspasKg: numeric("raspas_kg", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 export const history = pgTable("history", {
   id: serial("id").primaryKey(),

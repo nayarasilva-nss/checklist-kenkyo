@@ -29,6 +29,13 @@
       "when": 1783779091634,
       "tag": "0003_volatile_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783800857993,
+      "tag": "0004_bent_hiroim",
+      "breakpoints": true
     }
   ]
 }
