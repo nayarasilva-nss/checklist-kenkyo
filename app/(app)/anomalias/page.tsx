@@ -46,6 +46,12 @@ export default async function AnomaliasPage({
 
           <div className="report-section">
             <h3>⚠️ Anomalias Reportadas</h3>
+            <a
+              className="btn-pdf"
+              href={`/api/anomalias/export${requestedUnitId ? `?unit=${requestedUnitId}` : ""}`}
+            >
+              📥 Baixar Excel
+            </a>
             {records.length === 0 ? (
               <p className="empty-state">Nenhuma anomalia reportada ainda</p>
             ) : (
