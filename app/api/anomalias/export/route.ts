@@ -1,15 +1,16 @@
 import ExcelJS from "exceljs";
-import { requireGestor } from "@/lib/auth/dal";
-import { getAnomalies } from "@/lib/data/anomalies";
+import { getCurrentUser } from "@/lib/auth/dal";
+import { getAnomaliesByScope, resolveAnomalyScope } from "@/lib/data/anomalies";
 
 export async function GET(request: Request) {
-  await requireGestor();
+  const user = await getCurrentUser();
 
   const { searchParams } = new URL(request.url);
   const rawUnit = searchParams.get("unit");
-  const unitId = rawUnit ? Number(rawUnit) : null;
+  const requestedUnitId = rawUnit ? Number(rawUnit) : null;
 
-  const records = await getAnomalies(unitId);
+  const scope = resolveAnomalyScope(user, requestedUnitId);
+  const records = await getAnomaliesByScope(scope);
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Anomalias");
