@@ -198,6 +198,27 @@ export const documents = pgTable("documents", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const anomalies = pgTable("anomalies", {
+  id: serial("id").primaryKey(),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => units.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  relator: varchar("relator", { length: 255 }).notNull(),
+  tipos: text("tipos").array().notNull(),
+  setores: text("setores").array().notNull(),
+  colaboradoresEnvolvidos: text("colaboradores_envolvidos").notNull(),
+  oQueAconteceu: text("o_que_aconteceu").notNull(),
+  causaPercebida: text("causa_percebida").notNull(),
+  consequenciaImediata: text("consequencia_imediata"),
+  acaoTomada: text("acao_tomada"),
+  sugestaoTratativa: text("sugestao_tratativa"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const history = pgTable("history", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
