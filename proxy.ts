@@ -18,7 +18,7 @@ export default async function proxy(request: NextRequest) {
   }
 
   if (isLoginRoute && session) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/inicio", request.url));
   }
 
   if (

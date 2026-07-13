@@ -38,7 +38,7 @@ export async function login(
   }
 
   await createSession({ userId: user.id, profile: user.profile });
-  redirect("/dashboard");
+  redirect("/inicio");
 }
 
 export async function logout() {
