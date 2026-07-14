@@ -18,14 +18,20 @@ export default async function AppLayout({
   return (
     <div className="app-container">
       <div className="header">
-        <h1>🎯 Kenkyo - Checklists</h1>
-        <div className="user-info">
+        <div className="logo-section">
+          <div className="logo">K</div>
+          <div className="logo-text">Kenkyo</div>
+        </div>
+        <div className="header-right">
           <Link href="/inicio" className="btn-home">
             🏠 Início
           </Link>
-          <span>
-            {user.name} ({PROFILE_LABELS[user.profile] ?? user.profile})
-          </span>
+          <div className="user-info">
+            <div className="user-name">{user.name}</div>
+            <div className="user-role">
+              {PROFILE_LABELS[user.profile] ?? user.profile}
+            </div>
+          </div>
           <form action={logout}>
             <button className="btn-logout" type="submit">
               Sair

@@ -48,24 +48,24 @@ export default async function DashboardPage({
           <div className="value">{stats.totalChecklists}</div>
           <div className="subtitle">cadastrados</div>
         </div>
-        <div className="card">
+        <div className="card success">
           <h3>Concluídos Hoje</h3>
           <div className="value">{stats.completedToday}</div>
           <div className="subtitle">de {stats.totalChecklists}</div>
         </div>
-        <div className="card">
+        <div className="card warning">
           <h3>Em Andamento</h3>
           <div className="value">{stats.inProgress}</div>
           <div className="subtitle">pendentes</div>
         </div>
-        <div className="card">
+        <div className="card info">
           <h3>Taxa de Conformidade</h3>
           <div className="value">
             {stats.complianceRate === null ? "-" : `${stats.complianceRate}%`}
           </div>
           <div className="subtitle">mês atual</div>
         </div>
-        <div className="card">
+        <div className="card warning">
           <h3>🐟 Perda na Filetagem</h3>
           <div className="value">
             {filletingSummary.avgLossPercent === null
@@ -74,7 +74,7 @@ export default async function DashboardPage({
           </div>
           <div className="subtitle">média do mês atual</div>
         </div>
-        <div className="card">
+        <div className="card info">
           <h3>🍽️ Resto Ingesta</h3>
           <div className="value">
             {restoIngestaSummary.avgWastePerPersonKg === null
