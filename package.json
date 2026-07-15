@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && tsx scripts/seed-chefe-function.ts && tsx scripts/migrate-templates-to-checklists.ts && tsx scripts/seed-souschef-routine.ts && tsx scripts/dedupe-checklist-types.ts && tsx scripts/seed-pops-higienizacao.ts && next build",
+    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && tsx scripts/seed-chefe-function.ts && tsx scripts/migrate-templates-to-checklists.ts && tsx scripts/seed-souschef-routine.ts && tsx scripts/dedupe-checklist-types.ts && tsx scripts/seed-pops-higienizacao.ts && tsx scripts/seed-fichas-tecnicas.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
@@ -15,7 +15,8 @@
     "db:seed:chefe": "dotenv -e .env.local -- tsx scripts/seed-chefe-function.ts",
     "db:seed:souschef": "dotenv -e .env.local -- tsx scripts/seed-souschef-routine.ts",
     "db:dedupe-checklists": "dotenv -e .env.local -- tsx scripts/dedupe-checklist-types.ts",
-    "db:seed:pops-higienizacao": "dotenv -e .env.local -- tsx scripts/seed-pops-higienizacao.ts"
+    "db:seed:pops-higienizacao": "dotenv -e .env.local -- tsx scripts/seed-pops-higienizacao.ts",
+    "db:seed:fichas-tecnicas": "dotenv -e .env.local -- tsx scripts/seed-fichas-tecnicas.ts"
   },
   "dependencies": {
     "@vercel/blob": "^2.6.1",
