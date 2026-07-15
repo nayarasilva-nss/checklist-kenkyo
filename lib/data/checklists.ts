@@ -121,6 +121,72 @@ export async function getChecklistsForUser(
   }));
 }
 
+export async function getChecklistForUser(
+  checklistTypeId: number,
+  viewer: Viewer & { id: number },
+  date: string = todayISO(),
+) {
+  const [checklistType] = await db
+    .select()
+    .from(checklistTypes)
+    .where(eq(checklistTypes.id, checklistTypeId))
+    .limit(1);
+
+  if (!checklistType) return null;
+  if (!checklistVisibleToViewer(checklistType, viewer)) return null;
+
+  const items = await db
+    .select()
+    .from(checklistTypeItems)
+    .where(eq(checklistTypeItems.checklistTypeId, checklistTypeId))
+    .orderBy(asc(checklistTypeItems.position));
+
+  const itemIds = items.map((i) => i.id);
+  const completions =
+    itemIds.length > 0
+      ? await db
+          .select()
+          .from(checklistCompletions)
+          .where(
+            and(
+              inArray(checklistCompletions.itemId, itemIds),
+              eq(checklistCompletions.userId, viewer.id),
+              eq(checklistCompletions.date, date),
+            ),
+          )
+      : [];
+  const completionByItem = new Map(completions.map((c) => [c.itemId, c]));
+
+  let assignedUserName: string | null = null;
+  if (checklistType.assignedUserId) {
+    const [assignedUser] = await db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, checklistType.assignedUserId))
+      .limit(1);
+    assignedUserName = assignedUser?.name ?? null;
+  }
+
+  return {
+    id: checklistType.id,
+    name: checklistType.name,
+    description: checklistType.description,
+    type: checklistType.type,
+    assignedUserName,
+    items: items.map((item) => {
+      const completion = completionByItem.get(item.id);
+      return {
+        id: item.id,
+        label: item.label,
+        requiresPhoto: item.requiresPhoto,
+        status: (completion?.status ?? "pending") as CompletionStatus,
+        justification: completion?.justification ?? null,
+        photoUrl: completion?.photoUrl ?? null,
+      };
+    }),
+  };
+}
+
 export async function getChecklistExportData(
   checklistTypeId: number,
   userId: number,

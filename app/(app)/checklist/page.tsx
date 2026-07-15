@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getChecklistsForUser } from "@/lib/data/checklists";
-import { ChecklistItemRow } from "./ChecklistItemRow";
 
 const TYPE_LABELS = { daily: "📋 Diários", weekly: "📋 Semanais" } as const;
 
@@ -46,35 +45,34 @@ export default async function ChecklistPage({
             : "Nenhum checklist disponível para você ainda. Peça a um Gestor para criar um modelo para a sua função."}
         </p>
       ) : (
-        checklists.map((checklist) => (
-          <div key={checklist.id} className="checklist-block">
-            <div className="checklist-block-header">
-              <div>
-                <h3>{checklist.name}</h3>
-                <p>{checklist.description}</p>
-                {checklist.assignedUserName && (
-                  <p className="items-count">
-                    Atribuído a: {checklist.assignedUserName}
-                  </p>
-                )}
-              </div>
-              <a
-                className="btn-pdf"
-                href={`/api/checklists/${checklist.id}/export`}
+        <div className="checklist-list">
+          {checklists.map((checklist) => {
+            const total = checklist.items.length;
+            const done = checklist.items.filter(
+              (item) => item.status !== "pending",
+            ).length;
+            return (
+              <Link
+                key={checklist.id}
+                href={`/checklist/${checklist.id}?type=${type}`}
+                className={`checklist-card ${total > 0 && done === total ? "done" : ""}`}
               >
-                📥 Enviar PDF
-              </a>
-            </div>
-
-            {checklist.items.map((item) => (
-              <ChecklistItemRow
-                key={item.id}
-                item={item}
-                checklistTypeId={checklist.id}
-              />
-            ))}
-          </div>
-        ))
+                <div>
+                  <h3>{checklist.name}</h3>
+                  {checklist.description && <p>{checklist.description}</p>}
+                  {checklist.assignedUserName && (
+                    <p className="items-count">
+                      Atribuído a: {checklist.assignedUserName}
+                    </p>
+                  )}
+                </div>
+                <span className="checklist-card-progress">
+                  {done}/{total} concluídos
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       )}
     </>
   );

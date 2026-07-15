@@ -515,10 +515,50 @@ button {
   font-weight: 600;
 }
 
-.checklist-block {
-  margin-bottom: 32px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 24px;
+.checklist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checklist-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  color: var(--text);
+  transition: all 0.3s;
+}
+
+.checklist-card:hover {
+  border-color: var(--kenkyo-red);
+  transform: translateY(-2px);
+}
+
+.checklist-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.checklist-card p {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.checklist-card-progress {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.checklist-card.done .checklist-card-progress {
+  color: var(--success);
 }
 
 .checklist-block-header {
