@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { put } from "@vercel/blob";
 import { db } from "../lib/db";
 import { documents, users } from "../lib/db/schema";
+import { FICHA_TECNICA_CATEGORY_ORDER } from "../lib/domain/ficha-tecnica-categorias";
 
 type Ingrediente = [nome: string, pesoBruto: string, pesoLiquido: string];
 
@@ -1705,6 +1706,99 @@ const RECEITAS: Receita[] = [
   },
 ];
 
+const CATEGORIAS: Record<string, (typeof FICHA_TECNICA_CATEGORY_ORDER)[number]> = {
+  "Camarão Alho e Óleo": "Camarão e Peixe Empanados",
+  "Camarão Empanado 36/40": "Camarão e Peixe Empanados",
+  "Camarão Empanado 36/40 (unidade)": "Camarão e Peixe Empanados",
+  "Ebi Amêndoas": "Camarão e Peixe Empanados",
+  "Ebi Pipoca (Delivery)": "Camarão e Peixe Empanados",
+  "Ebi Sakana": "Camarão e Peixe Empanados",
+  "Iscas de Tilápia": "Camarão e Peixe Empanados",
+  "Pele de Salmão Frita (Skin)": "Camarão e Peixe Empanados",
+  "Shiromi Pipoca (Delivery)": "Camarão e Peixe Empanados",
+  "Shiromi Sakana": "Camarão e Peixe Empanados",
+
+  "Ceviche de Salmão": "Ceviches e Usuzukuri",
+  "Ceviche de Tilápia": "Ceviches e Usuzukuri",
+  "Ceviche do Mar": "Ceviches e Usuzukuri",
+  Usuzukuri: "Ceviches e Usuzukuri",
+  "Usuzukuri de Polvo": "Ceviches e Usuzukuri",
+  "Usuzukuri de Salmão": "Ceviches e Usuzukuri",
+
+  Gyoza: "Gyoza e Harumaki",
+  "Harumaki de Queijo": "Gyoza e Harumaki",
+
+  "Hot Couve Crispy": "Hots",
+  "Hot Especial": "Hots",
+  "Hot Filadélfia": "Hots",
+  "Hot Haru": "Hots",
+  "Hot Tartare": "Hots",
+
+  "Joy Amêndoas": "Joys",
+  "Joy de Maracujá": "Joys",
+  "Joy Filadélfia": "Joys",
+  "Joy Morango": "Joys",
+  "Joy Passion": "Joys",
+  "Joy Patê de Salmão": "Joys",
+
+  "Julieta Oreo": "Sobremesas",
+  "Mousse de Limão": "Sobremesas",
+  "Mousse de Maçã Verde": "Sobremesas",
+  "Petit Gateau": "Sobremesas",
+
+  "Maionese Kenkyo": "Molhos e Bases",
+  "Massa de Empanar": "Molhos e Bases",
+  "Massa de Tempurá (Pronta para Empanar)": "Molhos e Bases",
+  "Molho Cítrico Kenkyo": "Molhos e Bases",
+  "Molho do Ebi Pipoca": "Molhos e Bases",
+  "Molho Gorgonzola": "Molhos e Bases",
+  "Molho Tártaro": "Molhos e Bases",
+  "Shari Kenkyo (Arroz)": "Molhos e Bases",
+  Shimeji: "Molhos e Bases",
+
+  "Niguiri de Atum": "Niguiris",
+  "Niguiri de Salmão": "Niguiris",
+  "Niguiri de Salmão Selado": "Niguiris",
+  "Niguiri de Salmão Trufado": "Niguiris",
+  "Niguiri de Tilápia e Ovas Black": "Niguiris",
+  "Niguiri Skin": "Niguiris",
+
+  "Patê de Salmão": "Patês",
+  "Patê Grelhado": "Patês",
+
+  "Sashimi de Salmão Trufado": "Sashimis",
+  "Sashimi de Atum": "Sashimis",
+  "Sashimi de Polvo": "Sashimis",
+  "Sashimi de Salmão": "Sashimis",
+  "Sashimi de Salmão Selado": "Sashimis",
+  "Sashimi de Tilápia com Limão": "Sashimis",
+  "Sashimi de Toro de Salmão": "Sashimis",
+
+  "Shake Hara": "Outros Pratos",
+  "Sunomono Alacart": "Outros Pratos",
+  "Yakisoba de Carne": "Outros Pratos",
+  "Yakisoba de Frango": "Outros Pratos",
+  "Yakisoba Misto": "Outros Pratos",
+
+  "Sushi Hossomaki com Patê": "Sushis",
+  "Sushi Hossomaki de Salmão": "Sushis",
+  "Sushi Hossomaki Filadélfia": "Sushis",
+  "Sushi Low Carb Patê": "Sushis",
+  "Sushi Low Carb Patê com Ovas": "Sushis",
+  "Sushi Low Carb Peixe com Cebolinha": "Sushis",
+  "Sushi Uramaki de Morango e Cream Cheese": "Sushis",
+  "Sushi Uramaki Ebi-Ten": "Sushis",
+  "Sushi Uramaki Filadélfia": "Sushis",
+  "Sushi Uramaki Salmão": "Sushis",
+  "Sushi Uramaki Shimeji": "Sushis",
+  "Sushi Uramaki Shiromi Croc": "Sushis",
+  "Sushi Uramaki Skin Dragon": "Sushis",
+  "Sushi Uramaki Tartare": "Sushis",
+  "Temaki Filadélfia": "Sushis",
+  "Temaki Hot": "Sushis",
+  "Temaki Salmão": "Sushis",
+};
+
 async function main() {
   const [gestor] = await db
     .select({ id: users.id })
@@ -1716,13 +1810,24 @@ async function main() {
     process.exit(1);
   }
 
-  const existingTitles = new Set(
-    (await db.select({ title: documents.title }).from(documents)).map((d) => d.title),
-  );
+  const existing = await db
+    .select({ title: documents.title, subcategory: documents.subcategory })
+    .from(documents);
+  const existingByTitle = new Map(existing.map((d) => [d.title, d.subcategory]));
 
   for (const receita of RECEITAS) {
-    if (existingTitles.has(receita.titulo)) {
-      console.log(`"${receita.titulo}" já existe, pulando.`);
+    const subcategory = CATEGORIAS[receita.titulo] ?? null;
+
+    if (existingByTitle.has(receita.titulo)) {
+      if (existingByTitle.get(receita.titulo) == null && subcategory) {
+        await db
+          .update(documents)
+          .set({ subcategory })
+          .where(eq(documents.title, receita.titulo));
+        console.log(`"${receita.titulo}" já existe, categoria atualizada para "${subcategory}".`);
+      } else {
+        console.log(`"${receita.titulo}" já existe, pulando.`);
+      }
       continue;
     }
     const html = renderReceitaHtml(receita);
@@ -1734,6 +1839,7 @@ async function main() {
     await db.insert(documents).values({
       title: receita.titulo,
       category: "ficha_tecnica",
+      subcategory,
       fileUrl: blob.url,
       createdBy: gestor.id,
     });

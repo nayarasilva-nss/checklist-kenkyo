@@ -9,6 +9,7 @@ export async function getDocuments() {
       id: documents.id,
       title: documents.title,
       category: documents.category,
+      subcategory: documents.subcategory,
       fileUrl: documents.fileUrl,
       createdAt: documents.createdAt,
     })

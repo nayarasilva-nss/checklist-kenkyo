@@ -191,6 +191,7 @@ export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   category: documentCategoryEnum("category").notNull(),
+  subcategory: varchar("subcategory", { length: 100 }),
   fileUrl: text("file_url").notNull(),
   createdBy: integer("created_by")
     .notNull()

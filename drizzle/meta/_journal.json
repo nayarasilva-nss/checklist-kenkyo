@@ -57,6 +57,13 @@
       "when": 1783963702144,
       "tag": "0007_vengeful_praxagora",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784147947189,
+      "tag": "0008_cool_barracuda",
+      "breakpoints": true
     }
   ]
 }

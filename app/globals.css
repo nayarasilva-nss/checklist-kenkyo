@@ -457,6 +457,23 @@ button {
   align-items: center;
 }
 
+.document-category {
+  margin-bottom: 20px;
+}
+
+.document-category:last-child {
+  margin-bottom: 0;
+}
+
+.document-category h4 {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
 .report-item .user-name {
   font-weight: 700;
 }
