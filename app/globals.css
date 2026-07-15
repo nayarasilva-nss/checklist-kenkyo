@@ -66,6 +66,12 @@ button {
   max-width: 400px;
 }
 
+.login-logo {
+  display: block;
+  margin-bottom: 16px;
+  object-fit: contain;
+}
+
 .login-card h1 {
   font-size: 28px;
   font-weight: 800;
@@ -174,15 +180,7 @@ button {
 .logo {
   width: 40px;
   height: 40px;
-  background: var(--kenkyo-gradient);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  color: #fff;
-  font-size: 18px;
-  box-shadow: 0 4px 16px rgba(230, 57, 70, 0.3);
+  object-fit: contain;
   flex-shrink: 0;
 }
 

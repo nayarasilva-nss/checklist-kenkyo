@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { logout } from "@/lib/auth/actions";
@@ -19,7 +20,14 @@ export default async function AppLayout({
     <div className="app-container">
       <div className="header">
         <div className="logo-section">
-          <div className="logo">K</div>
+          <Image
+            src="/kenkyo-logo.png"
+            alt="Kenkyo"
+            width={40}
+            height={40}
+            className="logo"
+            priority
+          />
           <div className="logo-text">Kenkyo</div>
         </div>
         <div className="header-right">
