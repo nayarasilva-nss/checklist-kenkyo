@@ -29,7 +29,7 @@ export default async function DocumentosPage() {
         ) : (
           fichasTecnicas.map((doc) => (
             <div className="report-item" key={doc.id}>
-              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+              <a href={`/api/documentos/${doc.id}/view`} target="_blank" rel="noopener noreferrer">
                 {doc.title}
               </a>
               {isGestor && (
@@ -51,7 +51,7 @@ export default async function DocumentosPage() {
         ) : (
           pops.map((doc) => (
             <div className="report-item" key={doc.id}>
-              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+              <a href={`/api/documentos/${doc.id}/view`} target="_blank" rel="noopener noreferrer">
                 {doc.title}
               </a>
               {isGestor && (
