@@ -13,6 +13,8 @@ export default async function AnomaliasPage({
 }) {
   const user = await getCurrentUser();
   const isGestor = user.profile === "gestor";
+  const isRh = user.profile === "rh";
+  const canViewAllUnits = isGestor || isRh;
   const { unit: rawUnit } = await searchParams;
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
 
@@ -20,25 +22,27 @@ export default async function AnomaliasPage({
 
   const [records, units] = await Promise.all([
     getAnomaliesByScope(scope),
-    isGestor ? getUnits() : Promise.resolve([]),
+    canViewAllUnits ? getUnits() : Promise.resolve([]),
   ]);
 
   return (
     <>
       <h2>Relatório de Anomalias</h2>
 
-      {!isGestor && user.unitId === null && (
+      {!isGestor && !isRh && user.unitId === null && (
         <p className="empty-state">
           Sua unidade ainda não foi definida. Peça a um Gestor para atribuir
           sua unidade no cadastro.
         </p>
       )}
 
-      <div className="report-section">
-        <AnomaliaForm defaultRelator={user.name} />
-      </div>
+      {!isRh && (
+        <div className="report-section">
+          <AnomaliaForm defaultRelator={user.name} />
+        </div>
+      )}
 
-      {isGestor && (
+      {canViewAllUnits && (
         <div className="report-section">
           <h3>Filtrar por Unidade</h3>
           <UnitFilter units={units} value={requestedUnitId} />

@@ -12,7 +12,7 @@ export type ShiftLogViewer = {
 export type ShiftLogScope = { unitId: number | null };
 
 /**
- * Gestor: sees every shift log (or filtered by requestedUnitId).
+ * Gestor / RH: sees every shift log (or filtered by requestedUnitId).
  * Everyone else (líder, gerente, chefe): sees every shift log from their
  * own unit, so the next shift's leader can read the previous handoff —
  * unlike Anomalias, this isn't restricted to "own records only" because
@@ -22,7 +22,7 @@ export function resolveShiftLogScope(
   viewer: ShiftLogViewer,
   requestedUnitId: number | null,
 ): ShiftLogScope {
-  if (viewer.profile === "gestor") {
+  if (viewer.profile === "gestor" || viewer.profile === "rh") {
     return { unitId: requestedUnitId };
   }
   return { unitId: viewer.unitId ?? -1 };

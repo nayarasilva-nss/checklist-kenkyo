@@ -8,6 +8,7 @@ const PROFILE_LABELS: Record<string, string> = {
   gestor: "Gestor",
   gerente: "Gerente",
   lider: "Líder",
+  rh: "RH",
 };
 
 type Option = { id: number; name: string };
@@ -112,6 +113,7 @@ export function UserRow({
           <option value="lider">Líder</option>
           <option value="gerente">Gerente</option>
           <option value="gestor">Gestor</option>
+          <option value="rh">RH</option>
         </select>
       </div>
       <div className="form-group">

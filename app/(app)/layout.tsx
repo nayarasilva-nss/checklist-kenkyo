@@ -7,6 +7,7 @@ const PROFILE_LABELS: Record<string, string> = {
   gestor: "Gestor",
   gerente: "Gerente",
   lider: "Líder",
+  rh: "RH",
 };
 
 export default async function AppLayout({

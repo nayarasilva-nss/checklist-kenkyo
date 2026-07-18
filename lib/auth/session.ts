@@ -10,7 +10,7 @@ if (!secretKey) {
 }
 const encodedKey = new TextEncoder().encode(secretKey);
 
-export type Profile = "gestor" | "gerente" | "lider";
+export type Profile = "gestor" | "gerente" | "lider" | "rh";
 
 export type SessionPayload = {
   userId: number;

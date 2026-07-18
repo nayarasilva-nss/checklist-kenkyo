@@ -30,7 +30,7 @@ function parseOptionalId(formData: FormData, key: string): number | null {
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
-const PROFILES = ["gestor", "gerente", "lider"] as const;
+const PROFILES = ["gestor", "gerente", "lider", "rh"] as const;
 
 export async function createUser(
   _prevState: ActionState,

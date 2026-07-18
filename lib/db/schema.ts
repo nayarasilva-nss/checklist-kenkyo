@@ -12,7 +12,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-export const profileEnum = pgEnum("profile", ["gestor", "gerente", "lider"]);
+export const profileEnum = pgEnum("profile", ["gestor", "gerente", "lider", "rh"]);
 export const checklistTypeEnum = pgEnum("checklist_type_kind", ["daily", "weekly"]);
 export const completionStatusEnum = pgEnum("completion_status", [
   "conforme",

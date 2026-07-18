@@ -1,0 +1,1 @@
+ALTER TYPE "public"."profile" ADD VALUE 'rh';

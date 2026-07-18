@@ -17,7 +17,7 @@ export type AnomalyScope =
   | { mode: "own"; userId: number };
 
 /**
- * Gestor: sees all anomalies (or filtered by requestedUnitId).
+ * Gestor / RH: sees all anomalies (or filtered by requestedUnitId).
  * Gerente / Chefe (função): sees every anomaly reported in their own unit.
  * Everyone else: sees only the anomalies they personally reported.
  */
@@ -25,7 +25,7 @@ export function resolveAnomalyScope(
   viewer: AnomalyViewer,
   requestedUnitId: number | null,
 ): AnomalyScope {
-  if (viewer.profile === "gestor") {
+  if (viewer.profile === "gestor" || viewer.profile === "rh") {
     return { mode: "unit", unitId: requestedUnitId };
   }
   if (viewer.profile === "gerente" || viewer.jobFunctionName === "Chefe") {

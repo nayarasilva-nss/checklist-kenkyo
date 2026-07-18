@@ -13,13 +13,20 @@ const TILES = [
   { href: "/diario-de-bordo", icon: "📖", label: "Diário de Bordo" },
 ] as const;
 
+const RH_TILES = [
+  { href: "/anomalias", icon: "⚠️", label: "Anomalias" },
+  { href: "/diario-de-bordo", icon: "📖", label: "Diário de Bordo" },
+] as const;
+
 export default async function InicioPage() {
   const user = await getCurrentUser();
 
   const tiles =
-    user.profile === "gestor"
-      ? [...TILES, { href: "/gerenciar", icon: "⚙️", label: "Gerenciar" }]
-      : TILES;
+    user.profile === "rh"
+      ? RH_TILES
+      : user.profile === "gestor"
+        ? [...TILES, { href: "/gerenciar", icon: "⚙️", label: "Gerenciar" }]
+        : TILES;
 
   return (
     <>

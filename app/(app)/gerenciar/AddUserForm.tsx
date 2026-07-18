@@ -62,6 +62,7 @@ export function AddUserForm({
           <option value="lider">Líder</option>
           <option value="gerente">Gerente</option>
           <option value="gestor">Gestor</option>
+          <option value="rh">RH</option>
         </select>
       </div>
       <div className="form-group">

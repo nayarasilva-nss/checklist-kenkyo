@@ -19,6 +19,8 @@ export default async function DiarioDeBordoPage({
 }) {
   const user = await getCurrentUser();
   const isGestor = user.profile === "gestor";
+  const isRh = user.profile === "rh";
+  const canViewAllUnits = isGestor || isRh;
   const { unit: rawUnit } = await searchParams;
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
 
@@ -26,25 +28,27 @@ export default async function DiarioDeBordoPage({
 
   const [records, units] = await Promise.all([
     getShiftLogsByScope(scope),
-    isGestor ? getUnits() : Promise.resolve([]),
+    canViewAllUnits ? getUnits() : Promise.resolve([]),
   ]);
 
   return (
     <>
       <h2>Diário de Bordo da Liderança</h2>
 
-      {!isGestor && user.unitId === null && (
+      {!isGestor && !isRh && user.unitId === null && (
         <p className="empty-state">
           Sua unidade ainda não foi definida. Peça a um Gestor para atribuir
           sua unidade no cadastro.
         </p>
       )}
 
-      <div className="report-section">
-        <DiarioBordoForm />
-      </div>
+      {!isRh && (
+        <div className="report-section">
+          <DiarioBordoForm />
+        </div>
+      )}
 
-      {isGestor && (
+      {canViewAllUnits && (
         <div className="report-section">
           <h3>Filtrar por Unidade</h3>
           <UnitFilter units={units} value={requestedUnitId} />
