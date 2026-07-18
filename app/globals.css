@@ -878,7 +878,8 @@ button {
   margin-bottom: 8px;
 }
 
-.item-editor-row input[type="text"] {
+.item-editor-row input[type="text"],
+.item-editor-row input[type="date"] {
   flex: 1;
   min-width: 160px;
   padding: 8px;

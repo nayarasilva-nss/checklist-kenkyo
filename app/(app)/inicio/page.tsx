@@ -10,6 +10,7 @@ const TILES = [
   { href: "/resto-ingesta", icon: "🍽️", label: "Resto Ingesta" },
   { href: "/documentos", icon: "📑", label: "Fichas e POPs" },
   { href: "/anomalias", icon: "⚠️", label: "Anomalias" },
+  { href: "/diario-de-bordo", icon: "📖", label: "Diário de Bordo" },
 ] as const;
 
 export default async function InicioPage() {

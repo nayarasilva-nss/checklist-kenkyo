@@ -64,6 +64,13 @@
       "when": 1784147947189,
       "tag": "0008_cool_barracuda",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784339262998,
+      "tag": "0009_flaky_mauler",
+      "breakpoints": true
     }
   ]
 }

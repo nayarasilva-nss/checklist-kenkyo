@@ -25,6 +25,16 @@ export const documentCategoryEnum = pgEnum("document_category", [
   "ficha_tecnica",
   "pop",
 ]);
+export const shiftStatusEnum = pgEnum("shift_status", [
+  "estavel",
+  "sob_pressao",
+  "instavel",
+]);
+export const leaderSelfAssessmentEnum = pgEnum("leader_self_assessment", [
+  "proativo",
+  "reativo",
+  "apagando_incendio",
+]);
 
 export const units = pgTable(
   "units",
@@ -218,6 +228,41 @@ export const anomalies = pgTable("anomalies", {
   acaoTomada: text("acao_tomada"),
   sugestaoTratativa: text("sugestao_tratativa"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const shiftLogs = pgTable("shift_logs", {
+  id: serial("id").primaryKey(),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => units.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  setor: varchar("setor", { length: 255 }).notNull(),
+  statusTurno: shiftStatusEnum("status_turno").notNull(),
+  statusJustificativa: text("status_justificativa").notNull(),
+  desvioDescricao: text("desvio_descricao").notNull(),
+  desvioImpacto: text("desvio_impacto"),
+  desvioCausaRaiz: text("desvio_causa_raiz"),
+  acoesLideranca: text("acoes_lideranca").array().notNull(),
+  acaoLiderancaDescricao: text("acao_lideranca_descricao"),
+  outrasDecisoes: text("outras_decisoes"),
+  gestaoEquipe: text("gestao_equipe").array().notNull(),
+  gestaoEquipeDescricao: text("gestao_equipe_descricao"),
+  autoavaliacao: leaderSelfAssessmentEnum("autoavaliacao").notNull(),
+  autoavaliacaoMelhorias: text("autoavaliacao_melhorias"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const shiftLogPendencias = pgTable("shift_log_pendencias", {
+  id: serial("id").primaryKey(),
+  shiftLogId: integer("shift_log_id")
+    .notNull()
+    .references(() => shiftLogs.id, { onDelete: "cascade" }),
+  descricao: text("descricao").notNull(),
+  responsavel: varchar("responsavel", { length: 255 }),
+  prazo: date("prazo"),
 });
 
 export const history = pgTable("history", {
