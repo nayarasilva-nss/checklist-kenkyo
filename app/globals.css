@@ -175,6 +175,11 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
+  transition: opacity 0.3s;
+}
+
+.logo-section:hover {
+  opacity: 0.8;
 }
 
 .logo {

@@ -20,7 +20,7 @@ export default async function AppLayout({
   return (
     <div className="app-container">
       <div className="header">
-        <div className="logo-section">
+        <Link href="/inicio" className="logo-section">
           <Image
             src="/kenkyo-logo.png"
             alt="Kenkyo"
@@ -30,11 +30,8 @@ export default async function AppLayout({
             priority
           />
           <div className="logo-text">Kenkyo</div>
-        </div>
+        </Link>
         <div className="header-right">
-          <Link href="/inicio" className="btn-home">
-            🏠 Início
-          </Link>
           <div className="user-info">
             <div className="user-name">{user.name}</div>
             <div className="user-role">
