@@ -1,11 +1,10 @@
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getDocuments } from "@/lib/data/documents";
-import { deleteDocument } from "@/lib/actions/documents";
 import {
   FICHA_TECNICA_CATEGORY_ORDER,
   FICHA_TECNICA_OUTRAS,
 } from "@/lib/domain/ficha-tecnica-categorias";
-import { DeleteButton } from "../gerenciar/DeleteButton";
+import { DocumentRow } from "./DocumentRow";
 import { DocumentUploadForm } from "./DocumentUploadForm";
 
 export default async function DocumentosPage() {
@@ -45,24 +44,21 @@ export default async function DocumentosPage() {
             .map((group) => (
               <div key={group.categoria} className="document-category">
                 <h4>{group.categoria}</h4>
-                {group.docs.map((doc) => (
-                  <div className="report-item" key={doc.id}>
-                    <a
-                      href={`/api/documentos/${doc.id}/view`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {doc.title}
-                    </a>
-                    {isGestor && (
-                      <DeleteButton
-                        action={deleteDocument}
-                        id={doc.id}
-                        confirmText={`Remover "${doc.title}"?`}
-                      />
-                    )}
-                  </div>
-                ))}
+                {group.docs.map((doc) =>
+                  isGestor ? (
+                    <DocumentRow key={doc.id} doc={doc} />
+                  ) : (
+                    <div className="report-item" key={doc.id}>
+                      <a
+                        href={`/api/documentos/${doc.id}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {doc.title}
+                      </a>
+                    </div>
+                  ),
+                )}
               </div>
             ))
         )}
@@ -73,20 +69,17 @@ export default async function DocumentosPage() {
         {pops.length === 0 ? (
           <p className="empty-state">Nenhum POP cadastrado ainda</p>
         ) : (
-          pops.map((doc) => (
-            <div className="report-item" key={doc.id}>
-              <a href={`/api/documentos/${doc.id}/view`} target="_blank" rel="noopener noreferrer">
-                {doc.title}
-              </a>
-              {isGestor && (
-                <DeleteButton
-                  action={deleteDocument}
-                  id={doc.id}
-                  confirmText={`Remover "${doc.title}"?`}
-                />
-              )}
-            </div>
-          ))
+          pops.map((doc) =>
+            isGestor ? (
+              <DocumentRow key={doc.id} doc={doc} />
+            ) : (
+              <div className="report-item" key={doc.id}>
+                <a href={`/api/documentos/${doc.id}/view`} target="_blank" rel="noopener noreferrer">
+                  {doc.title}
+                </a>
+              </div>
+            ),
+          )
         )}
       </div>
     </>

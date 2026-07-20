@@ -3,9 +3,11 @@
 import { useRef, useState, useTransition } from "react";
 import { upload } from "@vercel/blob/client";
 import { createDocument } from "@/lib/actions/documents";
+import { FICHA_TECNICA_CATEGORY_ORDER } from "@/lib/domain/ficha-tecnica-categorias";
 
 export function DocumentUploadForm() {
   const [file, setFile] = useState<File | null>(null);
+  const [category, setCategory] = useState("ficha_tecnica");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -43,6 +45,7 @@ export function DocumentUploadForm() {
       } else {
         setError(undefined);
         setFile(null);
+        setCategory("ficha_tecnica");
         formRef.current?.reset();
       }
     });
@@ -59,11 +62,29 @@ export function DocumentUploadForm() {
       </div>
       <div className="form-group">
         <label htmlFor="docCategory">Categoria</label>
-        <select id="docCategory" name="category" defaultValue="ficha_tecnica">
+        <select
+          id="docCategory"
+          name="category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
           <option value="ficha_tecnica">Ficha Técnica</option>
           <option value="pop">POP</option>
         </select>
       </div>
+      {category === "ficha_tecnica" && (
+        <div className="form-group">
+          <label htmlFor="docSubcategory">Subcategoria</label>
+          <select id="docSubcategory" name="subcategory" defaultValue="">
+            <option value="">Sem subcategoria (aparece em &quot;Outras&quot;)</option>
+            {FICHA_TECNICA_CATEGORY_ORDER.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="form-group">
         <label htmlFor="docFile">Arquivo (PDF ou imagem)</label>
         <input
