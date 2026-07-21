@@ -8,6 +8,9 @@ import {
   users,
   type completionStatusEnum,
 } from "@/lib/db/schema";
+import { todayISO } from "@/lib/date-utils";
+
+export { todayISO };
 
 export type CompletionStatus = (typeof completionStatusEnum.enumValues)[number];
 
@@ -33,10 +36,6 @@ function checklistVisibleToViewer(
     return checklistType.assignedUserId === viewer.id;
   }
   return visibleToViewer(checklistType.jobFunctionId, viewer);
-}
-
-export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
 }
 
 export async function getChecklistsForUser(

@@ -1,10 +1,7 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayISO } from "@/lib/date-utils";
 
 export async function getDashboardStats(unitId: number | null) {
   const today = todayISO();
@@ -47,7 +44,7 @@ export async function getDashboardStats(unitId: number | null) {
       count(*) filter (where cc.status in ('conforme', 'nao-conforme'))::text as total
     from checklist_completions cc
     ${unitJoin}
-    where date_trunc('month', cc.date) = date_trunc('month', current_date)
+    where date_trunc('month', cc.date::timestamp) = date_trunc('month', ${today}::timestamp)
   `);
   const conforme = Number(complianceResult.rows[0]?.conforme ?? 0);
   const totalEvaluated = Number(complianceResult.rows[0]?.total ?? 0);
@@ -62,8 +59,8 @@ export async function getDashboardStats(unitId: number | null) {
   };
 }
 
-export async function getRanking(unitId: number | null) {
-  const unitFilter = unitId ? sql`where u.unit_id = ${unitId}` : sql``;
+export async function getRanking(unitId: number | null, date: string = todayISO()) {
+  const unitFilter = unitId ? sql`and u.unit_id = ${unitId}` : sql``;
 
   const result = await db.execute<{
     name: string;
@@ -81,6 +78,7 @@ export async function getRanking(unitId: number | null) {
     from users u
     join checklist_completions cc on cc.user_id = u.id
     left join units un on un.id = u.unit_id
+    where date_trunc('week', cc.date::timestamp) = date_trunc('week', ${date}::timestamp)
     ${unitFilter}
     group by u.id, u.name, un.name
     having count(*) filter (where cc.status = 'conforme') > 0

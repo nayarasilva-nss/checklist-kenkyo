@@ -2,10 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { createFilletingRecord } from "@/lib/actions/filleting";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayISO } from "@/lib/date-utils";
 
 export function FiletagemForm({
   defaultResponsavel,

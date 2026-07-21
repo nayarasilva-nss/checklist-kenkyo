@@ -86,7 +86,7 @@ export default async function DashboardPage({
       </div>
 
       <h2 style={{ marginTop: 30, marginBottom: 20 }}>
-        🏆 Ranking de Colaboradores
+        🏆 Ranking de Colaboradores (semana atual)
       </h2>
       {ranking.length === 0 ? (
         <p className="empty-state">Nenhum checklist concluído ainda</p>

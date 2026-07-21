@@ -3,10 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { createAnomaly } from "@/lib/actions/anomalies";
 import { ANOMALY_SETORES, ANOMALY_TYPES } from "@/lib/anomaly-constants";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayISO } from "@/lib/date-utils";
 
 export function AnomaliaForm({ defaultRelator }: { defaultRelator: string }) {
   const [error, setError] = useState<string | undefined>();

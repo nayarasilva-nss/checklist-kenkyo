@@ -2,10 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { createRestoIngestaRecord } from "@/lib/actions/resto-ingesta";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayISO } from "@/lib/date-utils";
 
 export function RestoIngestaForm() {
   const [error, setError] = useState<string | undefined>();

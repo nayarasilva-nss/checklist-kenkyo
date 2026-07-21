@@ -9,11 +9,8 @@ import {
   TEAM_MANAGEMENT_ACTIONS,
 } from "@/lib/shift-log-constants";
 import { ANOMALY_SETORES } from "@/lib/anomaly-constants";
+import { todayISO } from "@/lib/date-utils";
 import { PendenciasEditor } from "./PendenciasEditor";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export function DiarioBordoForm() {
   const [error, setError] = useState<string | undefined>();
