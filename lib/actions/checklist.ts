@@ -4,22 +4,11 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
-import {
-  checklistTypes,
-  checklistTypeItems,
-  checklistCompletions,
-} from "@/lib/db/schema";
-import { addHistoryEntry } from "@/lib/data/history";
+import { checklistTypeItems, checklistCompletions } from "@/lib/db/schema";
 import { todayISO } from "@/lib/data/checklists";
 
 const STATUS_VALUES = ["conforme", "nao-conforme", "nao-se-aplica"] as const;
 type Status = (typeof STATUS_VALUES)[number];
-
-const STATUS_LABELS: Record<Status, string> = {
-  conforme: "Conforme",
-  "nao-conforme": "Não Conforme",
-  "nao-se-aplica": "Não se Aplica",
-};
 
 function revalidateChecklistViews() {
   revalidatePath("/checklist");
@@ -30,16 +19,8 @@ function revalidateChecklistViews() {
 
 async function getItemContext(itemId: number, checklistTypeId: number) {
   const [row] = await db
-    .select({
-      itemLabel: checklistTypeItems.label,
-      requiresPhoto: checklistTypeItems.requiresPhoto,
-      checklistName: checklistTypes.name,
-    })
+    .select({ requiresPhoto: checklistTypeItems.requiresPhoto })
     .from(checklistTypeItems)
-    .innerJoin(
-      checklistTypes,
-      eq(checklistTypes.id, checklistTypeItems.checklistTypeId),
-    )
     .where(
       and(
         eq(checklistTypeItems.id, itemId),
@@ -104,12 +85,6 @@ export async function setChecklistItemStatus(
         completedAt: new Date(),
       },
     });
-
-  await addHistoryEntry(
-    user.id,
-    `${context.itemLabel} (${context.checklistName}) marcado como ${STATUS_LABELS[status as Status]}`,
-    status === "nao-conforme" ? "pending" : "completed",
-  );
 
   revalidateChecklistViews();
 }
