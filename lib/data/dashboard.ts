@@ -69,20 +69,45 @@ export async function getRanking(unitId: number | null, date: string = todayISO(
     conforme: string;
     total: string;
   }>(sql`
+    with completed_sessions as (
+      select cc.user_id, cc.checklist_type_id, cc.date
+      from checklist_completions cc
+      where cc.status != 'pending'
+        and date_trunc('week', cc.date::timestamp) = date_trunc('week', ${date}::timestamp)
+      group by cc.user_id, cc.checklist_type_id, cc.date
+      having count(distinct cc.item_id) = (
+        select count(*)
+        from checklist_type_items cti
+        where cti.checklist_type_id = cc.checklist_type_id
+      )
+    ),
+    session_counts as (
+      select user_id, count(*)::int as completions
+      from completed_sessions
+      group by user_id
+    ),
+    item_stats as (
+      select
+        cc.user_id,
+        count(*) filter (where cc.status = 'conforme')::int as conforme,
+        count(*) filter (where cc.status in ('conforme', 'nao-conforme'))::int as total
+      from checklist_completions cc
+      where date_trunc('week', cc.date::timestamp) = date_trunc('week', ${date}::timestamp)
+      group by cc.user_id
+    )
     select
       u.name as name,
       un.name as unit_name,
-      count(*) filter (where cc.status = 'conforme')::text as completions,
-      count(*) filter (where cc.status = 'conforme')::text as conforme,
-      count(*) filter (where cc.status in ('conforme', 'nao-conforme'))::text as total
+      sc.completions::text as completions,
+      coalesce(ist.conforme, 0)::text as conforme,
+      coalesce(ist.total, 0)::text as total
     from users u
-    join checklist_completions cc on cc.user_id = u.id
+    join session_counts sc on sc.user_id = u.id
+    left join item_stats ist on ist.user_id = u.id
     left join units un on un.id = u.unit_id
-    where date_trunc('week', cc.date::timestamp) = date_trunc('week', ${date}::timestamp)
+    where true
     ${unitFilter}
-    group by u.id, u.name, un.name
-    having count(*) filter (where cc.status = 'conforme') > 0
-    order by completions desc
+    order by sc.completions desc
     limit 20
   `);
 
