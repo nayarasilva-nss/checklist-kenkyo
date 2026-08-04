@@ -12,5 +12,23 @@ const BRAZIL_TIMEZONE = "America/Sao_Paulo";
  * needs to agree with what a user in Brazil considers today.
  */
 export function todayISO(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: BRAZIL_TIMEZONE }).format(new Date());
+  return formatBrazilDate(new Date());
+}
+
+const CHECKLIST_DAY_ROLLOVER_HOUR = 2;
+
+/**
+ * Same as todayISO(), but the checklist day only rolls over at 02:00 BRT
+ * instead of midnight. Staff commonly close out a shift just after
+ * midnight and still need to finish that shift's checklist during the
+ * next couple hours, so "today's checklist" should still mean the
+ * previous calendar day until 2am.
+ */
+export function checklistDayISO(): string {
+  const shifted = new Date(Date.now() - CHECKLIST_DAY_ROLLOVER_HOUR * 60 * 60 * 1000);
+  return formatBrazilDate(shifted);
+}
+
+function formatBrazilDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: BRAZIL_TIMEZONE }).format(date);
 }

@@ -1,7 +1,11 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { todayISO } from "@/lib/date-utils";
+// Checklist-derived stats use the same 02:00 BRT rollover as the
+// checklist page itself (checklistDayISO), not plain midnight — otherwise
+// "Concluídos Hoje" and the ranking's week boundary would disagree with
+// what the Checklist page considers "today".
+import { checklistDayISO as todayISO } from "@/lib/date-utils";
 
 export async function getDashboardStats(unitId: number | null) {
   const today = todayISO();

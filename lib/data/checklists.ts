@@ -8,8 +8,12 @@ import {
   users,
   type completionStatusEnum,
 } from "@/lib/db/schema";
-import { todayISO } from "@/lib/date-utils";
+import { checklistDayISO } from "@/lib/date-utils";
 
+// "Today" for checklist purposes rolls over at 02:00 BRT, not midnight —
+// see checklistDayISO() for why. Exported as `todayISO` since that's the
+// name every checklist read/write path already imports.
+const todayISO = checklistDayISO;
 export { todayISO };
 
 export type CompletionStatus = (typeof completionStatusEnum.enumValues)[number];
