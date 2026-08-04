@@ -1810,24 +1810,20 @@ async function main() {
     process.exit(1);
   }
 
-  const existing = await db
-    .select({ title: documents.title, subcategory: documents.subcategory })
-    .from(documents);
-  const existingByTitle = new Map(existing.map((d) => [d.title, d.subcategory]));
+  const existingTitles = new Set(
+    (await db.select({ title: documents.title }).from(documents)).map((d) => d.title),
+  );
 
   for (const receita of RECEITAS) {
     const subcategory = CATEGORIAS[receita.titulo] ?? null;
 
-    if (existingByTitle.has(receita.titulo)) {
-      if (existingByTitle.get(receita.titulo) == null && subcategory) {
-        await db
-          .update(documents)
-          .set({ subcategory })
-          .where(eq(documents.title, receita.titulo));
-        console.log(`"${receita.titulo}" já existe, categoria atualizada para "${subcategory}".`);
-      } else {
-        console.log(`"${receita.titulo}" já existe, pulando.`);
-      }
+    // Once a document exists, this script never touches it again — a
+    // Gestor may have deliberately edited its title/categoria/subcategoria
+    // (including clearing it back to "Sem subcategoria") via the app's
+    // own Editar screen, and re-running this seed on every deploy must
+    // not overwrite that.
+    if (existingTitles.has(receita.titulo)) {
+      console.log(`"${receita.titulo}" já existe, pulando.`);
       continue;
     }
     const html = renderReceitaHtml(receita);
