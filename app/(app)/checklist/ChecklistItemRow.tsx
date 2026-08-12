@@ -23,6 +23,40 @@ const STATUS_CLASS: Record<CompletionStatus, string> = {
   pending: "",
 };
 
+const MAX_PHOTO_DIMENSION = 1600;
+const PHOTO_QUALITY = 0.75;
+
+// Evidence photos come straight off phone cameras (often 3-4 MB each), and
+// storage quota is limited — resize/recompress to JPEG client-side before
+// upload. Falls back to the original file on any decode error (e.g. a HEIC
+// variant the browser can't rasterize) so a photo never fails to submit
+// just because compression didn't work.
+async function compressPhoto(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_PHOTO_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", PHOTO_QUALITY),
+    );
+    if (!blob || blob.size >= file.size) return file;
+
+    const baseName = file.name.replace(/\.\w+$/, "");
+    return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
 export function ChecklistItemRow({
   item,
   checklistTypeId,
@@ -88,9 +122,10 @@ export function ChecklistItemRow({
       setUploading(true);
       setError(null);
       try {
+        const compressed = await compressPhoto(photoFile);
         const blob = await upload(
-          `evidencias/${checklistTypeId}-${item.id}-${Date.now()}-${photoFile.name}`,
-          photoFile,
+          `evidencias/${checklistTypeId}-${item.id}-${Date.now()}-${compressed.name}`,
+          compressed,
           { access: "public", handleUploadUrl: "/api/upload" },
         );
         photoUrl = blob.url;
