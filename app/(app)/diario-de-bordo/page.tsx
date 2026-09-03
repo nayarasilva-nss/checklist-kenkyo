@@ -57,6 +57,12 @@ export default async function DiarioDeBordoPage({
 
       <div className="report-section">
         <h3>📖 Registros do Turno</h3>
+        <a
+          className="btn-pdf"
+          href={`/api/diario-de-bordo/export${requestedUnitId ? `?unit=${requestedUnitId}` : ""}`}
+        >
+          📥 Baixar Excel
+        </a>
         {records.length === 0 ? (
           <p className="empty-state">Nenhum diário de bordo registrado ainda</p>
         ) : (
