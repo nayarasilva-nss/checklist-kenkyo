@@ -65,6 +65,9 @@ export default async function AnomaliasPage({
               <div>
                 <span className="user-name">
                   {record.tipos.join(", ")} — {record.unitName}
+                  {record.sourceChecklistCompletionId && (
+                    <span className="items-count"> · 🤖 gerada pelo checklist</span>
+                  )}
                 </span>
                 <div className="item-text">
                   {new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR")} · relatado por {record.relator}

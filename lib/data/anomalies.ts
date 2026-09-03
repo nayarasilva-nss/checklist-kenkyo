@@ -48,6 +48,7 @@ function baseQuery() {
       consequenciaImediata: anomalies.consequenciaImediata,
       acaoTomada: anomalies.acaoTomada,
       sugestaoTratativa: anomalies.sugestaoTratativa,
+      sourceChecklistCompletionId: anomalies.sourceChecklistCompletionId,
       unitName: units.name,
       userName: users.name,
     })

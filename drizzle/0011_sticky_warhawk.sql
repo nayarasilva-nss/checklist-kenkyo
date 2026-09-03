@@ -1,0 +1,3 @@
+ALTER TABLE "anomalies" ADD COLUMN "source_checklist_completion_id" integer;--> statement-breakpoint
+ALTER TABLE "anomalies" ADD CONSTRAINT "anomalies_source_checklist_completion_id_checklist_completions_id_fk" FOREIGN KEY ("source_checklist_completion_id") REFERENCES "public"."checklist_completions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "anomalies_source_completion_idx" ON "anomalies" USING btree ("source_checklist_completion_id");

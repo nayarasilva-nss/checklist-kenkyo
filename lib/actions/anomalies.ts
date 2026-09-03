@@ -28,6 +28,74 @@ async function sendToSpreadsheet(payload: Record<string, string>) {
   }
 }
 
+export type RecordAnomalyInput = {
+  unitId: number;
+  userId: number;
+  date: string;
+  relator: string;
+  tipos: string[];
+  setores: string[];
+  colaboradoresEnvolvidos: string;
+  oQueAconteceu: string;
+  causaPercebida: string;
+  consequenciaImediata?: string | null;
+  acaoTomada?: string | null;
+  sugestaoTratativa?: string | null;
+  /** Set only when generating an anomaly automatically from a checklist item. */
+  sourceChecklistCompletionId?: number;
+};
+
+/**
+ * Shared by the manual "Registrar Anomalia" form and the automatic
+ * "item marcado não conforme" trigger. When sourceChecklistCompletionId is
+ * set, relies on the anomalies_source_completion_idx unique index to skip
+ * creating a duplicate if the same completion is resaved.
+ */
+export async function recordAnomaly(input: RecordAnomalyInput) {
+  const inserted = await db
+    .insert(anomalies)
+    .values({
+      unitId: input.unitId,
+      userId: input.userId,
+      date: input.date,
+      relator: input.relator,
+      tipos: input.tipos,
+      setores: input.setores,
+      colaboradoresEnvolvidos: input.colaboradoresEnvolvidos,
+      oQueAconteceu: input.oQueAconteceu,
+      causaPercebida: input.causaPercebida,
+      consequenciaImediata: input.consequenciaImediata ?? null,
+      acaoTomada: input.acaoTomada ?? null,
+      sugestaoTratativa: input.sugestaoTratativa ?? null,
+      sourceChecklistCompletionId: input.sourceChecklistCompletionId ?? null,
+    })
+    .onConflictDoNothing({ target: anomalies.sourceChecklistCompletionId })
+    .returning({ id: anomalies.id });
+
+  if (inserted.length === 0) return;
+
+  await addHistoryEntry(
+    input.userId,
+    `Registro de anomalia: ${input.tipos.join(", ")}`,
+    "completed",
+  );
+
+  await sendToSpreadsheet({
+    data: input.date,
+    relator: input.relator,
+    tipos: input.tipos.join(", "),
+    setores: input.setores.join(", "),
+    colaboradoresEnvolvidos: input.colaboradoresEnvolvidos,
+    oQueAconteceu: input.oQueAconteceu,
+    causaPercebida: input.causaPercebida,
+    consequenciaImediata: input.consequenciaImediata ?? "",
+    acaoTomada: input.acaoTomada ?? "",
+    sugestaoTratativa: input.sugestaoTratativa ?? "",
+  });
+
+  revalidatePath("/anomalias");
+}
+
 export async function createAnomaly(
   _prevState: AnomalyFormState,
   formData: FormData,
@@ -67,7 +135,7 @@ export async function createAnomaly(
   if (!oQueAconteceu) return { error: "Descreva o que aconteceu" };
   if (!causaPercebida) return { error: "Descreva a causa percebida" };
 
-  await db.insert(anomalies).values({
+  await recordAnomaly({
     unitId: user.unitId,
     userId: user.id,
     date,
@@ -81,27 +149,6 @@ export async function createAnomaly(
     acaoTomada,
     sugestaoTratativa,
   });
-
-  await addHistoryEntry(
-    user.id,
-    `Registro de anomalia: ${tipos.join(", ")}`,
-    "completed",
-  );
-
-  await sendToSpreadsheet({
-    data: date,
-    relator,
-    tipos: tipos.join(", "),
-    setores: setores.join(", "),
-    colaboradoresEnvolvidos,
-    oQueAconteceu,
-    causaPercebida,
-    consequenciaImediata: consequenciaImediata ?? "",
-    acaoTomada: acaoTomada ?? "",
-    sugestaoTratativa: sugestaoTratativa ?? "",
-  });
-
-  revalidatePath("/anomalias");
 }
 
 export async function deleteAnomaly(formData: FormData) {

@@ -4,8 +4,10 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
-import { checklistTypeItems, checklistCompletions } from "@/lib/db/schema";
+import { checklistTypeItems, checklistTypes, checklistCompletions } from "@/lib/db/schema";
 import { todayISO } from "@/lib/data/checklists";
+import { recordAnomaly } from "@/lib/actions/anomalies";
+import { guessSetorFromText } from "@/lib/anomaly-constants";
 
 const STATUS_VALUES = ["conforme", "nao-conforme", "nao-se-aplica"] as const;
 type Status = (typeof STATUS_VALUES)[number];
@@ -19,8 +21,13 @@ function revalidateChecklistViews() {
 
 async function getItemContext(itemId: number, checklistTypeId: number) {
   const [row] = await db
-    .select({ requiresPhoto: checklistTypeItems.requiresPhoto })
+    .select({
+      requiresPhoto: checklistTypeItems.requiresPhoto,
+      itemLabel: checklistTypeItems.label,
+      checklistTypeName: checklistTypes.name,
+    })
     .from(checklistTypeItems)
+    .innerJoin(checklistTypes, eq(checklistTypes.id, checklistTypeItems.checklistTypeId))
     .where(
       and(
         eq(checklistTypeItems.id, itemId),
@@ -60,7 +67,7 @@ export async function setChecklistItemStatus(
   }
 
   const date = todayISO();
-  await db
+  const [completion] = await db
     .insert(checklistCompletions)
     .values({
       checklistTypeId,
@@ -84,7 +91,28 @@ export async function setChecklistItemStatus(
         photoUrl,
         completedAt: new Date(),
       },
+    })
+    .returning({ id: checklistCompletions.id });
+
+  // A não-conformidade não deve mudar se o checklist está concluído — isso é
+  // decidido só por status !== 'pending' em todas as leituras. Em vez disso,
+  // ela abre uma anomalia automaticamente, ligada a esta completion (o
+  // índice único em sourceChecklistCompletionId evita duplicar caso o item
+  // seja resalvo com a mesma justificativa).
+  if (status === "nao-conforme" && user.unitId) {
+    await recordAnomaly({
+      unitId: user.unitId,
+      userId: user.id,
+      date,
+      relator: user.name,
+      tipos: ["Operacional"],
+      setores: [guessSetorFromText(context.checklistTypeName)],
+      colaboradoresEnvolvidos: user.name,
+      oQueAconteceu: `Item "${context.itemLabel}" do checklist "${context.checklistTypeName}" marcado como não conforme.`,
+      causaPercebida: justification,
+      sourceChecklistCompletionId: completion.id,
     });
+  }
 
   revalidateChecklistViews();
 }

@@ -209,26 +209,41 @@ export const documents = pgTable("documents", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const anomalies = pgTable("anomalies", {
-  id: serial("id").primaryKey(),
-  unitId: integer("unit_id")
-    .notNull()
-    .references(() => units.id, { onDelete: "cascade" }),
-  userId: integer("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  date: date("date").notNull(),
-  relator: varchar("relator", { length: 255 }).notNull(),
-  tipos: text("tipos").array().notNull(),
-  setores: text("setores").array().notNull(),
-  colaboradoresEnvolvidos: text("colaboradores_envolvidos").notNull(),
-  oQueAconteceu: text("o_que_aconteceu").notNull(),
-  causaPercebida: text("causa_percebida").notNull(),
-  consequenciaImediata: text("consequencia_imediata"),
-  acaoTomada: text("acao_tomada"),
-  sugestaoTratativa: text("sugestao_tratativa"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const anomalies = pgTable(
+  "anomalies",
+  {
+    id: serial("id").primaryKey(),
+    unitId: integer("unit_id")
+      .notNull()
+      .references(() => units.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    relator: varchar("relator", { length: 255 }).notNull(),
+    tipos: text("tipos").array().notNull(),
+    setores: text("setores").array().notNull(),
+    colaboradoresEnvolvidos: text("colaboradores_envolvidos").notNull(),
+    oQueAconteceu: text("o_que_aconteceu").notNull(),
+    causaPercebida: text("causa_percebida").notNull(),
+    consequenciaImediata: text("consequencia_imediata"),
+    acaoTomada: text("acao_tomada"),
+    sugestaoTratativa: text("sugestao_tratativa"),
+    // Set only for anomalies generated automatically from a "não conforme"
+    // checklist item — lets that path avoid creating a duplicate anomaly
+    // if the same item is resaved (e.g. justification edited).
+    sourceChecklistCompletionId: integer("source_checklist_completion_id").references(
+      () => checklistCompletions.id,
+      { onDelete: "set null" },
+    ),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("anomalies_source_completion_idx").on(
+      table.sourceChecklistCompletionId,
+    ),
+  ],
+);
 
 export const shiftLogs = pgTable("shift_logs", {
   id: serial("id").primaryKey(),
