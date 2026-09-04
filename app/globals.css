@@ -1986,6 +1986,178 @@ button {
   }
 }
 
+/* Redesign: navegação inferior e bottom sheets (celular) */
+
+.mobile-bottom-bar {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  height: 78px;
+  background: var(--bg-rail);
+  border-top: 1px solid var(--border-rail);
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 12px 14px;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mobile-nav-icon {
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid #4a5058;
+  border-radius: 5px;
+}
+
+.mobile-nav-item.active {
+  color: var(--text-strong);
+}
+
+.mobile-nav-item.active .mobile-nav-icon {
+  background: var(--kenkyo-red);
+  border-color: var(--kenkyo-red);
+}
+
+.mobile-nav-label {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.mobile-nav-item.active .mobile-nav-label {
+  font-weight: 700;
+}
+
+.mobile-nav-fab {
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  background: var(--kenkyo-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 6px 18px rgba(255, 77, 61, 0.4);
+  margin-top: -20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 40;
+}
+
+.bottom-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-bottom: none;
+  border-radius: 22px 22px 0 0;
+  padding: 20px 20px 26px;
+  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.5);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.bottom-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: #3a3f47;
+  margin: 0 auto 18px;
+}
+
+.bottom-sheet-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-strong);
+  margin-bottom: 6px;
+}
+
+.sheet-options {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-row);
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+}
+
+.sheet-options > .sheet-option:last-child,
+.sheet-options > form:last-child .sheet-option {
+  border-bottom: none;
+}
+
+.sheet-option-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--kenkyo-tint);
+  flex-shrink: 0;
+}
+
+.sheet-option-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.sheet-option-desc {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.sheet-option-chevron {
+  margin-left: auto;
+  color: var(--text-label);
+  font-size: 16px;
+}
+
+.sheet-cancel {
+  width: 100%;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  padding-top: 14px;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .wizard-step-label {
     display: none;
@@ -1995,9 +2167,6 @@ button {
     margin: 0 4px;
   }
 
-  /* Sidebar interina em celular: vira uma barra horizontal rolável, em vez
-     da barra inferior de 5 posições do redesign (fica para quando o
-     conteúdo de cada tela também for migrado). */
   .app-shell {
     flex-direction: column;
     height: auto;
@@ -2005,14 +2174,7 @@ button {
   }
 
   .app-nav {
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    align-items: center;
-    padding: 10px 14px;
-    gap: 14px;
-    overflow-x: auto;
-    overflow-y: visible;
+    display: none;
   }
 
   .app-main {
@@ -2020,44 +2182,8 @@ button {
     overflow-y: visible;
   }
 
-  .app-nav-brand {
-    padding-bottom: 0;
-    flex-shrink: 0;
-  }
-
-  .app-nav-groups {
-    flex-direction: row;
-    flex: none;
-    gap: 10px;
-  }
-
-  .app-nav-group-label {
-    display: none;
-  }
-
-  .app-nav-items {
-    flex-direction: row;
-    gap: 4px;
-  }
-
-  .app-nav-link {
-    white-space: nowrap;
-  }
-
-  .app-nav-footer {
-    border-top: none;
-    margin-top: 0;
-    padding: 0;
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  .app-nav-user {
-    display: none;
-  }
-
   .tab-content {
-    padding: 20px;
+    padding: 16px 20px 100px;
   }
 
   .dashboard-grid {
@@ -2066,5 +2192,9 @@ button {
 
   .ranking-table {
     font-size: 12px;
+  }
+
+  .mobile-bottom-bar {
+    display: flex;
   }
 }
