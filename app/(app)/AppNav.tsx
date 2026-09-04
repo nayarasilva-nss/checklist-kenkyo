@@ -32,7 +32,7 @@ function buildGroups(profile: string): NavGroup[] {
     {
       label: "OPERAÇÃO",
       items: [
-        { href: "/inicio", label: "Hoje" },
+        { href: "/hoje", label: "Hoje" },
         { href: "/checklist", label: "Checklists" },
         { href: "/diario-de-bordo", label: "Diário de bordo" },
         { href: "/anomalias", label: "Anomalias" },
@@ -91,7 +91,7 @@ export function AppNav({
 
   return (
     <aside className="app-nav">
-      <Link href="/inicio" className="app-nav-brand">
+      <Link href="/hoje" className="app-nav-brand">
         <Image src="/kenkyo-logo.png" alt="Kenkyo" width={28} height={28} />
         <span>Kenkyo</span>
       </Link>

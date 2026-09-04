@@ -1,5 +1,5 @@
 import "server-only";
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { shiftLogPendencias, shiftLogs, units, users } from "@/lib/db/schema";
 
@@ -84,4 +84,33 @@ export async function getShiftLogsByScope(scope: ShiftLogScope) {
     ...r,
     pendencias: pendenciasByLog.get(r.id) ?? [],
   }));
+}
+
+export type OpenPendencia = {
+  id: number;
+  descricao: string;
+  responsavel: string | null;
+  prazo: string | null;
+  shiftLogDate: string;
+  setor: string;
+};
+
+/** Open (não concluídas) pendências from any shift log in the unit, oldest deadline first. */
+export async function getOpenPendenciasForUnit(unitId: number): Promise<OpenPendencia[]> {
+  const rows = await db
+    .select({
+      id: shiftLogPendencias.id,
+      descricao: shiftLogPendencias.descricao,
+      responsavel: shiftLogPendencias.responsavel,
+      prazo: shiftLogPendencias.prazo,
+      shiftLogDate: shiftLogs.date,
+      setor: shiftLogs.setor,
+    })
+    .from(shiftLogPendencias)
+    .innerJoin(shiftLogs, eq(shiftLogs.id, shiftLogPendencias.shiftLogId))
+    .where(and(eq(shiftLogs.unitId, unitId), eq(shiftLogPendencias.concluida, false)))
+    .orderBy(asc(shiftLogPendencias.prazo), desc(shiftLogs.date))
+    .limit(50);
+
+  return rows;
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "shift_log_pendencias" ADD COLUMN "concluida" boolean DEFAULT false NOT NULL;

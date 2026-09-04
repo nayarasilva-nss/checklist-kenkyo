@@ -37,3 +37,28 @@ function formatBrazilDate(date: Date): string {
 export function daysAgoISO(days: number): string {
   return formatBrazilDate(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
 }
+
+/** "Bom dia" / "Boa tarde" / "Boa noite", based on Brazil local time. */
+export function greeting(): string {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: BRAZIL_TIMEZONE,
+      hour: "numeric",
+      hour12: false,
+    }).format(new Date()),
+  );
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+/** Short Brazil-local date label, e.g. "qua, 4 set". */
+export function todayShortLabel(): string {
+  const label = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: BRAZIL_TIMEZONE,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(new Date());
+  return label.replace(/\./g, "");
+}

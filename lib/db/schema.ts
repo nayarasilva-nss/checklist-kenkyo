@@ -280,6 +280,7 @@ export const shiftLogPendencias = pgTable("shift_log_pendencias", {
   descricao: text("descricao").notNull(),
   responsavel: varchar("responsavel", { length: 255 }),
   prazo: date("prazo"),
+  concluida: boolean("concluida").notNull().default(false),
 });
 
 export const history = pgTable("history", {

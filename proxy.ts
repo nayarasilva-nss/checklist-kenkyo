@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { decrypt } from "@/lib/auth/session";
 
-const protectedRoutes = ["/inicio", "/dashboard", "/checklist", "/relatorio", "/historico", "/gerenciar", "/filetagem", "/resto-ingesta", "/documentos", "/anomalias", "/diario-de-bordo"];
+const protectedRoutes = ["/hoje", "/inicio", "/dashboard", "/checklist", "/relatorio", "/historico", "/gerenciar", "/filetagem", "/resto-ingesta", "/documentos", "/anomalias", "/diario-de-bordo"];
 const gestorOnlyRoutes = ["/gerenciar"];
-const rhAllowedRoutes = ["/inicio", "/anomalias", "/diario-de-bordo"];
+const rhAllowedRoutes = ["/hoje", "/inicio", "/anomalias", "/diario-de-bordo"];
 
 export default async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -19,7 +19,7 @@ export default async function proxy(request: NextRequest) {
   }
 
   if (isLoginRoute && session) {
-    return NextResponse.redirect(new URL("/inicio", request.url));
+    return NextResponse.redirect(new URL("/hoje", request.url));
   }
 
   if (
@@ -36,7 +36,7 @@ export default async function proxy(request: NextRequest) {
     session.profile === "rh" &&
     !rhAllowedRoutes.some((route) => path.startsWith(route))
   ) {
-    return NextResponse.redirect(new URL("/inicio", request.url));
+    return NextResponse.redirect(new URL("/hoje", request.url));
   }
 
   return NextResponse.next();

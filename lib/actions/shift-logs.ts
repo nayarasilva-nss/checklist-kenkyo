@@ -127,3 +127,15 @@ export async function deleteShiftLog(formData: FormData) {
   await db.delete(shiftLogs).where(eq(shiftLogs.id, id));
   revalidatePath("/diario-de-bordo");
 }
+
+export async function resolvePendencia(formData: FormData) {
+  await getCurrentUser();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await db
+    .update(shiftLogPendencias)
+    .set({ concluida: true })
+    .where(eq(shiftLogPendencias.id, id));
+  revalidatePath("/hoje");
+  revalidatePath("/diario-de-bordo");
+}
