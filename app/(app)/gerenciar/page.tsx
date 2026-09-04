@@ -58,77 +58,93 @@ export default async function GerenciarPage({
       </div>
 
       {tab === "usuarios" && (
-        <div className="today-card">
-          <div className="today-card-title" style={{ marginBottom: 14 }}>
-            Usuários
+        <div className="board-layout">
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Usuários · {users.length}
+            </div>
+            {users.map((user) => (
+              <UserRow key={user.id} user={user} units={units} jobFunctions={jobFunctions} />
+            ))}
           </div>
-          <AddUserForm units={units} jobFunctions={jobFunctions} />
-          {users.map((user) => (
-            <UserRow key={user.id} user={user} units={units} jobFunctions={jobFunctions} />
-          ))}
+          <div className="detail-panel" style={{ minHeight: "auto" }}>
+            <AddUserForm units={units} jobFunctions={jobFunctions} />
+          </div>
         </div>
       )}
 
       {tab === "modelos" && (
-        <div className="today-card">
-          <div className="today-card-title" style={{ marginBottom: 14 }}>
-            Modelos de Checklist
+        <div className="board-layout">
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Modelos de Checklist · {checklistTypes.length}
+            </div>
+            {checklistTypes.map((c) => (
+              <ChecklistTypeRow
+                key={c.id}
+                checklistType={c}
+                jobFunctions={jobFunctions}
+                users={users}
+              />
+            ))}
           </div>
-          <AddChecklistTypeForm jobFunctions={jobFunctions} users={users} />
-          {checklistTypes.map((c) => (
-            <ChecklistTypeRow
-              key={c.id}
-              checklistType={c}
-              jobFunctions={jobFunctions}
-              users={users}
-            />
-          ))}
+          <div className="detail-panel" style={{ minHeight: "auto" }}>
+            <AddChecklistTypeForm jobFunctions={jobFunctions} users={users} />
+          </div>
         </div>
       )}
 
       {tab === "unidades" && (
-        <div className="today-card">
-          <div className="today-card-title" style={{ marginBottom: 14 }}>
-            Unidades
-          </div>
-          <AddUnitForm />
-          {units.map((unit) => (
-            <div className="list-item" key={unit.id}>
-              <div className="info">
-                <h4>{unit.name}</h4>
-              </div>
-              <div className="list-item-actions">
-                <DeleteButton
-                  action={deleteUnit}
-                  id={unit.id}
-                  confirmText={`Deletar a unidade "${unit.name}"?`}
-                />
-              </div>
+        <div className="board-layout">
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Unidades · {units.length}
             </div>
-          ))}
+            {units.map((unit) => (
+              <div className="list-item" key={unit.id}>
+                <div className="info">
+                  <h4>{unit.name}</h4>
+                </div>
+                <div className="list-item-actions">
+                  <DeleteButton
+                    action={deleteUnit}
+                    id={unit.id}
+                    confirmText={`Deletar a unidade "${unit.name}"?`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="detail-panel" style={{ minHeight: "auto" }}>
+            <AddUnitForm />
+          </div>
         </div>
       )}
 
       {tab === "funcoes" && (
-        <div className="today-card">
-          <div className="today-card-title" style={{ marginBottom: 14 }}>
-            Funções
-          </div>
-          <AddJobFunctionForm />
-          {jobFunctions.map((jobFunction) => (
-            <div className="list-item" key={jobFunction.id}>
-              <div className="info">
-                <h4>{jobFunction.name}</h4>
-              </div>
-              <div className="list-item-actions">
-                <DeleteButton
-                  action={deleteJobFunction}
-                  id={jobFunction.id}
-                  confirmText={`Deletar a função "${jobFunction.name}"?`}
-                />
-              </div>
+        <div className="board-layout">
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Funções · {jobFunctions.length}
             </div>
-          ))}
+            {jobFunctions.map((jobFunction) => (
+              <div className="list-item" key={jobFunction.id}>
+                <div className="info">
+                  <h4>{jobFunction.name}</h4>
+                </div>
+                <div className="list-item-actions">
+                  <DeleteButton
+                    action={deleteJobFunction}
+                    id={jobFunction.id}
+                    confirmText={`Deletar a função "${jobFunction.name}"?`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="detail-panel" style={{ minHeight: "auto" }}>
+            <AddJobFunctionForm />
+          </div>
         </div>
       )}
     </>

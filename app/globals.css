@@ -1860,6 +1860,27 @@ button {
   color: var(--text-faint);
 }
 
+.form-row-inline {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.form-row-inline .form-group {
+  flex: 1;
+  min-width: 140px;
+}
+
+.loss-preview {
+  background: var(--warning-bg);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--warning-text);
+  margin-bottom: 16px;
+}
+
 @media (max-width: 1080px) {
   .board-layout {
     grid-template-columns: 1fr;
