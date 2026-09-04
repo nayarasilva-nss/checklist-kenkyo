@@ -1,21 +1,60 @@
 :root {
-  --kenkyo-red: #e63946;
-  --kenkyo-red-dark: #c1121f;
-  --kenkyo-gradient: linear-gradient(135deg, #e63946 0%, #ff5a5a 100%);
-  --kenkyo-dark-gradient: linear-gradient(135deg, #0f1419 0%, #1a1f2a 100%);
-  --bg: #0f1419;
-  --surface: #1a1f2a;
-  --text: #ffffff;
-  --text-muted: #b0b5be;
-  --border: #2a2e3a;
-  --success: #22c55e;
-  --success-bg: rgba(34, 197, 94, 0.15);
+  /* Marca e ação */
+  --kenkyo-red: #ff4d3d;
+  --kenkyo-red-deep: #e63946;
+  --kenkyo-gradient: linear-gradient(135deg, #ff4d3d 0%, #e63946 100%);
+  --kenkyo-glow: 0 4px 14px rgba(255, 77, 61, 0.32);
+  --kenkyo-tint: rgba(255, 77, 61, 0.16);
+  --kenkyo-tint-soft: rgba(255, 77, 61, 0.07);
+  --kenkyo-on-tint: #ffb3aa;
+
+  /* Superfícies (carvão neutro) */
+  --bg: #0e0f11;
+  --bg-rail: #121316;
+  --bg-topbar: #101216;
+  --surface: #15181c;
+  --surface-raised: #191d22;
+  --surface-input: #0e0f11;
+  --control: #1a1d22;
+
+  /* Traços */
+  --border: #262a31;
+  --border-strong: #2d3239;
+  --border-rail: #22262c;
+  --border-row: #1f2329;
+  --border-input: #3a3f47;
+
+  /* Texto */
+  --text: #f4f5f6;
+  --text-strong: #ffffff;
+  --text-2: #e4e7ea;
+  --text-3: #c9ced6;
+  --text-muted: #a8aeb7;
+  --text-dim: #8f959e;
+  --text-faint: #7c828b;
+  --text-label: #5d636c;
+
+  /* Semânticas */
+  --success: #34d399;
+  --success-text: #6ee7b7;
+  --success-bg: rgba(52, 211, 153, 0.14);
   --danger: #ff6b6b;
-  --danger-bg: rgba(255, 107, 107, 0.15);
+  --danger-text: #ff9b90;
+  --danger-bg: rgba(255, 107, 107, 0.14);
   --warning: #fbbf24;
-  --warning-bg: rgba(251, 191, 36, 0.15);
+  --warning-text: #fcd34d;
+  --warning-bg: rgba(251, 191, 36, 0.14);
   --info: #60a5fa;
-  --info-bg: rgba(96, 165, 250, 0.15);
+  --info-text: #93c5fd;
+  --info-bg: rgba(96, 165, 250, 0.14);
+  --violet: #a78bfa;
+  --violet-text: #c4b5fd;
+  --violet-bg: rgba(167, 139, 250, 0.14);
+
+  /* Aliases para nomes antigos ainda usados no restante do CSS, que segue
+     no visual anterior até ser migrado tela por tela. */
+  --kenkyo-red-dark: var(--kenkyo-red-deep);
+  --kenkyo-dark-gradient: linear-gradient(135deg, #0e0f11 0%, #15181c 100%);
 }
 
 * {
@@ -32,10 +71,16 @@ body {
 
 body {
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    var(--font-archivo), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
+}
+
+:focus-visible {
+  outline: 2px solid var(--kenkyo-red);
+  outline-offset: 2px;
 }
 
 a {
@@ -152,85 +197,163 @@ button {
 }
 
 /* App shell */
-.app-container {
+.app-shell {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
   background: var(--bg);
 }
 
-.header {
-  background: var(--kenkyo-dark-gradient);
-  border-bottom: 1px solid var(--border);
-  color: white;
-  padding: 20px 40px;
+.app-nav {
+  width: 236px;
+  flex-shrink: 0;
+  background: var(--bg-rail);
+  border-right: 1px solid var(--border-rail);
+  padding: 20px 14px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
-.logo-section {
+.app-nav-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: opacity 0.3s;
+  gap: 10px;
+  padding-bottom: 22px;
+  transition: opacity 0.2s;
 }
 
-.logo-section:hover {
+.app-nav-brand:hover {
   opacity: 0.8;
 }
 
-.logo {
-  width: 40px;
-  height: 40px;
+.app-nav-brand img {
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-.logo-text {
-  font-size: 20px;
+.app-nav-brand span {
+  font-size: 16px;
   font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
 }
 
-.header-right {
+.app-nav-groups {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.app-nav-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-label);
+  padding: 0 10px 6px;
+}
+
+.app-nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-nav-link {
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.app-nav-link:hover {
+  background: #1a1d22;
+  color: var(--text-3);
+}
+
+.app-nav-link.active {
+  background: #22252b;
+  color: var(--text-strong);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--kenkyo-red);
+}
+
+.app-nav-footer {
+  border-top: 1px solid var(--border-rail);
+  padding: 14px 8px 0;
+  margin-top: 14px;
   display: flex;
   align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.user-info {
-  text-align: right;
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.user-role {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.btn-logout {
-  background: var(--kenkyo-red);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
+.app-nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: #2a2e34;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 12px;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.4);
-  transition: background 0.3s;
+  color: var(--text-3);
+  flex-shrink: 0;
 }
 
-.btn-logout:hover {
-  background: var(--kenkyo-red-dark);
+.app-nav-user {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-nav-user-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-nav-user-scope {
+  font-size: 11px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-nav-logout {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.app-nav-logout:hover {
+  color: var(--danger-text);
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .content {
@@ -962,10 +1085,57 @@ button {
 }
 
 @media (max-width: 768px) {
-  .header {
+  /* Sidebar interina em celular: vira uma barra horizontal rolável, em vez
+     da barra inferior de 5 posições do redesign (fica para quando o
+     conteúdo de cada tela também for migrado). */
+  .app-shell {
     flex-direction: column;
-    gap: 12px;
-    padding: 16px 20px;
+  }
+
+  .app-nav {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 14px;
+    gap: 14px;
+    overflow-x: auto;
+  }
+
+  .app-nav-brand {
+    padding-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .app-nav-groups {
+    flex-direction: row;
+    flex: none;
+    gap: 10px;
+  }
+
+  .app-nav-group-label {
+    display: none;
+  }
+
+  .app-nav-items {
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .app-nav-link {
+    white-space: nowrap;
+  }
+
+  .app-nav-footer {
+    border-top: none;
+    margin-top: 0;
+    padding: 0;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .app-nav-user {
+    display: none;
   }
 
   .tab-content {
