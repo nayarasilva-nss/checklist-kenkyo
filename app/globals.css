@@ -1881,6 +1881,93 @@ button {
   margin-bottom: 16px;
 }
 
+/* Redesign: formulário em etapas (diário de bordo) */
+
+.wizard-steps {
+  display: flex;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.wizard-step-wrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.wizard-step-wrap:last-child {
+  flex: none;
+}
+
+.wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.wizard-step-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.wizard-step-circle.done {
+  background: var(--success);
+  color: #0e0f11;
+}
+
+.wizard-step-circle.current {
+  background: var(--kenkyo-red);
+  color: white;
+}
+
+.wizard-step-circle.future {
+  border: 1.5px solid var(--border-input);
+  color: var(--text-faint);
+}
+
+.wizard-step-label {
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.wizard-step-label.done {
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.wizard-step-label.current {
+  color: white;
+  font-weight: 700;
+}
+
+.wizard-step-label.future {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.wizard-step-connector {
+  flex: 1;
+  height: 1px;
+  background: #2a2e34;
+  margin: 0 10px;
+}
+
+.wizard-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
 @media (max-width: 1080px) {
   .board-layout {
     grid-template-columns: 1fr;
@@ -1900,6 +1987,14 @@ button {
 }
 
 @media (max-width: 768px) {
+  .wizard-step-label {
+    display: none;
+  }
+
+  .wizard-step-connector {
+    margin: 0 4px;
+  }
+
   /* Sidebar interina em celular: vira uma barra horizontal rolável, em vez
      da barra inferior de 5 posições do redesign (fica para quando o
      conteúdo de cada tela também for migrado). */
