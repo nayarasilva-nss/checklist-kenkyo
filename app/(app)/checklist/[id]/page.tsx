@@ -25,6 +25,18 @@ export default async function ChecklistDetailPage({
 
   if (!checklist) notFound();
 
+  const total = checklist.items.length;
+  const done = checklist.items.filter((i) => i.status !== "pending").length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const conforme = checklist.items.filter((i) => i.status === "conforme").length;
+  const naoConforme = checklist.items.filter((i) => i.status === "nao-conforme").length;
+  const naoSeAplica = checklist.items.filter((i) => i.status === "nao-se-aplica").length;
+  const faltam = total - done;
+  const lastCompletedAt = checklist.items.reduce<Date | null>((latest, item) => {
+    if (!item.completedAt) return latest;
+    return !latest || item.completedAt > latest ? item.completedAt : latest;
+  }, null);
+
   return (
     <>
       <Link
@@ -50,13 +62,56 @@ export default async function ChecklistDetailPage({
         </a>
       </div>
 
-      {checklist.items.map((item) => (
-        <ChecklistItemRow
-          key={item.id}
-          item={item}
-          checklistTypeId={checklist.id}
-        />
-      ))}
+      <div className="today-checklist-progress-bar" style={{ maxWidth: "none", marginBottom: 22 }}>
+        <div className="today-checklist-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+
+      <div className="hoje-layout">
+        <div>
+          {checklist.items.map((item) => (
+            <ChecklistItemRow
+              key={item.id}
+              item={item}
+              checklistTypeId={checklist.id}
+              checklistTypeName={checklist.name}
+            />
+          ))}
+        </div>
+
+        <div className="hoje-column">
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Resumo
+            </div>
+            <div className="detail-panel-fields" style={{ gap: 10 }}>
+              <div className="quick-action-row">
+                Conformes
+                <span className="badge badge-success">{conforme}</span>
+              </div>
+              <div className="quick-action-row">
+                Não conformes
+                <span className="badge badge-danger">{naoConforme}</span>
+              </div>
+              <div className="quick-action-row">
+                Não se aplica
+                <span className="badge badge-neutral">{naoSeAplica}</span>
+              </div>
+              <div className="quick-action-row" style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+                Faltam responder
+                <span className="badge badge-info">{faltam}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="today-card">
+            <div className="today-card-subtitle">
+              {lastCompletedAt
+                ? `Última alteração às ${lastCompletedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}. Você pode fechar e retomar de onde parou.`
+                : "Suas respostas são salvas automaticamente a cada item."}
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

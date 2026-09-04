@@ -185,6 +185,7 @@ export async function getChecklistForUser(
         status: (completion?.status ?? "pending") as CompletionStatus,
         justification: completion?.justification ?? null,
         photoUrl: completion?.photoUrl ?? null,
+        completedAt: completion?.completedAt ?? null,
       };
     }),
   };

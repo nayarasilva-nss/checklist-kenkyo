@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { upload } from "@vercel/blob/client";
 import { setChecklistItemStatus } from "@/lib/actions/checklist";
 import type { CompletionStatus } from "@/lib/data/checklists";
+import { guessSetorFromText } from "@/lib/anomaly-constants";
 
 type Status = "conforme" | "nao-conforme" | "nao-se-aplica";
 
@@ -57,12 +58,21 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
+const STATUS_MARKER: Record<CompletionStatus, string> = {
+  conforme: "✓",
+  "nao-conforme": "!",
+  "nao-se-aplica": "",
+  pending: "",
+};
+
 export function ChecklistItemRow({
   item,
   checklistTypeId,
+  checklistTypeName,
 }: {
   item: Item;
   checklistTypeId: number;
+  checklistTypeName: string;
 }) {
   const [pendingStatus, setPendingStatus] = useState<Status | null>(null);
   const [justification, setJustification] = useState(item.justification ?? "");
@@ -144,6 +154,14 @@ export function ChecklistItemRow({
 
   return (
     <div className={`checklist-item ${STATUS_CLASS[item.status]}`}>
+      <div className="item-marker-row">
+        <span className={`item-marker ${item.status}`}>{STATUS_MARKER[item.status]}</span>
+        <span className="item-text">{item.label}</span>
+        {item.requiresPhoto && (
+          <span className="requires-photo-badge">Foto obrigatória</span>
+        )}
+      </div>
+
       <div className="item-button-row">
         <button
           type="button"
@@ -151,7 +169,7 @@ export function ChecklistItemRow({
           onClick={() => handleStatusClick("conforme")}
           disabled={busy}
         >
-          ✓ Conforme
+          Conforme
         </button>
         <button
           type="button"
@@ -159,7 +177,7 @@ export function ChecklistItemRow({
           onClick={() => handleStatusClick("nao-conforme")}
           disabled={busy}
         >
-          ✗ Não Conforme
+          Não conforme
         </button>
         <button
           type="button"
@@ -167,14 +185,9 @@ export function ChecklistItemRow({
           onClick={() => handleStatusClick("nao-se-aplica")}
           disabled={busy}
         >
-          ➖ Não se Aplica
+          N/A
         </button>
-        {item.requiresPhoto && (
-          <span className="requires-photo-badge">📷 requer foto</span>
-        )}
       </div>
-
-      <span className="item-text">{item.label}</span>
 
       {pendingStatus && (
         <form className="justification-form" onSubmit={handleSubmitForm}>
@@ -195,6 +208,12 @@ export function ChecklistItemRow({
             />
           )}
           {error && <p className="login-error">{error}</p>}
+          {pendingStatus === "nao-conforme" && (
+            <div className="anomaly-notice">
+              Ao salvar, uma anomalia de <strong>Operacional</strong> será aberta em{" "}
+              <strong>{guessSetorFromText(checklistTypeName)}</strong> com este texto.
+            </div>
+          )}
           <div className="justification-form-buttons">
             <button
               type="button"

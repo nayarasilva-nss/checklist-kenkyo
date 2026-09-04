@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { decrypt } from "@/lib/auth/session";
 
-const protectedRoutes = ["/hoje", "/inicio", "/dashboard", "/checklist", "/relatorio", "/historico", "/gerenciar", "/filetagem", "/resto-ingesta", "/documentos", "/anomalias", "/diario-de-bordo"];
+const protectedRoutes = ["/hoje", "/inicio", "/dashboard", "/checklist", "/relatorio", "/historico", "/gerenciar", "/perdas", "/filetagem", "/resto-ingesta", "/documentos", "/anomalias", "/diario-de-bordo"];
 const gestorOnlyRoutes = ["/gerenciar"];
 const rhAllowedRoutes = ["/hoje", "/inicio", "/anomalias", "/diario-de-bordo"];
 

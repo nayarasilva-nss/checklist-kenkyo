@@ -114,3 +114,26 @@ export async function getOpenPendenciasForUnit(unitId: number): Promise<OpenPend
 
   return rows;
 }
+
+export type MyPendencia = OpenPendencia & { concluida: boolean };
+
+/** Every pendência the user has opened across their own shift logs, open first. */
+export async function getMyPendencias(userId: number): Promise<MyPendencia[]> {
+  const rows = await db
+    .select({
+      id: shiftLogPendencias.id,
+      descricao: shiftLogPendencias.descricao,
+      responsavel: shiftLogPendencias.responsavel,
+      prazo: shiftLogPendencias.prazo,
+      concluida: shiftLogPendencias.concluida,
+      shiftLogDate: shiftLogs.date,
+      setor: shiftLogs.setor,
+    })
+    .from(shiftLogPendencias)
+    .innerJoin(shiftLogs, eq(shiftLogs.id, shiftLogPendencias.shiftLogId))
+    .where(eq(shiftLogs.userId, userId))
+    .orderBy(asc(shiftLogPendencias.concluida), asc(shiftLogPendencias.prazo))
+    .limit(30);
+
+  return rows;
+}

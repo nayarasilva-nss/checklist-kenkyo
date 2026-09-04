@@ -42,8 +42,7 @@ function buildGroups(profile: string): NavGroup[] {
       label: "INDICADORES",
       items: [
         { href: "/dashboard", label: "Painel" },
-        { href: "/filetagem", label: "Filetagem" },
-        { href: "/resto-ingesta", label: "Resto ingesta" },
+        { href: "/perdas", label: "Perdas" },
         { href: "/relatorio", label: "Relatórios" },
         { href: "/historico", label: "Histórico" },
       ],

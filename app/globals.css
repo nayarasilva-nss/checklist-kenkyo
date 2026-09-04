@@ -752,48 +752,87 @@ button {
 .checklist-item {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 12px;
+  border-radius: 11px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  transition: all 0.3s;
+  gap: 10px;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
 
 .checklist-item.status-conforme {
-  background: var(--success-bg);
-  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(52, 211, 153, 0.07);
+  border-color: rgba(52, 211, 153, 0.26);
 }
 
 .checklist-item.status-nao-conforme {
-  background: var(--danger-bg);
+  background: rgba(255, 107, 107, 0.07);
   border-color: rgba(255, 107, 107, 0.3);
 }
 
 .checklist-item.status-nao-se-aplica {
-  background: var(--bg);
-  border-color: var(--border);
+  background: var(--surface);
+  border-color: var(--border-strong);
+  opacity: 0.85;
+}
+
+.item-marker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.item-marker {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0e0f11;
+}
+
+.item-marker.pending {
+  border: 1.5px solid var(--border-input);
+}
+
+.item-marker.conforme {
+  background: var(--success);
+}
+
+.item-marker.nao-conforme {
+  background: var(--danger);
+}
+
+.item-marker.nao-se-aplica {
+  background: #2a2e34;
 }
 
 .item-button-row {
   display: flex;
   gap: 8px;
   width: 100%;
-  margin-bottom: 12px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .btn-status {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 7px 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-dim);
   transition: all 0.2s;
 }
 
@@ -804,65 +843,96 @@ button {
 .btn-status-conforme.active {
   background: var(--success);
   border-color: var(--success);
-  color: white;
+  color: #0e0f11;
 }
 
 .btn-status-nao-conforme.active {
   background: var(--danger);
   border-color: var(--danger);
-  color: white;
+  color: #0e0f11;
 }
 
 .btn-status-nao-se-aplica.active {
-  background: var(--text-muted);
-  border-color: var(--text-muted);
-  color: var(--bg);
+  background: #2a2e34;
+  border-color: #2a2e34;
+  color: var(--text-3);
 }
 
 .requires-photo-badge {
   font-size: 11px;
-  color: var(--warning);
+  color: var(--warning-text);
   font-weight: 700;
   background: var(--warning-bg);
-  padding: 4px 8px;
-  border-radius: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
 }
 
 .item-text {
-  margin-bottom: 8px;
-  color: var(--text-muted);
-  font-size: 13px;
+  color: var(--text-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  flex: 1;
 }
 
 .justification-box {
   width: 100%;
-  padding: 12px;
-  background: var(--warning-bg);
-  border-left: 4px solid var(--danger);
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 12px 14px;
+  background: var(--surface-raised);
+  border-left: 3px solid var(--danger);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--text-2);
 }
 
 .justification-form {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .justification-form textarea {
   width: 100%;
-  min-height: 70px;
-  padding: 8px;
-  border: 2px solid var(--danger);
-  border-radius: 6px;
+  min-height: 78px;
+  padding: 10px 12px;
+  background: var(--surface-input);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--text);
   font-family: inherit;
   font-size: 13px;
+}
+
+.justification-form textarea:focus {
+  outline: none;
+  border-color: var(--kenkyo-red);
 }
 
 .justification-form-buttons {
   display: flex;
   gap: 8px;
+}
+
+.anomaly-notice {
+  width: 100%;
+  padding-top: 10px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 107, 107, 0.2);
+  font-size: 11.5px;
+  color: var(--text-3);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.anomaly-notice::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+  margin-top: 4px;
 }
 
 /* Histórico */

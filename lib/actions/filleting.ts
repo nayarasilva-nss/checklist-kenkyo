@@ -85,7 +85,7 @@ export async function createFilletingRecord(
     "completed",
   );
 
-  revalidatePath("/filetagem");
+  revalidatePath("/perdas");
 }
 
 export async function deleteFilletingRecord(formData: FormData) {
@@ -93,5 +93,5 @@ export async function deleteFilletingRecord(formData: FormData) {
   const id = Number(formData.get("id"));
   if (!id) return;
   await db.delete(filletingRecords).where(eq(filletingRecords.id, id));
-  revalidatePath("/filetagem");
+  revalidatePath("/perdas");
 }

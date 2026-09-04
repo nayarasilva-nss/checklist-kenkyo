@@ -1,16 +1,21 @@
 import { getCurrentUser } from "@/lib/auth/dal";
-import { getShiftLogsByScope, resolveShiftLogScope } from "@/lib/data/shift-logs";
-import { deleteShiftLog } from "@/lib/actions/shift-logs";
+import {
+  getShiftLogsByScope,
+  resolveShiftLogScope,
+  getMyPendencias,
+} from "@/lib/data/shift-logs";
+import { resolvePendencia } from "@/lib/actions/shift-logs";
 import { getUnits } from "@/lib/data/units";
-import { LEADER_SELF_ASSESSMENT, SHIFT_STATUS } from "@/lib/shift-log-constants";
-import { UnitFilter } from "../UnitFilter";
-import { DeleteButton } from "../gerenciar/DeleteButton";
+import { SHIFT_STATUS } from "@/lib/shift-log-constants";
 import { DiarioBordoForm } from "./DiarioBordoForm";
+import { ShiftLogsBoard } from "./ShiftLogsBoard";
 
 const STATUS_LABELS = Object.fromEntries(SHIFT_STATUS.map((s) => [s.value, s.label]));
-const ASSESSMENT_LABELS = Object.fromEntries(
-  LEADER_SELF_ASSESSMENT.map((a) => [a.value, a.label]),
-);
+const STATUS_DOT: Record<string, string> = {
+  estavel: "var(--success)",
+  sob_pressao: "var(--warning)",
+  instavel: "var(--danger)",
+};
 
 export default async function DiarioDeBordoPage({
   searchParams,
@@ -31,123 +36,105 @@ export default async function DiarioDeBordoPage({
     canViewAllUnits ? getUnits() : Promise.resolve([]),
   ]);
 
+  if (isGestor || isRh) {
+    return (
+      <ShiftLogsBoard
+        records={records}
+        units={units}
+        canViewAllUnits={canViewAllUnits}
+        requestedUnitId={requestedUnitId}
+        canDelete={isGestor}
+      />
+    );
+  }
+
+  const myPendencias = await getMyPendencias(user.id);
+  const timeline = records.slice(0, 8);
+
   return (
     <>
       <h2>Diário de Bordo da Liderança</h2>
 
-      {!isGestor && !isRh && user.unitId === null && (
+      {user.unitId === null && (
         <p className="empty-state">
           Sua unidade ainda não foi definida. Peça a um Gestor para atribuir
           sua unidade no cadastro.
         </p>
       )}
 
-      {!isRh && (
-        <div className="report-section">
+      <div className="hoje-layout">
+        <div>
           <DiarioBordoForm />
         </div>
-      )}
 
-      {canViewAllUnits && (
-        <div className="report-section">
-          <h3>Filtrar por Unidade</h3>
-          <UnitFilter units={units} value={requestedUnitId} />
-        </div>
-      )}
-
-      <div className="report-section">
-        <h3>📖 Registros do Turno</h3>
-        <a
-          className="btn-pdf"
-          href={`/api/diario-de-bordo/export${requestedUnitId ? `?unit=${requestedUnitId}` : ""}`}
-        >
-          📥 Baixar Excel
-        </a>
-        {records.length === 0 ? (
-          <p className="empty-state">Nenhum diário de bordo registrado ainda</p>
-        ) : (
-          records.map((record) => (
-            <div className="report-item" key={record.id}>
-              <div>
-                <span className="user-name">
-                  {STATUS_LABELS[record.statusTurno]} — {record.unitName} · {record.setor}
-                </span>
-                <div className="item-text">
-                  {new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR")} · líder:{" "}
-                  {record.liderNome}
-                </div>
-                <div className="item-text">{record.statusJustificativa}</div>
-
-                <div className="item-text">
-                  <strong>Principal desvio:</strong> {record.desvioDescricao}
-                </div>
-                {record.desvioImpacto && (
-                  <div className="item-text">Impacto: {record.desvioImpacto}</div>
-                )}
-                {record.desvioCausaRaiz && (
-                  <div className="item-text">Causa raiz: {record.desvioCausaRaiz}</div>
-                )}
-
-                {record.acoesLideranca.length > 0 && (
-                  <div className="item-text">
-                    Ação de liderança: {record.acoesLideranca.join(", ")}
-                  </div>
-                )}
-                {record.acaoLiderancaDescricao && (
-                  <div className="item-text">{record.acaoLiderancaDescricao}</div>
-                )}
-
-                {record.outrasDecisoes && (
-                  <div className="item-text">Outras decisões: {record.outrasDecisoes}</div>
-                )}
-
-                {record.gestaoEquipe.length > 0 && (
-                  <div className="item-text">
-                    Gestão da equipe: {record.gestaoEquipe.join(", ")}
-                  </div>
-                )}
-                {record.gestaoEquipeDescricao && (
-                  <div className="item-text">{record.gestaoEquipeDescricao}</div>
-                )}
-
-                {record.pendencias.length > 0 && (
-                  <div className="item-text">
-                    <strong>Pendências:</strong>
-                    <ul>
-                      {record.pendencias.map((p, i) => (
-                        <li key={i}>
-                          {p.descricao}
-                          {p.responsavel ? ` — ${p.responsavel}` : ""}
-                          {p.prazo
-                            ? ` (prazo: ${new Date(`${p.prazo}T00:00:00`).toLocaleDateString("pt-BR")})`
-                            : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div className="item-text">
-                  Autoavaliação: {ASSESSMENT_LABELS[record.autoavaliacao]}
-                </div>
-                {record.autoavaliacaoMelhorias && (
-                  <div className="item-text">
-                    Poderia melhorar: {record.autoavaliacaoMelhorias}
-                  </div>
-                )}
-              </div>
-              {isGestor && (
-                <div className="report-item-actions">
-                  <DeleteButton
-                    action={deleteShiftLog}
-                    id={record.id}
-                    confirmText="Remover este diário de bordo?"
-                  />
-                </div>
-              )}
+        <div className="hoje-column">
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Turnos anteriores
             </div>
-          ))
-        )}
+            {timeline.length === 0 ? (
+              <p className="empty-state">Nenhum diário de bordo registrado ainda</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {timeline.map((log) => (
+                  <div key={log.id} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <span
+                      style={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: "50%",
+                        marginTop: 5,
+                        flexShrink: 0,
+                        background: STATUS_DOT[log.statusTurno] ?? "var(--text-faint)",
+                      }}
+                    />
+                    <div>
+                      <div className="pendencia-item-title">
+                        {new Date(`${log.date}T00:00:00`).toLocaleDateString("pt-BR")} ·{" "}
+                        {STATUS_LABELS[log.statusTurno] ?? log.statusTurno}
+                      </div>
+                      <div className="pendencia-item-meta">{log.desvioDescricao}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Pendências que você abriu
+            </div>
+            {myPendencias.length === 0 ? (
+              <p className="empty-state">Nenhuma pendência registrada</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {myPendencias.map((p) => (
+                  <div
+                    key={p.id}
+                    className="quick-action-row"
+                    style={{
+                      textDecoration: p.concluida ? "line-through" : "none",
+                      color: p.concluida ? "var(--success-text)" : undefined,
+                    }}
+                  >
+                    <span>{p.descricao}</span>
+                    {p.concluida ? (
+                      <span className="badge badge-success">feito</span>
+                    ) : (
+                      <form action={resolvePendencia}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <button type="submit" className="btn-tertiary">
+                          Concluir
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </>
   );

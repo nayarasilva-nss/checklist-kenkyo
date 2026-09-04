@@ -60,7 +60,7 @@ export async function createRestoIngestaRecord(
     "completed",
   );
 
-  revalidatePath("/resto-ingesta");
+  revalidatePath("/perdas");
 }
 
 export async function deleteRestoIngestaRecord(formData: FormData) {
@@ -68,5 +68,5 @@ export async function deleteRestoIngestaRecord(formData: FormData) {
   const id = Number(formData.get("id"));
   if (!id) return;
   await db.delete(restoIngestaRecords).where(eq(restoIngestaRecords.id, id));
-  revalidatePath("/resto-ingesta");
+  revalidatePath("/perdas");
 }

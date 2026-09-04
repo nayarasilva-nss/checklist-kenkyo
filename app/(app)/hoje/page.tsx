@@ -245,13 +245,13 @@ export default async function HojePage() {
                 </Link>
               )}
               {canSubmitRestoIngesta(user) && (
-                <Link href="/resto-ingesta" className="quick-action-row">
+                <Link href="/perdas?tab=resto" className="quick-action-row">
                   Resto ingesta
                   <span className="quick-action-plus">+</span>
                 </Link>
               )}
               {canSubmitFilleting(user) && (
-                <Link href="/filetagem" className="quick-action-row">
+                <Link href="/perdas?tab=filetagem" className="quick-action-row">
                   Filetagem de pescado
                   <span className="quick-action-plus">+</span>
                 </Link>
