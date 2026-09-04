@@ -1,5 +1,5 @@
 import "server-only";
-import { desc, eq } from "drizzle-orm";
+import { and, arrayContains, desc, eq, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { anomalies, units, users } from "@/lib/db/schema";
 
@@ -48,6 +48,7 @@ function baseQuery() {
       consequenciaImediata: anomalies.consequenciaImediata,
       acaoTomada: anomalies.acaoTomada,
       sugestaoTratativa: anomalies.sugestaoTratativa,
+      status: anomalies.status,
       sourceChecklistCompletionId: anomalies.sourceChecklistCompletionId,
       unitName: units.name,
       userName: users.name,
@@ -57,13 +58,30 @@ function baseQuery() {
     .innerJoin(users, eq(users.id, anomalies.userId));
 }
 
-export async function getAnomaliesByScope(scope: AnomalyScope) {
-  const query =
-    scope.mode === "unit"
-      ? baseQuery().where(
-          scope.unitId !== null ? eq(anomalies.unitId, scope.unitId) : undefined,
-        )
-      : baseQuery().where(eq(anomalies.userId, scope.userId));
+export type AnomalyFilters = {
+  tipo?: string | null;
+  setor?: string | null;
+  /** Only anomalies from this date (YYYY-MM-DD) onward. */
+  sinceDate?: string | null;
+};
 
-  return query.orderBy(desc(anomalies.date), desc(anomalies.id)).limit(200);
+export async function getAnomaliesByScope(
+  scope: AnomalyScope,
+  filters: AnomalyFilters = {},
+) {
+  const conditions = [
+    scope.mode === "unit"
+      ? scope.unitId !== null
+        ? eq(anomalies.unitId, scope.unitId)
+        : undefined
+      : eq(anomalies.userId, scope.userId),
+    filters.tipo ? arrayContains(anomalies.tipos, [filters.tipo]) : undefined,
+    filters.setor ? arrayContains(anomalies.setores, [filters.setor]) : undefined,
+    filters.sinceDate ? gte(anomalies.date, filters.sinceDate) : undefined,
+  ].filter((c) => c !== undefined);
+
+  return baseQuery()
+    .where(and(...conditions))
+    .orderBy(desc(anomalies.date), desc(anomalies.id))
+    .limit(200);
 }

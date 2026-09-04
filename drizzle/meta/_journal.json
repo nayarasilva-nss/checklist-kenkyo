@@ -85,6 +85,13 @@
       "when": 1788394391712,
       "tag": "0011_sticky_warhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788552261181,
+      "tag": "0012_spicy_mathemanic",
+      "breakpoints": true
     }
   ]
 }

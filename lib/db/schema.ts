@@ -35,6 +35,7 @@ export const leaderSelfAssessmentEnum = pgEnum("leader_self_assessment", [
   "reativo",
   "apagando_incendio",
 ]);
+export const anomalyStatusEnum = pgEnum("anomaly_status", ["aberta", "tratada"]);
 
 export const units = pgTable(
   "units",
@@ -229,6 +230,7 @@ export const anomalies = pgTable(
     consequenciaImediata: text("consequencia_imediata"),
     acaoTomada: text("acao_tomada"),
     sugestaoTratativa: text("sugestao_tratativa"),
+    status: anomalyStatusEnum("status").notNull().default("aberta"),
     // Set only for anomalies generated automatically from a "não conforme"
     // checklist item — lets that path avoid creating a duplicate anomaly
     // if the same item is resaved (e.g. justification edited).

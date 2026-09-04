@@ -197,9 +197,17 @@ button {
 }
 
 /* App shell */
+/* `height: 100vh` + `overflow: hidden` here (instead of `position: sticky`
+   on .app-nav) is deliberate: the global `overflow-x: hidden` on html/body
+   further up this file makes the browser treat their `overflow-y` as `auto`
+   too (a standard CSS quirk), which silently breaks `position: sticky` for
+   any descendant — the sidebar would scroll away with the page instead of
+   staying put. Making .app-main its own scroll container sidesteps that
+   entirely, so this doesn't depend on document-level scroll behavior. */
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
+  overflow: hidden;
   background: var(--bg);
 }
 
@@ -211,9 +219,7 @@ button {
   padding: 20px 14px;
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
-  height: 100vh;
+  height: 100%;
   overflow-y: auto;
 }
 
@@ -352,6 +358,8 @@ button {
 .app-main {
   flex: 1;
   min-width: 0;
+  height: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -1084,12 +1092,379 @@ button {
   transform: translateY(-2px);
 }
 
+/* Redesign: padrão tabela + painel de detalhe (piloto em Anomalias) */
+
+.page-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.btn-primary {
+  background: var(--kenkyo-gradient);
+  color: white;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 10px 16px;
+  box-shadow: var(--kenkyo-glow);
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: var(--control);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 9px 14px;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  border-color: var(--kenkyo-red);
+}
+
+.btn-destructive {
+  background: none;
+  border: 1px solid rgba(255, 107, 107, 0.35);
+  color: var(--danger-text);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 7px;
+  padding: 8px 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-destructive:hover {
+  background: var(--danger-bg);
+}
+
+.filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--control);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.pill.active {
+  background: var(--kenkyo-red);
+  color: #0e0f11;
+  border-color: var(--kenkyo-red);
+}
+
+.pill-count {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 18px 20px;
+}
+
+.summary-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.summary-card-value {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.summary-card-meta {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+
+.board-layout {
+  display: grid;
+  grid-template-columns: 1fr 352px;
+  gap: 22px;
+  align-items: start;
+}
+
+.data-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.data-table-head,
+.data-table-row {
+  min-width: max-content;
+}
+
+.data-table-head,
+.data-table-row {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+}
+
+.data-table-head {
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  padding: 11px 20px;
+}
+
+.data-table-head span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.data-table-row {
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--border-row);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.data-table-row:last-child {
+  border-bottom: none;
+}
+
+.data-table-row:hover {
+  background: var(--kenkyo-tint-soft);
+}
+
+.data-table-row.selected {
+  background: var(--kenkyo-tint-soft);
+  box-shadow: inset 2px 0 0 var(--kenkyo-red);
+}
+
+.data-table-date {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.data-table-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-info {
+  color: var(--info-text);
+  background: var(--info-bg);
+}
+
+.badge-violet {
+  color: var(--violet-text);
+  background: var(--violet-bg);
+}
+
+.badge-danger {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+}
+
+.badge-warning {
+  color: var(--warning-text);
+  background: var(--warning-bg);
+}
+
+.badge-success {
+  color: var(--success-text);
+  background: var(--success-bg);
+}
+
+.badge-brand {
+  color: var(--kenkyo-on-tint);
+  background: var(--kenkyo-tint);
+}
+
+.badge-neutral {
+  color: var(--text-dim);
+  background: #22262c;
+}
+
+.detail-panel {
+  background: var(--bg-rail);
+  border-radius: 13px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+
+.detail-panel-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: center;
+  margin: auto 0;
+}
+
+.detail-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.detail-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text-strong);
+}
+
+.detail-panel-meta {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+
+.detail-panel-close {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.detail-panel-close:hover {
+  color: var(--text-strong);
+}
+
+.detail-panel-origin {
+  background: var(--info-bg);
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  border-radius: 9px;
+  padding: 11px 13px;
+  font-size: 11.5px;
+  color: var(--text-2);
+  margin-bottom: 16px;
+}
+
+.detail-panel-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.detail-panel-field-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 5px;
+}
+
+.detail-panel-field-value {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.detail-panel-field-boxed {
+  background: var(--surface-raised);
+  border-radius: 9px;
+  padding: 12px 14px;
+}
+
+.detail-panel-footer {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-rail);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1080px) {
+  .board-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   /* Sidebar interina em celular: vira uma barra horizontal rolável, em vez
      da barra inferior de 5 posições do redesign (fica para quando o
      conteúdo de cada tela também for migrado). */
   .app-shell {
     flex-direction: column;
+    height: auto;
+    overflow: visible;
   }
 
   .app-nav {
@@ -1100,6 +1475,12 @@ button {
     padding: 10px 14px;
     gap: 14px;
     overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .app-main {
+    height: auto;
+    overflow-y: visible;
   }
 
   .app-nav-brand {

@@ -32,3 +32,8 @@ export function checklistDayISO(): string {
 function formatBrazilDate(date: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: BRAZIL_TIMEZONE }).format(date);
 }
+
+/** Brazil-local date, as YYYY-MM-DD, `days` days before today. */
+export function daysAgoISO(days: number): string {
+  return formatBrazilDate(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
+}

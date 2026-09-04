@@ -158,3 +158,11 @@ export async function deleteAnomaly(formData: FormData) {
   await db.delete(anomalies).where(eq(anomalies.id, id));
   revalidatePath("/anomalias");
 }
+
+export async function markAnomalyTreated(formData: FormData) {
+  await getCurrentUser();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await db.update(anomalies).set({ status: "tratada" }).where(eq(anomalies.id, id));
+  revalidatePath("/anomalias");
+}

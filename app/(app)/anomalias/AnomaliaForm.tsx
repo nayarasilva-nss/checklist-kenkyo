@@ -5,7 +5,13 @@ import { createAnomaly } from "@/lib/actions/anomalies";
 import { ANOMALY_SETORES, ANOMALY_TYPES } from "@/lib/anomaly-constants";
 import { todayISO } from "@/lib/date-utils";
 
-export function AnomaliaForm({ defaultRelator }: { defaultRelator: string }) {
+export function AnomaliaForm({
+  defaultRelator,
+  onSuccess,
+}: {
+  defaultRelator: string;
+  onSuccess?: () => void;
+}) {
   const [error, setError] = useState<string | undefined>();
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -23,14 +29,13 @@ export function AnomaliaForm({ defaultRelator }: { defaultRelator: string }) {
         setError(undefined);
         setSuccess(true);
         formRef.current?.reset();
+        onSuccess?.();
       }
     });
   }
 
   return (
     <form className="inline-form" ref={formRef} onSubmit={handleSubmit}>
-      <h4>Registrar Anomalia</h4>
-
       <div className="form-group">
         <label htmlFor="aDate">Data do ocorrido</label>
         <input id="aDate" name="date" type="date" defaultValue={todayISO()} required />
