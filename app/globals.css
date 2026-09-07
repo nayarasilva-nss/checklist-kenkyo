@@ -2,59 +2,66 @@
   /* Marca e ação */
   --kenkyo-red: #ff4d3d;
   --kenkyo-red-deep: #e63946;
+  --kenkyo-red-light: #ff8577;
   --kenkyo-gradient: linear-gradient(135deg, #ff4d3d 0%, #e63946 100%);
-  --kenkyo-glow: 0 4px 14px rgba(255, 77, 61, 0.32);
-  --kenkyo-tint: rgba(255, 77, 61, 0.16);
-  --kenkyo-tint-soft: rgba(255, 77, 61, 0.07);
-  --kenkyo-on-tint: #ffb3aa;
+  --kenkyo-glow: 0 4px 14px rgba(230, 57, 70, 0.22);
+  --kenkyo-tint: rgba(255, 77, 61, 0.1);
+  --kenkyo-tint-soft: rgba(255, 77, 61, 0.05);
+  --kenkyo-on-tint: #b3261e;
+  /* Texto para cima de cores de destaque saturadas (botões, pills ativos) —
+     fixo nos dois temas, não depende do fundo estar claro ou escuro. */
+  --on-accent: #1c1917;
 
-  /* Superfícies (carvão neutro) */
-  --bg: #0e0f11;
-  --bg-rail: #121316;
-  --bg-topbar: #101216;
-  --surface: #15181c;
-  --surface-raised: #191d22;
-  --surface-input: #0e0f11;
-  --control: #1a1d22;
+  /* Superfícies (cinza claro neutro, leve tom quente) */
+  --bg: #f2f1ed;
+  --bg-rail: #ffffff;
+  --surface: #ffffff;
+  --surface-raised: #f7f6f2;
+  --surface-input: #ffffff;
+  --control: #eeece7;
+  --surface-sunken: #e7e5df;
+  --hover-fill: #f0efea;
+  --active-fill: #f5f0ea;
+  --neutral-bg: #e9e7e0;
 
   /* Traços */
-  --border: #262a31;
-  --border-strong: #2d3239;
-  --border-rail: #22262c;
-  --border-row: #1f2329;
-  --border-input: #3a3f47;
+  --border: #e3e1da;
+  --border-strong: #d3d1c8;
+  --border-rail: #e6e4dd;
+  --border-row: #ebe9e2;
+  --border-input: #c7c5bb;
 
-  /* Texto */
-  --text: #f4f5f6;
-  --text-strong: #ffffff;
-  --text-2: #e4e7ea;
-  --text-3: #c9ced6;
-  --text-muted: #a8aeb7;
-  --text-dim: #8f959e;
-  --text-faint: #7c828b;
-  --text-label: #5d636c;
+  /* Texto (escuro sobre claro) */
+  --text: #2a2823;
+  --text-strong: #16140f;
+  --text-2: #3d3b35;
+  --text-3: #504e46;
+  --text-muted: #65635a;
+  --text-dim: #7a786d;
+  --text-faint: #8f8d81;
+  --text-label: #a19f92;
 
   /* Semânticas */
-  --success: #34d399;
-  --success-text: #6ee7b7;
-  --success-bg: rgba(52, 211, 153, 0.14);
-  --danger: #ff6b6b;
-  --danger-text: #ff9b90;
-  --danger-bg: rgba(255, 107, 107, 0.14);
-  --warning: #fbbf24;
-  --warning-text: #fcd34d;
-  --warning-bg: rgba(251, 191, 36, 0.14);
-  --info: #60a5fa;
-  --info-text: #93c5fd;
-  --info-bg: rgba(96, 165, 250, 0.14);
-  --violet: #a78bfa;
-  --violet-text: #c4b5fd;
-  --violet-bg: rgba(167, 139, 250, 0.14);
+  --success: #16a34a;
+  --success-text: #15803d;
+  --success-bg: rgba(22, 163, 74, 0.1);
+  --danger: #dc2626;
+  --danger-text: #b91c1c;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --warning: #d97706;
+  --warning-text: #92400e;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --info: #2563eb;
+  --info-text: #1d4ed8;
+  --info-bg: rgba(37, 99, 235, 0.08);
+  --violet: #7c3aed;
+  --violet-text: #6d28d9;
+  --violet-bg: rgba(124, 58, 237, 0.08);
 
   /* Aliases para nomes antigos ainda usados no restante do CSS, que segue
      no visual anterior até ser migrado tela por tela. */
   --kenkyo-red-dark: var(--kenkyo-red-deep);
-  --kenkyo-dark-gradient: linear-gradient(135deg, #0e0f11 0%, #15181c 100%);
+  --kenkyo-dark-gradient: linear-gradient(135deg, #f2f1ed 0%, #ffffff 100%);
 }
 
 * {
@@ -283,12 +290,12 @@ button {
 }
 
 .app-nav-link:hover {
-  background: #1a1d22;
+  background: var(--hover-fill);
   color: var(--text-3);
 }
 
 .app-nav-link.active {
-  background: #22252b;
+  background: var(--active-fill);
   color: var(--text-strong);
   font-weight: 600;
   box-shadow: inset 2px 0 0 var(--kenkyo-red);
@@ -307,7 +314,7 @@ button {
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: #2a2e34;
+  background: var(--surface-sunken);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -434,7 +441,7 @@ button {
   font-size: 32px;
   font-weight: 800;
   margin-bottom: 24px;
-  background: linear-gradient(135deg, #fff 0%, var(--kenkyo-red) 100%);
+  background: linear-gradient(135deg, var(--text-strong) 0%, var(--kenkyo-red) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -497,15 +504,15 @@ button {
 }
 
 .card.success h3 {
-  color: #4ade80;
+  color: var(--success-text);
 }
 
 .card.warning h3 {
-  color: #fcd34d;
+  color: var(--warning-text);
 }
 
 .card.info h3 {
-  color: #93c5fd;
+  color: var(--info-text);
 }
 
 .card .value {
@@ -616,7 +623,7 @@ button {
 
 .report-item .count {
   background: rgba(230, 57, 70, 0.2);
-  color: #ff8a8a;
+  color: var(--kenkyo-on-tint);
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 11px;
@@ -797,7 +804,7 @@ button {
   justify-content: center;
   font-size: 12px;
   font-weight: 800;
-  color: #0e0f11;
+  color: var(--on-accent);
 }
 
 .item-marker.pending {
@@ -813,7 +820,7 @@ button {
 }
 
 .item-marker.nao-se-aplica {
-  background: #2a2e34;
+  background: var(--surface-sunken);
 }
 
 .item-button-row {
@@ -843,18 +850,18 @@ button {
 .btn-status-conforme.active {
   background: var(--success);
   border-color: var(--success);
-  color: #0e0f11;
+  color: var(--on-accent);
 }
 
 .btn-status-nao-conforme.active {
   background: var(--danger);
   border-color: var(--danger);
-  color: #0e0f11;
+  color: var(--on-accent);
 }
 
 .btn-status-nao-se-aplica.active {
-  background: #2a2e34;
-  border-color: #2a2e34;
+  background: var(--surface-sunken);
+  border-color: var(--surface-sunken);
   color: var(--text-3);
 }
 
@@ -986,12 +993,12 @@ button {
 
 .status-pill.completed {
   background: var(--success-bg);
-  color: #4ade80;
+  color: var(--success-text);
 }
 
 .status-pill.pending {
   background: var(--warning-bg);
-  color: #fcd34d;
+  color: var(--warning-text);
 }
 
 /* Gerenciar */
@@ -1250,7 +1257,7 @@ button {
 
 .pill.active {
   background: var(--kenkyo-red);
-  color: #0e0f11;
+  color: var(--on-accent);
   border-color: var(--kenkyo-red);
 }
 
@@ -1416,7 +1423,7 @@ button {
 
 .badge-neutral {
   color: var(--text-dim);
-  background: #22262c;
+  background: var(--neutral-bg);
 }
 
 .detail-panel {
@@ -1580,7 +1587,7 @@ button {
 .today-card-link {
   font-size: 12px;
   font-weight: 600;
-  color: #ff8577;
+  color: var(--kenkyo-red-deep);
 }
 
 .progress-ring {
@@ -1647,14 +1654,14 @@ button {
   max-width: 260px;
   height: 5px;
   border-radius: 3px;
-  background: #2a2e34;
+  background: var(--surface-sunken);
   overflow: hidden;
   margin-top: 6px;
 }
 
 .today-checklist-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff4d3d, #ff8577);
+  background: linear-gradient(90deg, var(--kenkyo-red), var(--kenkyo-red-light));
 }
 
 .today-checklist-actions {
@@ -1681,7 +1688,7 @@ button {
 
 .state-pill-aguardando {
   color: var(--text-dim);
-  background: #22262c;
+  background: var(--neutral-bg);
 }
 
 .state-pill-concluido {
@@ -1801,12 +1808,12 @@ button {
 }
 
 .doc-category-link:hover {
-  background: #1a1d22;
+  background: var(--hover-fill);
   color: var(--text-3);
 }
 
 .doc-category-link.active {
-  background: #22252b;
+  background: var(--active-fill);
   color: var(--text-strong);
   font-weight: 600;
   box-shadow: inset 2px 0 0 var(--kenkyo-red);
@@ -1921,7 +1928,7 @@ button {
 
 .wizard-step-circle.done {
   background: var(--success);
-  color: #0e0f11;
+  color: var(--on-accent);
 }
 
 .wizard-step-circle.current {
@@ -1945,7 +1952,7 @@ button {
 }
 
 .wizard-step-label.current {
-  color: white;
+  color: var(--kenkyo-red-deep);
   font-weight: 700;
 }
 
@@ -1957,7 +1964,7 @@ button {
 .wizard-step-connector {
   flex: 1;
   height: 1px;
-  background: #2a2e34;
+  background: var(--surface-sunken);
   margin: 0 10px;
 }
 
@@ -2086,7 +2093,7 @@ button {
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: #3a3f47;
+  background: var(--border-input);
   margin: 0 auto 18px;
 }
 
