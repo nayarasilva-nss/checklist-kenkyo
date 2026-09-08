@@ -100,7 +100,10 @@ export default async function HojePage({
 
       <div className="hoje-layout">
         <div className="hoje-column">
-          {!isRh ? (
+          {/* Gestor não precisa ter checklist atribuído — só aparece pra
+              ele se de fato tiver algum (por opção/necessidade), sem o
+              estado vazio que faz sentido pros outros perfis. */}
+          {!isRh && (!isGestor || sortedChecklists.length > 0) ? (
             <div className="today-card">
               <div className="today-card-header">
                 <div>
