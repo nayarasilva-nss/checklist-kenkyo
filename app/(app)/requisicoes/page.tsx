@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth/dal";
 import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/auth/requisicoes";
 import { resolveRequisicaoScope, getRequisicoesByScope } from "@/lib/data/requisicoes";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
+import { getUnits } from "@/lib/data/units";
 import { RequisicoesBoard } from "./RequisicoesBoard";
 
 export default async function RequisicoesPage({
@@ -19,25 +20,23 @@ export default async function RequisicoesPage({
   const { tipo } = await searchParams;
   const criarTiposPermitidos = tiposPermitidos(user);
 
-  // "gestor-externa" só confere externa (não opera interna de unidade
-  // nenhuma) — a aba fica travada, não é uma escolha do usuário.
   const tabs =
-    scope.mode === "estoque"
+    scope.mode === "estoque" || scope.mode === "gestor"
       ? (["interna", "externa"] as const)
-      : scope.mode === "gestor-externa"
-        ? (["externa"] as const)
-        : criarTiposPermitidos;
+      : criarTiposPermitidos;
 
-  const requestedTipo = tipo === "interna" || tipo === "externa" ? tipo : (tabs[0] ?? null);
-  const activeTipo = scope.mode === "gestor-externa" ? "externa" : requestedTipo;
+  const activeTipo = tipo === "interna" || tipo === "externa" ? tipo : (tabs[0] ?? null);
 
   const canConferir = activeTipo === "interna" ? canConferirInterna(user) : canConferirExterna(user);
   const canCreate = criarTiposPermitidos.length > 0;
+  // Quem não tem unidade fixa (Gestor) escolhe a unidade na hora de criar.
+  const needsUnitPicker = canCreate && !user.unitId;
 
-  const [records, categorias, catalogItems] = await Promise.all([
+  const [records, categorias, catalogItems, units] = await Promise.all([
     getRequisicoesByScope(scope, activeTipo),
     canCreate ? getCatalogCategories() : Promise.resolve([]),
     canCreate ? getCatalogItems() : Promise.resolve([]),
+    needsUnitPicker ? getUnits() : Promise.resolve([]),
   ]);
 
   return (
@@ -50,6 +49,7 @@ export default async function RequisicoesPage({
       currentUserId={user.id}
       categorias={categorias}
       catalogItems={catalogItems}
+      units={units}
       criarTiposPermitidos={criarTiposPermitidos}
     />
   );

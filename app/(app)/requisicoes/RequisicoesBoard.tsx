@@ -107,6 +107,7 @@ export function RequisicoesBoard({
   currentUserId,
   categorias,
   catalogItems,
+  units,
   criarTiposPermitidos,
 }: {
   records: Requisicao[];
@@ -123,6 +124,7 @@ export function RequisicoesBoard({
     categoryId: number | null;
     categoryName: string | null;
   }[];
+  units: { id: number; name: string }[];
   criarTiposPermitidos: ("interna" | "externa")[];
 }) {
   const router = useRouter();
@@ -232,6 +234,7 @@ export function RequisicoesBoard({
                 tiposPermitidos={criarTiposPermitidos}
                 categorias={categorias}
                 catalogItems={catalogItems}
+                units={units}
                 onSuccess={() => setCreating(false)}
               />
             </>

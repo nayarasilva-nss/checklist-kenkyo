@@ -5,16 +5,18 @@ export type RequisicaoTipo = "interna" | "externa";
 type Viewer = { profile: string; jobFunctionName: string | null };
 
 /**
- * Todo mundo pede requisição interna, exceto gestor (só administra o
- * catálogo, não opera unidade) e rh (não faz operação de unidade, mesmo
- * padrão usado em canCreateAnomaly). Só gerente pede externa.
+ * Todo mundo pede requisição interna, exceto rh (não faz operação de
+ * unidade, mesmo padrão usado em canCreateAnomaly). Gestor não opera uma
+ * unidade fixa, mas pode enviar se precisar — nesse caso escolhe a
+ * unidade na hora (ver unitId em createRequisicao). Gerente e Gestor
+ * pedem externa.
  */
 export function canRequestInterna(viewer: Viewer) {
-  return viewer.profile !== "gestor" && viewer.profile !== "rh";
+  return viewer.profile !== "rh";
 }
 
 export function canRequestExterna(viewer: Viewer) {
-  return viewer.profile === "gerente";
+  return viewer.profile === "gerente" || viewer.profile === "gestor";
 }
 
 export function tiposPermitidos(viewer: Viewer): RequisicaoTipo[] {

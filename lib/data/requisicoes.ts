@@ -13,22 +13,23 @@ export type RequisicaoViewer = {
 
 export type RequisicaoScope =
   | { mode: "estoque"; unitId: number }
-  | { mode: "gestor-externa" }
+  | { mode: "gestor"; userId: number }
   | { mode: "own"; userId: number; unitId: number };
 
 /**
  * Líder de Estoque/Produção vê tudo da própria unidade, interna e externa
- * (é quem confere, não quem cria). Gestor confere externa de todas as
- * unidades (não opera unidade própria, então não faz sentido travar numa
- * só). Quem pode criar requisição vê só as próprias. rh não tem fila de
- * requisição — ver spec-requisicao-kenkyo.md seção 3 e lib/auth/requisicoes.ts.
+ * (é quem confere, não quem cria). Gestor não opera uma unidade fixa: na
+ * aba interna vê só as próprias (pode criar, mas não confere interna); na
+ * aba externa vê de todas as unidades (confere, além de poder criar).
+ * Quem só pode criar vê as próprias. rh não tem fila de requisição — ver
+ * spec-requisicao-kenkyo.md seção 3 e lib/auth/requisicoes.ts.
  */
 export function resolveRequisicaoScope(viewer: RequisicaoViewer): RequisicaoScope | null {
   if (canConferirInterna(viewer)) {
     return { mode: "estoque", unitId: viewer.unitId ?? -1 };
   }
   if (canConferirExterna(viewer)) {
-    return { mode: "gestor-externa" };
+    return { mode: "gestor", userId: viewer.id };
   }
   if (tiposPermitidos(viewer).length === 0) return null;
   return { mode: "own", userId: viewer.id, unitId: viewer.unitId ?? -1 };
@@ -62,7 +63,11 @@ export async function getRequisicoesByScope(scope: RequisicaoScope, tipo?: strin
       ? eq(requisicoes.unitId, scope.unitId)
       : scope.mode === "own"
         ? eq(requisicoes.requesterId, scope.userId)
-        : undefined, // "gestor-externa": todas as unidades, sem filtro de solicitante
+        // "gestor": interna só as próprias (não confere); externa, todas
+        // as unidades (confere) — sem filtro de solicitante.
+        : scope.mode === "gestor" && tipo === "interna"
+          ? eq(requisicoes.requesterId, scope.userId)
+          : undefined,
     tipo === "interna" || tipo === "externa" ? eq(requisicoes.tipo, tipo) : undefined,
   ].filter((c) => c !== undefined);
 

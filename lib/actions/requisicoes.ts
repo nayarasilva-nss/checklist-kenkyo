@@ -73,8 +73,15 @@ export async function createRequisicao(
   if (tipo === "externa" && !canRequestExterna(user)) {
     return { error: "Você não tem permissão para criar requisição externa" };
   }
-  if (!user.unitId) {
-    return { error: "Seu usuário não está vinculado a uma unidade" };
+
+  // Quem não tem unidade fixa (hoje, Gestor) escolhe na hora de criar.
+  let unitId = user.unitId;
+  if (!unitId) {
+    const rawUnitId = Number(formData.get("unitId"));
+    if (!rawUnitId) {
+      return { error: "Selecione a unidade" };
+    }
+    unitId = rawUnitId;
   }
 
   const urgente = formData.get("urgente") === "on";
@@ -87,7 +94,7 @@ export async function createRequisicao(
 
   const [requisicao] = await db
     .insert(requisicoes)
-    .values({ tipo, unitId: user.unitId, requesterId: user.id, urgente, observacao })
+    .values({ tipo, unitId, requesterId: user.id, urgente, observacao })
     .returning({ id: requisicoes.id });
 
   await db.insert(requisicaoItens).values(

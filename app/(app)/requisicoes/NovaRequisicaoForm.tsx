@@ -22,14 +22,19 @@ export function NovaRequisicaoForm({
   tiposPermitidos,
   categorias,
   catalogItems,
+  units,
   onSuccess,
 }: {
   tiposPermitidos: ("interna" | "externa")[];
   categorias: { id: number; name: string }[];
   catalogItems: CatalogItem[];
+  // Só passado (não-vazio) pra quem não tem unidade fixa — hoje, Gestor —
+  // que por isso precisa escolher pra qual unidade é a requisição.
+  units: { id: number; name: string }[];
   onSuccess: () => void;
 }) {
   const [tipo, setTipo] = useState(tiposPermitidos[0] ?? "interna");
+  const [unitId, setUnitId] = useState(units[0]?.id ?? "");
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState<number | "todas">("todas");
   const [selecionados, setSelecionados] = useState<Record<number, SelectedItem>>({});
@@ -89,8 +94,13 @@ export function NovaRequisicaoForm({
       setError("Selecione ao menos um item");
       return;
     }
+    if (units.length > 0 && !unitId) {
+      setError("Selecione a unidade");
+      return;
+    }
     const fd = new FormData();
     fd.set("tipo", tipo);
+    if (units.length > 0) fd.set("unitId", String(unitId));
     fd.set("urgente", urgente ? "on" : "off");
     fd.set("observacao", observacao);
     fd.set("itensJson", JSON.stringify(Object.values(selecionados)));
@@ -120,6 +130,23 @@ export function NovaRequisicaoForm({
               {t === "interna" ? "Interna" : "Externa"}
             </button>
           ))}
+        </div>
+      )}
+
+      {units.length > 0 && (
+        <div className="form-group">
+          <label htmlFor="requisicaoUnidade">Unidade</label>
+          <select
+            id="requisicaoUnidade"
+            value={unitId}
+            onChange={(e) => setUnitId(Number(e.target.value))}
+          >
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 
