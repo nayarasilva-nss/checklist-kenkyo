@@ -12,6 +12,7 @@ import { getOpenPendenciasForUnit } from "@/lib/data/shift-logs";
 import { resolvePendencia } from "@/lib/actions/shift-logs";
 import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
+import { tiposPermitidos } from "@/lib/auth/requisicoes";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { greeting, todayISO, todayShortLabel } from "@/lib/date-utils";
 import { UnitFilter } from "../UnitFilter";
@@ -47,6 +48,7 @@ export default async function HojePage({
   const isRh = user.profile === "rh";
   const canWriteShiftLog = user.profile === "gerente" || user.profile === "lider";
   const canCreateAnomaly = !isRh;
+  const canRequestRequisicao = tiposPermitidos(user).length > 0;
 
   const { unit: rawUnit, date: rawDate } = await searchParams;
   const painelDate = rawDate || checklistTodayISO();
@@ -55,7 +57,7 @@ export default async function HojePage({
   const painelUnitId = resolveUnitScope(user, requestedUnitId);
 
   const [units, checklists] = await Promise.all([
-    user.unitId || isGestor ? getUnits() : Promise.resolve([]),
+    user.unitId || isGestor || isRh ? getUnits() : Promise.resolve([]),
     isRh ? Promise.resolve([]) : getChecklistsForUser("daily", viewer),
   ]);
   const unitName = units.find((u) => u.id === user.unitId)?.name ?? null;
@@ -224,7 +226,10 @@ export default async function HojePage({
         </div>
 
         <div className="hoje-column">
-          {(canCreateAnomaly || canSubmitRestoIngesta(user) || canSubmitFilleting(user)) && (
+          {(canCreateAnomaly ||
+            canSubmitRestoIngesta(user) ||
+            canSubmitFilleting(user) ||
+            canRequestRequisicao) && (
             <div className="today-card">
               <div className="today-card-title" style={{ marginBottom: 8 }}>
                 Registrar agora
@@ -232,6 +237,12 @@ export default async function HojePage({
               {canCreateAnomaly && (
                 <Link href="/anomalias" className="quick-action-row">
                   Anomalia
+                  <span className="quick-action-plus">+</span>
+                </Link>
+              )}
+              {canRequestRequisicao && (
+                <Link href="/requisicoes" className="quick-action-row">
+                  Requisição
                   <span className="quick-action-plus">+</span>
                 </Link>
               )}
@@ -268,10 +279,10 @@ export default async function HojePage({
 
       <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 20 }}>
         <DateFilter date={painelDate} unit={rawUnit} action="/hoje" />
-        {isGestor && <UnitFilter units={units} value={requestedUnitId} />}
+        {(isGestor || isRh) && <UnitFilter units={units} value={requestedUnitId} />}
       </div>
 
-      {!isGestor && user.unitId === null && (
+      {!isGestor && !isRh && user.unitId === null && (
         <p className="empty-state">
           Sua unidade ainda não foi definida. Peça a um Gestor para atribuir
           sua unidade no cadastro.

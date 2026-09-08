@@ -22,6 +22,7 @@ function buildGroups(profile: string, showRequisicoes: boolean): NavGroup[] {
       {
         label: "OPERAÇÃO",
         items: [
+          { href: "/hoje", label: "Hoje" },
           { href: "/anomalias", label: "Anomalias" },
           { href: "/diario-de-bordo", label: "Diário de bordo" },
         ],
@@ -149,6 +150,9 @@ export function AppNav({
   const registerOptions: SheetOptionDef[] = [
     ...(canCreateAnomaly
       ? [{ href: "/anomalias", title: "Anomalia", description: "Registrar uma ocorrência" }]
+      : []),
+    ...(showRequisicoes
+      ? [{ href: "/requisicoes", title: "Requisição", description: "Pedir itens ao estoque" }]
       : []),
     ...(canSubmitRestoIngesta
       ? [{ href: "/perdas?tab=resto", title: "Resto ingesta", description: "Lançar desperdício do dia" }]
