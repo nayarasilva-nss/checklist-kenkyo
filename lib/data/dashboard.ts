@@ -1,6 +1,7 @@
 import "server-only";
-import { sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { checklistCompletions, checklistTypes, units, users } from "@/lib/db/schema";
 // Checklist-derived stats use the same 02:00 BRT rollover as the
 // checklist page itself (checklistDayISO), not plain midnight — otherwise
 // "Concluídos Hoje" and the ranking's week boundary would disagree with
@@ -125,4 +126,72 @@ export async function getRanking(unitId: number | null, date: string = todayISO(
       complianceRate: total > 0 ? Math.round((conforme / total) * 100) : 0,
     };
   });
+}
+
+export type MissingChecklistUser = {
+  id: number;
+  name: string;
+  unitName: string | null;
+};
+
+/**
+ * Gerente/líder who has at least one visible daily checklist but hasn't
+ * touched a single item of it today — not "hasn't finished", just "hasn't
+ * started". Someone with no daily checklist assigned at all is never
+ * flagged, since there'd be nothing for them to do.
+ */
+export async function getUsersWithoutChecklistToday(
+  unitId: number | null,
+): Promise<MissingChecklistUser[]> {
+  const today = todayISO();
+
+  const candidates = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      jobFunctionId: users.jobFunctionId,
+      unitName: units.name,
+    })
+    .from(users)
+    .leftJoin(units, eq(units.id, users.unitId))
+    .where(
+      unitId
+        ? and(inArray(users.profile, ["gerente", "lider"]), eq(users.unitId, unitId))
+        : and(inArray(users.profile, ["gerente", "lider"]), sql`${users.unitId} is not null`),
+    );
+
+  if (candidates.length === 0) return [];
+
+  const dailyTypes = await db
+    .select({
+      jobFunctionId: checklistTypes.jobFunctionId,
+      assignedUserId: checklistTypes.assignedUserId,
+    })
+    .from(checklistTypes)
+    .where(eq(checklistTypes.type, "daily"));
+
+  const candidateIds = candidates.map((c) => c.id);
+  const completedRows = await db
+    .selectDistinct({ userId: checklistCompletions.userId })
+    .from(checklistCompletions)
+    .where(
+      and(
+        eq(checklistCompletions.date, today),
+        inArray(checklistCompletions.userId, candidateIds),
+      ),
+    );
+  const completedIds = new Set(completedRows.map((r) => r.userId));
+
+  function hasVisibleDailyChecklist(candidate: { id: number; jobFunctionId: number | null }) {
+    return dailyTypes.some(
+      (t) =>
+        t.assignedUserId === candidate.id ||
+        (t.assignedUserId === null &&
+          (t.jobFunctionId === null || t.jobFunctionId === candidate.jobFunctionId)),
+    );
+  }
+
+  return candidates
+    .filter((c) => !completedIds.has(c.id) && hasVisibleDailyChecklist(c))
+    .map((c) => ({ id: c.id, name: c.name, unitName: c.unitName }));
 }

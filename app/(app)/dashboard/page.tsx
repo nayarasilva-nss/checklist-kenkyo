@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/auth/dal";
-import { getDashboardStats, getRanking } from "@/lib/data/dashboard";
+import { getDashboardStats, getRanking, getUsersWithoutChecklistToday } from "@/lib/data/dashboard";
 import { getFilletingMonthlySummary } from "@/lib/data/filleting";
 import { getRestoIngestaMonthlySummary } from "@/lib/data/resto-ingesta";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
@@ -18,13 +18,14 @@ export default async function DashboardPage({
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const unitId = resolveUnitScope(user, requestedUnitId);
 
-  const [stats, ranking, units, filletingSummary, restoIngestaSummary] =
+  const [stats, ranking, units, filletingSummary, restoIngestaSummary, missingChecklist] =
     await Promise.all([
       getDashboardStats(unitId),
       getRanking(unitId),
       isGestor ? getUnits() : Promise.resolve([]),
       getFilletingMonthlySummary(unitId),
       getRestoIngestaMonthlySummary(unitId),
+      getUsersWithoutChecklistToday(unitId),
     ]);
 
   return (
@@ -40,6 +41,19 @@ export default async function DashboardPage({
           Sua unidade ainda não foi definida. Peça a um Gestor para atribuir
           sua unidade no cadastro.
         </p>
+      )}
+
+      {missingChecklist.length > 0 && (
+        <div className="alert-banner">
+          <strong>
+            ⚠️ {missingChecklist.length}{" "}
+            {missingChecklist.length === 1 ? "pessoa ainda não fez" : "pessoas ainda não fizeram"}{" "}
+            nenhum checklist hoje:
+          </strong>{" "}
+          {missingChecklist
+            .map((u) => (u.unitName ? `${u.name} (${u.unitName})` : u.name))
+            .join(", ")}
+        </div>
       )}
 
       <div className="dashboard-grid">

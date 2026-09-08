@@ -1975,6 +1975,21 @@ button {
   margin-top: 20px;
 }
 
+.alert-banner {
+  background: var(--warning-bg);
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  border-radius: 9px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.alert-banner strong {
+  color: var(--warning-text);
+}
+
 @media (max-width: 1080px) {
   .board-layout {
     grid-template-columns: 1fr;
