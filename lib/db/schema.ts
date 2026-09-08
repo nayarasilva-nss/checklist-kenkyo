@@ -100,6 +100,10 @@ export const checklistTypeItems = pgTable("checklist_type_items", {
   label: text("label").notNull(),
   position: integer("position").notNull(),
   requiresPhoto: boolean("requires_photo").notNull().default(false),
+  // When true, this item can only be marked "conforme" if the user has
+  // already submitted a diário de bordo (shift_logs row) for that date —
+  // see setChecklistItemStatus.
+  requiresShiftLog: boolean("requires_shift_log").notNull().default(false),
 });
 
 // Deprecated: superseded by checklistTypes/checklistTypeItems, which now

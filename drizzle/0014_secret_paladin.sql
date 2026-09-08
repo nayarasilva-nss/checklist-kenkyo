@@ -1,0 +1,1 @@
+ALTER TABLE "checklist_type_items" ADD COLUMN "requires_shift_log" boolean DEFAULT false NOT NULL;

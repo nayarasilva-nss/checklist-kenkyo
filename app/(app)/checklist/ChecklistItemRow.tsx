@@ -12,6 +12,7 @@ type Item = {
   id: number;
   label: string;
   requiresPhoto: boolean;
+  requiresShiftLog: boolean;
   status: CompletionStatus;
   justification: string | null;
   photoUrl: string | null;
@@ -160,6 +161,9 @@ export function ChecklistItemRow({
         {item.requiresPhoto && (
           <span className="requires-photo-badge">Foto obrigatória</span>
         )}
+        {item.requiresShiftLog && (
+          <span className="requires-photo-badge">Exige diário de bordo enviado</span>
+        )}
       </div>
 
       <div className="item-button-row">
@@ -207,13 +211,13 @@ export function ChecklistItemRow({
               onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)}
             />
           )}
-          {error && <p className="login-error">{error}</p>}
           {pendingStatus === "nao-conforme" && (
             <div className="anomaly-notice">
               Ao salvar, uma anomalia de <strong>Operacional</strong> será aberta em{" "}
               <strong>{guessSetorFromText(checklistTypeName)}</strong> com este texto.
             </div>
           )}
+          {error && <p className="login-error">{error}</p>}
           <div className="justification-form-buttons">
             <button
               type="button"
@@ -228,6 +232,8 @@ export function ChecklistItemRow({
           </div>
         </form>
       )}
+
+      {!pendingStatus && error && <p className="login-error">{error}</p>}
 
       {!pendingStatus && item.status === "nao-conforme" && item.justification && (
         <div className="justification-box">

@@ -99,6 +99,13 @@
       "when": 1788553056316,
       "tag": "0013_exotic_tana_nile",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788829252741,
+      "tag": "0014_secret_paladin",
+      "breakpoints": true
     }
   ]
 }

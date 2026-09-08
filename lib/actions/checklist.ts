@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
-import { checklistTypeItems, checklistTypes, checklistCompletions } from "@/lib/db/schema";
+import { checklistTypeItems, checklistTypes, checklistCompletions, shiftLogs } from "@/lib/db/schema";
 import { todayISO } from "@/lib/data/checklists";
 import { recordAnomaly } from "@/lib/actions/anomalies";
 import { guessSetorFromText } from "@/lib/anomaly-constants";
@@ -23,6 +23,7 @@ async function getItemContext(itemId: number, checklistTypeId: number) {
   const [row] = await db
     .select({
       requiresPhoto: checklistTypeItems.requiresPhoto,
+      requiresShiftLog: checklistTypeItems.requiresShiftLog,
       itemLabel: checklistTypeItems.label,
       checklistTypeName: checklistTypes.name,
     })
@@ -67,6 +68,20 @@ export async function setChecklistItemStatus(
   }
 
   const date = todayISO();
+
+  if (status === "conforme" && context.requiresShiftLog) {
+    const [shiftLog] = await db
+      .select({ id: shiftLogs.id })
+      .from(shiftLogs)
+      .where(and(eq(shiftLogs.userId, user.id), eq(shiftLogs.date, date)))
+      .limit(1);
+    if (!shiftLog) {
+      return {
+        error: "Você precisa preencher o diário de bordo de hoje antes de marcar esta tarefa como conforme.",
+      };
+    }
+  }
+
   const [completion] = await db
     .insert(checklistCompletions)
     .values({

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && tsx scripts/seed-chefe-function.ts && tsx scripts/migrate-templates-to-checklists.ts && tsx scripts/seed-souschef-routine.ts && tsx scripts/dedupe-checklist-types.ts && tsx scripts/seed-pops-higienizacao.ts && tsx scripts/seed-fichas-tecnicas.ts && tsx scripts/migrate-checklists-todas-funcoes.ts && tsx scripts/seed-staff-users.ts && next build",
+    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seed-gerente-routine.ts && tsx scripts/seed-chefe-function.ts && tsx scripts/migrate-templates-to-checklists.ts && tsx scripts/seed-souschef-routine.ts && tsx scripts/dedupe-checklist-types.ts && tsx scripts/seed-pops-higienizacao.ts && tsx scripts/seed-fichas-tecnicas.ts && tsx scripts/migrate-checklists-todas-funcoes.ts && tsx scripts/seed-staff-users.ts && tsx scripts/add-diario-bordo-item-to-fechamento.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
@@ -18,7 +18,8 @@
     "db:seed:pops-higienizacao": "dotenv -e .env.local -- tsx scripts/seed-pops-higienizacao.ts",
     "db:seed:fichas-tecnicas": "dotenv -e .env.local -- tsx scripts/seed-fichas-tecnicas.ts",
     "db:migrate-checklists-todas-funcoes": "dotenv -e .env.local -- tsx scripts/migrate-checklists-todas-funcoes.ts",
-    "db:seed:staff-users": "dotenv -e .env.local -- tsx scripts/seed-staff-users.ts"
+    "db:seed:staff-users": "dotenv -e .env.local -- tsx scripts/seed-staff-users.ts",
+    "db:add-diario-bordo-item": "dotenv -e .env.local -- tsx scripts/add-diario-bordo-item-to-fechamento.ts"
   },
   "dependencies": {
     "@vercel/blob": "^2.6.1",
