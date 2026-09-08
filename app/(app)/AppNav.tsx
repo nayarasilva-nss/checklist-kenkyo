@@ -123,6 +123,7 @@ export function AppNav({
   canSubmitRestoIngesta,
   canWriteShiftLog,
   showRequisicoes,
+  canCreateRequisicao,
 }: {
   userName: string;
   profile: string;
@@ -132,6 +133,7 @@ export function AppNav({
   canSubmitRestoIngesta: boolean;
   canWriteShiftLog: boolean;
   showRequisicoes: boolean;
+  canCreateRequisicao: boolean;
 }) {
   const pathname = usePathname();
   const groups = buildGroups(profile, showRequisicoes);
@@ -151,7 +153,7 @@ export function AppNav({
     ...(canCreateAnomaly
       ? [{ href: "/anomalias", title: "Anomalia", description: "Registrar uma ocorrência" }]
       : []),
-    ...(showRequisicoes
+    ...(canCreateRequisicao
       ? [{ href: "/requisicoes", title: "Requisição", description: "Pedir itens ao estoque" }]
       : []),
     ...(canSubmitRestoIngesta

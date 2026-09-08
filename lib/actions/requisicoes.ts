@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { canConferirRequisicao, canRequestExterna, canRequestInterna } from "@/lib/auth/requisicoes";
+import type { RequisicaoTipo } from "@/lib/auth/requisicoes";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, catalogUnitMeasureEnum } from "@/lib/db/schema";
 import { addHistoryEntry } from "@/lib/data/history";
@@ -134,13 +135,13 @@ export async function conferirRequisicao(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (!canConferirRequisicao(user)) {
-    return { error: "Você não tem permissão para conferir requisições" };
-  }
 
   const id = Number(formData.get("id"));
   const [existing] = await db.select().from(requisicoes).where(eq(requisicoes.id, id)).limit(1);
   if (!existing) return { error: "Requisição não encontrada" };
+  if (!canConferirRequisicao(user, existing.tipo as RequisicaoTipo)) {
+    return { error: "Você não tem permissão para conferir essa requisição" };
+  }
   if (existing.status !== "aberta") {
     return { error: "Essa requisição já foi conferida" };
   }

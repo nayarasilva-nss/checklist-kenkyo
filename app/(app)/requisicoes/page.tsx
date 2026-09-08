@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
-import { canConferirRequisicao, tiposPermitidos } from "@/lib/auth/requisicoes";
+import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/auth/requisicoes";
 import { resolveRequisicaoScope, getRequisicoesByScope } from "@/lib/data/requisicoes";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
 import { RequisicoesBoard } from "./RequisicoesBoard";
@@ -17,12 +17,21 @@ export default async function RequisicoesPage({
   }
 
   const { tipo } = await searchParams;
-  const canConferir = canConferirRequisicao(user);
   const criarTiposPermitidos = tiposPermitidos(user);
-  const tabs = canConferir ? (["interna", "externa"] as const) : criarTiposPermitidos;
 
-  const activeTipo = tipo === "interna" || tipo === "externa" ? tipo : (tabs[0] ?? null);
+  // "gestor-externa" só confere externa (não opera interna de unidade
+  // nenhuma) — a aba fica travada, não é uma escolha do usuário.
+  const tabs =
+    scope.mode === "estoque"
+      ? (["interna", "externa"] as const)
+      : scope.mode === "gestor-externa"
+        ? (["externa"] as const)
+        : criarTiposPermitidos;
 
+  const requestedTipo = tipo === "interna" || tipo === "externa" ? tipo : (tabs[0] ?? null);
+  const activeTipo = scope.mode === "gestor-externa" ? "externa" : requestedTipo;
+
+  const canConferir = activeTipo === "interna" ? canConferirInterna(user) : canConferirExterna(user);
   const canCreate = criarTiposPermitidos.length > 0;
 
   const [records, categorias, catalogItems] = await Promise.all([

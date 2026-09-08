@@ -3,6 +3,7 @@ import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { canCoverOtherUnits, getCoveringUnit } from "@/lib/auth/covering-unit";
 import { resolveRequisicaoScope } from "@/lib/data/requisicoes";
+import { tiposPermitidos } from "@/lib/auth/requisicoes";
 import { getUnits } from "@/lib/data/units";
 import { AppNav } from "./AppNav";
 import { CoveringUnitBanner } from "./CoveringUnitBanner";
@@ -15,6 +16,7 @@ export default async function AppLayout({
   const user = await getCurrentUser();
   const showCoveringUnitBanner = canCoverOtherUnits(user);
   const showRequisicoes = resolveRequisicaoScope(user) !== null;
+  const canCreateRequisicao = tiposPermitidos(user).length > 0;
   const [covering, units] = showCoveringUnitBanner
     ? await Promise.all([getCoveringUnit(), getUnits()])
     : [null, []];
@@ -30,6 +32,7 @@ export default async function AppLayout({
         canSubmitRestoIngesta={canSubmitRestoIngesta(user)}
         canWriteShiftLog={user.profile === "gerente" || user.profile === "lider"}
         showRequisicoes={showRequisicoes}
+        canCreateRequisicao={canCreateRequisicao}
       />
       <div className="app-main">
         {showCoveringUnitBanner && (

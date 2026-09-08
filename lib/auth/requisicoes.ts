@@ -24,7 +24,16 @@ export function tiposPermitidos(viewer: Viewer): RequisicaoTipo[] {
   return tipos;
 }
 
-/** Confere (interna e externa) só o Líder de Estoque/Produção. */
-export function canConferirRequisicao(viewer: Viewer) {
+/** Confere interna: só o Líder de Estoque/Produção. */
+export function canConferirInterna(viewer: Viewer) {
   return viewer.jobFunctionName === "Líder de Estoque/Produção";
+}
+
+/** Confere externa: Líder de Estoque/Produção ou qualquer Gestor. */
+export function canConferirExterna(viewer: Viewer) {
+  return viewer.jobFunctionName === "Líder de Estoque/Produção" || viewer.profile === "gestor";
+}
+
+export function canConferirRequisicao(viewer: Viewer, tipo: RequisicaoTipo) {
+  return tipo === "interna" ? canConferirInterna(viewer) : canConferirExterna(viewer);
 }

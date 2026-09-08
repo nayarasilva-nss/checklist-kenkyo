@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, units, users } from "@/lib/db/schema";
-import { canConferirRequisicao, tiposPermitidos } from "@/lib/auth/requisicoes";
+import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/auth/requisicoes";
 
 export type RequisicaoViewer = {
   id: number;
@@ -13,17 +13,22 @@ export type RequisicaoViewer = {
 
 export type RequisicaoScope =
   | { mode: "estoque"; unitId: number }
+  | { mode: "gestor-externa" }
   | { mode: "own"; userId: number; unitId: number };
 
 /**
- * Líder de Estoque/Produção vê tudo da própria unidade (é quem confere,
- * não quem cria). Quem pode criar requisição vê só as próprias. Gestor e
- * rh não têm fila de requisição — ver spec-requisicao-kenkyo.md seção 3 e
- * lib/auth/requisicoes.ts.
+ * Líder de Estoque/Produção vê tudo da própria unidade, interna e externa
+ * (é quem confere, não quem cria). Gestor confere externa de todas as
+ * unidades (não opera unidade própria, então não faz sentido travar numa
+ * só). Quem pode criar requisição vê só as próprias. rh não tem fila de
+ * requisição — ver spec-requisicao-kenkyo.md seção 3 e lib/auth/requisicoes.ts.
  */
 export function resolveRequisicaoScope(viewer: RequisicaoViewer): RequisicaoScope | null {
-  if (canConferirRequisicao(viewer)) {
+  if (canConferirInterna(viewer)) {
     return { mode: "estoque", unitId: viewer.unitId ?? -1 };
+  }
+  if (canConferirExterna(viewer)) {
+    return { mode: "gestor-externa" };
   }
   if (tiposPermitidos(viewer).length === 0) return null;
   return { mode: "own", userId: viewer.id, unitId: viewer.unitId ?? -1 };
@@ -55,7 +60,9 @@ export async function getRequisicoesByScope(scope: RequisicaoScope, tipo?: strin
   const conditions = [
     scope.mode === "estoque"
       ? eq(requisicoes.unitId, scope.unitId)
-      : eq(requisicoes.requesterId, scope.userId),
+      : scope.mode === "own"
+        ? eq(requisicoes.requesterId, scope.userId)
+        : undefined, // "gestor-externa": todas as unidades, sem filtro de solicitante
     tipo === "interna" || tipo === "externa" ? eq(requisicoes.tipo, tipo) : undefined,
   ].filter((c) => c !== undefined);
 
