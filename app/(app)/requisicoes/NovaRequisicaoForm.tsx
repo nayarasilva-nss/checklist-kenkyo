@@ -23,16 +23,20 @@ export function NovaRequisicaoForm({
   categorias,
   catalogItems,
   units,
+  todayWeekday,
   onSuccess,
 }: {
   tiposPermitidos: ("interna" | "externa")[];
-  categorias: { id: number; name: string }[];
+  categorias: { id: number; name: string; orderDays: number[] }[];
   catalogItems: CatalogItem[];
   // Só passado (não-vazio) pra quem não tem unidade fixa — hoje, Gestor —
   // que por isso precisa escolher pra qual unidade é a requisição.
   units: { id: number; name: string }[];
+  // 0=domingo..6=sábado, calculado no servidor (hora de Brasília).
+  todayWeekday: number;
   onSuccess: () => void;
 }) {
+  const categoriasHoje = categorias.filter((c) => c.orderDays.includes(todayWeekday));
   const [tipo, setTipo] = useState(tiposPermitidos[0] ?? "interna");
   const [unitId, setUnitId] = useState(units[0]?.id ?? "");
   const [busca, setBusca] = useState("");
@@ -150,6 +154,22 @@ export function NovaRequisicaoForm({
         </div>
       )}
 
+      {categoriasHoje.length > 0 && (
+        <div
+          style={{
+            background: "var(--warning-bg)",
+            color: "var(--warning-text)",
+            borderRadius: 8,
+            padding: "10px 14px",
+            fontSize: 13.5,
+            fontWeight: 600,
+            marginBottom: 16,
+          }}
+        >
+          📦 Hoje é dia de pedido: {categoriasHoje.map((c) => c.name).join(", ")}
+        </div>
+      )}
+
       <div className="form-group">
         <input
           value={busca}
@@ -174,6 +194,20 @@ export function NovaRequisicaoForm({
             onClick={() => setCategoria(c.id)}
           >
             {c.name}
+            {c.orderDays.includes(todayWeekday) && (
+              <span
+                aria-label="Hoje é dia de pedido"
+                title="Hoje é dia de pedido"
+                style={{
+                  display: "inline-block",
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "var(--kenkyo-red)",
+                  marginLeft: 6,
+                }}
+              />
+            )}
           </button>
         ))}
       </div>

@@ -2253,3 +2253,30 @@ button {
     display: flex;
   }
 }
+
+/* The app shell scrolls internally (.app-main has a fixed height and its
+   own overflow-y), which browsers don't paginate for print — only the
+   on-screen slice gets rendered, so anything past one viewport height
+   comes out blank on a printed/saved page (e.g. requisição PDFs). Print
+   media unlocks the shell into normal document flow and hides the chrome
+   that shouldn't appear on paper; individual print pages still use
+   .no-print for their own on-screen-only controls. */
+@media print {
+  .app-nav,
+  .mobile-bottom-bar,
+  .covering-unit-banner {
+    display: none !important;
+  }
+
+  .app-shell,
+  .app-main,
+  .content,
+  .tab-content {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+}

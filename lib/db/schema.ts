@@ -320,6 +320,11 @@ export const catalogCategories = pgTable(
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
+    // Dias da semana (0=domingo..6=sábado) em que essa categoria costuma
+    // ter pedido de fornecedor — configuração global (vale pra todas as
+    // unidades), usada só pra avisar na tela de nova requisição. Ver
+    // spec-requisicao-kenkyo.md seção 5.
+    orderDays: integer("order_days").array().notNull().default([]),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("catalog_categories_name_idx").on(table.name)],

@@ -4,16 +4,38 @@ import { useState, useTransition } from "react";
 import { updateCategory, deleteCategory } from "@/lib/actions/catalog";
 import { DeleteButton } from "./DeleteButton";
 
-export function CategoryRow({ category }: { category: { id: number; name: string } }) {
+const WEEKDAYS = [
+  { value: 0, label: "Dom" },
+  { value: 1, label: "Seg" },
+  { value: 2, label: "Ter" },
+  { value: 3, label: "Qua" },
+  { value: 4, label: "Qui" },
+  { value: 5, label: "Sex" },
+  { value: 6, label: "Sáb" },
+];
+
+type Category = { id: number; name: string; orderDays: number[] };
+
+export function CategoryRow({ category }: { category: Category }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
   if (!editing) {
+    const diasLabel =
+      category.orderDays.length > 0
+        ? category.orderDays
+            .slice()
+            .sort((a, b) => a - b)
+            .map((d) => WEEKDAYS[d].label)
+            .join(", ")
+        : "Sem dia de pedido definido";
+
     return (
       <div className="list-item">
         <div className="info">
           <h4>{category.name}</h4>
+          <p>Dia de pedido: {diasLabel}</p>
         </div>
         <div className="list-item-actions">
           <button className="btn-small" type="button" onClick={() => setEditing(true)}>
@@ -54,6 +76,26 @@ export function CategoryRow({ category }: { category: { id: number; name: string
           name="name"
           defaultValue={category.name}
         />
+      </div>
+      <div className="form-group">
+        <label>Dia de pedido (fornecedor)</label>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {WEEKDAYS.map((d) => (
+            <label
+              key={d.value}
+              className="item-editor-checkbox"
+              style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+            >
+              <input
+                type="checkbox"
+                name="orderDays"
+                value={d.value}
+                defaultChecked={category.orderDays.includes(d.value)}
+              />
+              {d.label}
+            </label>
+          ))}
+        </div>
       </div>
       {error && <p className="login-error">{error}</p>}
       <div className="inline-form-buttons">

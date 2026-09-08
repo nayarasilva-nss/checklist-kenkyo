@@ -45,6 +45,13 @@ export async function createCategory(
   revalidateCatalogViews();
 }
 
+function parseOrderDays(formData: FormData): number[] {
+  return formData
+    .getAll("orderDays")
+    .map((v) => Number(v))
+    .filter((v) => Number.isInteger(v) && v >= 0 && v <= 6);
+}
+
 export async function updateCategory(
   _prevState: ActionState,
   formData: FormData,
@@ -66,7 +73,9 @@ export async function updateCategory(
     return { error: "Já existe uma categoria com esse nome" };
   }
 
-  await db.update(catalogCategories).set({ name }).where(eq(catalogCategories.id, id));
+  const orderDays = parseOrderDays(formData);
+
+  await db.update(catalogCategories).set({ name, orderDays }).where(eq(catalogCategories.id, id));
   revalidateCatalogViews();
 }
 

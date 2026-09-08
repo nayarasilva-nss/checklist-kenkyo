@@ -1,0 +1,1 @@
+ALTER TABLE "catalog_categories" ADD COLUMN "order_days" integer[] DEFAULT '{}' NOT NULL;

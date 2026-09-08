@@ -108,6 +108,7 @@ export function RequisicoesBoard({
   categorias,
   catalogItems,
   units,
+  todayWeekday,
   criarTiposPermitidos,
 }: {
   records: Requisicao[];
@@ -116,7 +117,7 @@ export function RequisicoesBoard({
   canCreate: boolean;
   canConferir: boolean;
   currentUserId: number;
-  categorias: { id: number; name: string }[];
+  categorias: { id: number; name: string; orderDays: number[] }[];
   catalogItems: {
     id: number;
     name: string;
@@ -125,6 +126,7 @@ export function RequisicoesBoard({
     categoryName: string | null;
   }[];
   units: { id: number; name: string }[];
+  todayWeekday: number;
   criarTiposPermitidos: ("interna" | "externa")[];
 }) {
   const router = useRouter();
@@ -235,6 +237,7 @@ export function RequisicoesBoard({
                 categorias={categorias}
                 catalogItems={catalogItems}
                 units={units}
+                todayWeekday={todayWeekday}
                 onSuccess={() => setCreating(false)}
               />
             </>

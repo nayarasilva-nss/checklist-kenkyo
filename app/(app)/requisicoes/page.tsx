@@ -4,6 +4,7 @@ import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/a
 import { resolveRequisicaoScope, getRequisicoesByScope } from "@/lib/data/requisicoes";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
 import { getUnits } from "@/lib/data/units";
+import { todayWeekdayBrazil } from "@/lib/date-utils";
 import { RequisicoesBoard } from "./RequisicoesBoard";
 
 export default async function RequisicoesPage({
@@ -50,6 +51,7 @@ export default async function RequisicoesPage({
       categorias={categorias}
       catalogItems={catalogItems}
       units={units}
+      todayWeekday={todayWeekdayBrazil()}
       criarTiposPermitidos={criarTiposPermitidos}
     />
   );

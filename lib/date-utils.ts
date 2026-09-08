@@ -46,6 +46,17 @@ export function daysAgoISO(days: number): string {
 }
 
 /**
+ * Day of week for today in Brazil local time: 0=domingo..6=sábado (same
+ * convention as Date.getDay()). Computed off todayISO()'s calendar date at
+ * a fixed UTC noon anchor, so it's immune to any timezone shift — there's
+ * no real "instant" involved in asking what weekday a calendar date is.
+ */
+export function todayWeekdayBrazil(): number {
+  const [year, month, day] = todayISO().split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 12)).getUTCDay();
+}
+
+/**
  * YYYY-MM-DD, `days` days before the given YYYY-MM-DD date — pure calendar
  * arithmetic on the date's own components (via Date.UTC/getUTCDate), not
  * "now". Deliberately does NOT go through formatBrazilDate: that reformats
