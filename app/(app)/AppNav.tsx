@@ -43,7 +43,6 @@ function buildGroups(profile: string, showRequisicoes: boolean): NavGroup[] {
     {
       label: "INDICADORES",
       items: [
-        { href: "/dashboard", label: "Painel" },
         { href: "/perdas", label: "Perdas" },
         { href: "/relatorio", label: "Relatórios" },
         { href: "/historico", label: "Histórico" },
@@ -163,7 +162,6 @@ export function AppNav({
   ];
 
   const moreOptions: SheetOptionDef[] = [
-    { href: "/dashboard", title: "Painel", description: "Indicadores gerais" },
     { href: "/relatorio", title: "Relatórios", description: "Dia e semana" },
     { href: "/historico", title: "Histórico", description: "Atividades registradas" },
     { href: "/documentos", title: "Fichas e POPs", description: "Fichas técnicas e procedimentos" },

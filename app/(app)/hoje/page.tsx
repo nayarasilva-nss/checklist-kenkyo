@@ -1,14 +1,23 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
-import { getChecklistsForUser } from "@/lib/data/checklists";
-import { getDashboardStats } from "@/lib/data/dashboard";
-import { getAnomaliesByScope } from "@/lib/data/anomalies";
+import { getChecklistsForUser, todayISO as checklistTodayISO } from "@/lib/data/checklists";
+import {
+  getDashboardStats,
+  getRanking,
+  getUsersWithoutChecklistToday,
+} from "@/lib/data/dashboard";
+import { getFilletingMonthlySummary } from "@/lib/data/filleting";
+import { getRestoIngestaMonthlySummary } from "@/lib/data/resto-ingesta";
 import { getOpenPendenciasForUnit } from "@/lib/data/shift-logs";
 import { resolvePendencia } from "@/lib/actions/shift-logs";
 import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
-import { getUnits } from "@/lib/data/units";
-import { daysAgoISO, greeting, todayISO, todayShortLabel } from "@/lib/date-utils";
+import { getUnits, resolveUnitScope } from "@/lib/data/units";
+import { greeting, todayISO, todayShortLabel } from "@/lib/date-utils";
+import { UnitFilter } from "../UnitFilter";
+import { DateFilter } from "../DateFilter";
+
+const MEDALS = ["🥇", "🥈", "🥉"];
 
 function checklistState(done: number, total: number): "concluido" | "andamento" | "aguardando" {
   if (total > 0 && done === total) return "concluido";
@@ -22,7 +31,11 @@ const STATE_LABEL = {
   aguardando: "Aguardando",
 } as const;
 
-export default async function HojePage() {
+export default async function HojePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ unit?: string; date?: string }>;
+}) {
   const user = await getCurrentUser();
   const viewer = {
     id: user.id,
@@ -35,20 +48,28 @@ export default async function HojePage() {
   const canWriteShiftLog = user.profile === "gerente" || user.profile === "lider";
   const canCreateAnomaly = !isRh;
 
+  const { unit: rawUnit, date: rawDate } = await searchParams;
+  const painelDate = rawDate || checklistTodayISO();
+  const isPainelToday = painelDate === checklistTodayISO();
+  const requestedUnitId = rawUnit ? Number(rawUnit) : null;
+  const painelUnitId = resolveUnitScope(user, requestedUnitId);
+
   const [units, checklists] = await Promise.all([
-    user.unitId ? getUnits() : Promise.resolve([]),
+    user.unitId || isGestor ? getUnits() : Promise.resolve([]),
     isRh ? Promise.resolve([]) : getChecklistsForUser("daily", viewer),
   ]);
   const unitName = units.find((u) => u.id === user.unitId)?.name ?? null;
 
-  const [stats, pendencias, recentAnomalies] = await Promise.all([
-    getDashboardStats(isGestor ? null : (user.unitId ?? null)),
-    user.unitId ? getOpenPendenciasForUnit(user.unitId) : Promise.resolve([]),
-    user.unitId
-      ? getAnomaliesByScope({ mode: "unit", unitId: user.unitId }, { sinceDate: daysAgoISO(7) })
-      : Promise.resolve([]),
-  ]);
-  const recentAnomalyCount = recentAnomalies.length;
+  const [pendencias, painelStats, ranking, filletingSummary, restoIngestaSummary, missingChecklist] =
+    await Promise.all([
+      user.unitId ? getOpenPendenciasForUnit(user.unitId) : Promise.resolve([]),
+      getDashboardStats(painelUnitId, painelDate),
+      getRanking(painelUnitId, painelDate),
+      getFilletingMonthlySummary(painelUnitId, painelDate),
+      getRestoIngestaMonthlySummary(painelUnitId, painelDate),
+      getUsersWithoutChecklistToday(painelUnitId, painelDate),
+    ]);
+  const painelDateLabel = new Date(`${painelDate}T00:00:00`).toLocaleDateString("pt-BR");
 
   const totalItems = checklists.reduce((sum, c) => sum + c.items.length, 0);
   const doneItems = checklists.reduce(
@@ -58,9 +79,6 @@ export default async function HojePage() {
   const overallPct = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
 
   const sortedChecklists = [...checklists].sort((a, b) => a.name.localeCompare(b.name));
-  const myCompletedChecklists = checklists.filter(
-    (c) => checklistState(c.items.filter((i) => i.status !== "pending").length, c.items.length) === "concluido",
-  ).length;
 
   return (
     <>
@@ -82,37 +100,7 @@ export default async function HojePage() {
 
       <div className="hoje-layout">
         <div className="hoje-column">
-          {isGestor ? (
-            <div className="today-card">
-              <div className="today-card-header">
-                <div>
-                  <div className="today-card-title">Painel geral</div>
-                  <div className="today-card-subtitle">Todas as unidades, hoje</div>
-                </div>
-                <Link href="/dashboard" className="today-card-link">
-                  Ver painel completo
-                </Link>
-              </div>
-              <div className="summary-cards" style={{ marginBottom: 0 }}>
-                <Link href="/dashboard" className="summary-card summary-card-clickable">
-                  <div className="summary-card-label">Concluídos hoje</div>
-                  <div className="summary-card-value">
-                    {stats.completedToday}/{stats.totalChecklists}
-                  </div>
-                </Link>
-                <Link href="/dashboard" className="summary-card summary-card-clickable">
-                  <div className="summary-card-label">Em andamento</div>
-                  <div className="summary-card-value">{stats.inProgress}</div>
-                </Link>
-                <Link href="/dashboard" className="summary-card summary-card-clickable">
-                  <div className="summary-card-label">Conformidade</div>
-                  <div className="summary-card-value">
-                    {stats.complianceRate !== null ? `${stats.complianceRate}%` : "—"}
-                  </div>
-                </Link>
-              </div>
-            </div>
-          ) : !isRh ? (
+          {!isRh ? (
             <div className="today-card">
               <div className="today-card-header">
                 <div>
@@ -270,34 +258,112 @@ export default async function HojePage() {
               </Link>
             </div>
           )}
-
-          {!isGestor && user.unitId && unitName && (
-            <div className="today-card">
-              <div className="today-card-title" style={{ marginBottom: 14 }}>
-                {unitName} hoje
-              </div>
-              <div className="detail-panel-fields" style={{ gap: 12 }}>
-                <div>
-                  <div className="detail-panel-field-label">Conformidade (mês)</div>
-                  <div className="detail-panel-field-value">
-                    {stats.complianceRate !== null ? `${stats.complianceRate}%` : "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="detail-panel-field-label">Seus checklists concluídos hoje</div>
-                  <div className="detail-panel-field-value">
-                    {myCompletedChecklists}/{checklists.length}
-                  </div>
-                </div>
-                <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-                  <div className="detail-panel-field-label">Anomalias (7 dias)</div>
-                  <div className="detail-panel-field-value">{recentAnomalyCount}</div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      <h2 style={{ marginTop: 34, marginBottom: 16 }}>📊 Painel</h2>
+
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 20 }}>
+        <DateFilter date={painelDate} unit={rawUnit} action="/hoje" />
+        {isGestor && <UnitFilter units={units} value={requestedUnitId} />}
+      </div>
+
+      {!isGestor && user.unitId === null && (
+        <p className="empty-state">
+          Sua unidade ainda não foi definida. Peça a um Gestor para atribuir
+          sua unidade no cadastro.
+        </p>
+      )}
+
+      {missingChecklist.length > 0 && (
+        <div className="alert-banner">
+          <strong>
+            ⚠️ {missingChecklist.length}{" "}
+            {missingChecklist.length === 1 ? "pessoa ainda não fez" : "pessoas ainda não fizeram"}{" "}
+            nenhum checklist {isPainelToday ? "hoje" : `em ${painelDateLabel}`}:
+          </strong>{" "}
+          {missingChecklist
+            .map((u) => (u.unitName ? `${u.name} (${u.unitName})` : u.name))
+            .join(", ")}
+        </div>
+      )}
+
+      <div className="dashboard-grid">
+        <div className="card">
+          <h3>Checklists Totais</h3>
+          <div className="value">{painelStats.totalChecklists}</div>
+          <div className="subtitle">cadastrados</div>
+        </div>
+        <div className="card success">
+          <h3>{isPainelToday ? "Concluídos Hoje" : "Concluídos"}</h3>
+          <div className="value">{painelStats.completedToday}</div>
+          <div className="subtitle">de {painelStats.totalChecklists}</div>
+        </div>
+        <div className="card warning">
+          <h3>Em Andamento</h3>
+          <div className="value">{painelStats.inProgress}</div>
+          <div className="subtitle">pendentes</div>
+        </div>
+        <div className="card info">
+          <h3>Taxa de Conformidade</h3>
+          <div className="value">
+            {painelStats.complianceRate === null ? "-" : `${painelStats.complianceRate}%`}
+          </div>
+          <div className="subtitle">{isPainelToday ? "mês atual" : `mês de ${painelDateLabel}`}</div>
+        </div>
+        <div className="card warning">
+          <h3>🐟 Perda na Filetagem</h3>
+          <div className="value">
+            {filletingSummary.avgLossPercent === null
+              ? "-"
+              : `${filletingSummary.avgLossPercent.toFixed(1)}%`}
+          </div>
+          <div className="subtitle">média do {isPainelToday ? "mês atual" : `mês de ${painelDateLabel}`}</div>
+        </div>
+        <div className="card info">
+          <h3>🍽️ Resto Ingesta</h3>
+          <div className="value">
+            {restoIngestaSummary.avgWastePerPersonKg === null
+              ? "-"
+              : `${restoIngestaSummary.avgWastePerPersonKg.toFixed(3)} kg`}
+          </div>
+          <div className="subtitle">
+            desperdício médio por pessoa · {isPainelToday ? "mês atual" : `mês de ${painelDateLabel}`}
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ marginTop: 30, marginBottom: 20 }}>
+        🏆 Ranking de Colaboradores ({isPainelToday ? "semana atual" : `semana de ${painelDateLabel}`})
+      </h2>
+      {ranking.length === 0 ? (
+        <p className="empty-state">Nenhum checklist concluído ainda</p>
+      ) : (
+        <table className="ranking-table">
+          <thead>
+            <tr>
+              <th>Posição</th>
+              <th>Colaborador</th>
+              <th>Unidade</th>
+              <th>Checklists Completos</th>
+              <th>Taxa de Conformidade</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ranking.map((row, idx) => (
+              <tr key={row.name}>
+                <td>
+                  {MEDALS[idx] ?? "•"} {idx + 1}º
+                </td>
+                <td>{row.name}</td>
+                <td>{row.unitName ?? "-"}</td>
+                <td>{row.completions}</td>
+                <td>{row.complianceRate}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </>
   );
 }

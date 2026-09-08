@@ -22,7 +22,7 @@ type Status = (typeof STATUS_VALUES)[number];
 
 function revalidateChecklistViews() {
   revalidatePath("/checklist");
-  revalidatePath("/dashboard");
+  revalidatePath("/hoje");
   revalidatePath("/historico");
   revalidatePath("/relatorio");
 }

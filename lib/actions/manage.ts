@@ -18,7 +18,7 @@ export type ActionState = { error?: string } | undefined;
 function revalidateManageViews() {
   revalidatePath("/gerenciar");
   revalidatePath("/checklist");
-  revalidatePath("/dashboard");
+  revalidatePath("/hoje");
   revalidatePath("/relatorio");
   revalidatePath("/historico");
 }

@@ -46,7 +46,7 @@ export const getCurrentUser = cache(async () => {
 export async function requireGestor() {
   const user = await getCurrentUser();
   if (user.profile !== "gestor") {
-    redirect("/dashboard");
+    redirect("/hoje");
   }
   return user;
 }
