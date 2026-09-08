@@ -16,7 +16,7 @@ const PROFILE_LABELS: Record<string, string> = {
   rh: "RH",
 };
 
-function buildGroups(profile: string): NavGroup[] {
+function buildGroups(profile: string, showRequisicoes: boolean): NavGroup[] {
   if (profile === "rh") {
     return [
       {
@@ -37,6 +37,7 @@ function buildGroups(profile: string): NavGroup[] {
         { href: "/checklist", label: "Checklists" },
         { href: "/diario-de-bordo", label: "Diário de bordo" },
         { href: "/anomalias", label: "Anomalias" },
+        ...(showRequisicoes ? [{ href: "/requisicoes", label: "Requisições" }] : []),
       ],
     },
     {
@@ -121,6 +122,7 @@ export function AppNav({
   canSubmitFilleting,
   canSubmitRestoIngesta,
   canWriteShiftLog,
+  showRequisicoes,
 }: {
   userName: string;
   profile: string;
@@ -129,9 +131,10 @@ export function AppNav({
   canSubmitFilleting: boolean;
   canSubmitRestoIngesta: boolean;
   canWriteShiftLog: boolean;
+  showRequisicoes: boolean;
 }) {
   const pathname = usePathname();
-  const groups = buildGroups(profile);
+  const groups = buildGroups(profile, showRequisicoes);
   const scope =
     profile === "gestor" || profile === "rh"
       ? "Todas as unidades"
@@ -164,6 +167,9 @@ export function AppNav({
     { href: "/relatorio", title: "Relatórios", description: "Dia e semana" },
     { href: "/historico", title: "Histórico", description: "Atividades registradas" },
     { href: "/documentos", title: "Fichas e POPs", description: "Fichas técnicas e procedimentos" },
+    ...(showRequisicoes
+      ? [{ href: "/requisicoes", title: "Requisições", description: "Pedidos de estoque" }]
+      : []),
     ...(profile === "gestor"
       ? [{ href: "/gerenciar", title: "Gerenciar", description: "Usuários, unidades e modelos" }]
       : []),

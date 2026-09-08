@@ -36,6 +36,12 @@ export const leaderSelfAssessmentEnum = pgEnum("leader_self_assessment", [
   "apagando_incendio",
 ]);
 export const anomalyStatusEnum = pgEnum("anomaly_status", ["aberta", "tratada"]);
+export const requisicaoTipoEnum = pgEnum("requisicao_tipo", ["interna", "externa"]);
+export const requisicaoStatusEnum = pgEnum("requisicao_status", [
+  "aberta",
+  "conferida",
+  "cancelada",
+]);
 export const catalogUnitMeasureEnum = pgEnum("catalog_unit_measure", [
   "kg",
   "g",
@@ -328,6 +334,49 @@ export const catalogItems = pgTable(
   },
   (table) => [uniqueIndex("catalog_items_name_idx").on(table.name)],
 );
+
+// Requisição de estoque — interna (fica na unidade) ou externa (sai pra
+// fornecedor/estoque geral). Sem aprovação: nasce "aberta" e vira
+// "conferida" quando o Líder de Estoque/Produção confirma o que realmente
+// saiu/foi entregue (ver lib/auth/requisicoes.ts e
+// spec-requisicao-kenkyo.md).
+export const requisicoes = pgTable("requisicoes", {
+  id: serial("id").primaryKey(),
+  tipo: requisicaoTipoEnum("tipo").notNull(),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => units.id, { onDelete: "cascade" }),
+  requesterId: integer("requester_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  urgente: boolean("urgente").notNull().default(false),
+  observacao: text("observacao").notNull().default(""),
+  status: requisicaoStatusEnum("status").notNull().default("aberta"),
+  conferidoPorId: integer("conferido_por_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  editedAt: timestamp("edited_at"),
+  concluidoEm: timestamp("concluido_em"),
+});
+
+export const requisicaoItens = pgTable("requisicao_itens", {
+  id: serial("id").primaryKey(),
+  requisicaoId: integer("requisicao_id")
+    .notNull()
+    .references(() => requisicoes.id, { onDelete: "cascade" }),
+  // Nullable: o item pode ter sido removido do catálogo depois, ou ser um
+  // item personalizado adicionado só nesse pedido (mesma lógica do
+  // protótipo). nome/unidadeMedida ficam sempre gravados aqui, não
+  // dependem de um join, pra manter o histórico estável.
+  catalogItemId: integer("catalog_item_id").references(() => catalogItems.id, {
+    onDelete: "set null",
+  }),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  unidadeMedida: catalogUnitMeasureEnum("unidade_medida").notNull(),
+  qtdPedida: numeric("qtd_pedida", { precision: 10, scale: 2 }).notNull(),
+  qtdConferida: numeric("qtd_conferida", { precision: 10, scale: 2 }),
+});
 
 export const history = pgTable("history", {
   id: serial("id").primaryKey(),
