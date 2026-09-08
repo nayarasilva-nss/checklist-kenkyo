@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cancelRequisicao, conferirRequisicao } from "@/lib/actions/requisicoes";
 import { NovaRequisicaoForm } from "./NovaRequisicaoForm";
@@ -248,14 +249,23 @@ export function RequisicoesBoard({
                     {selected.requesterName} · {formatDate(selected.createdAt)}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="detail-panel-close"
-                  onClick={() => setSelectedId(null)}
-                  aria-label="Fechar"
-                >
-                  ×
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Link
+                    href={`/requisicoes/${selected.id}/imprimir`}
+                    target="_blank"
+                    className="btn-pdf"
+                  >
+                    📥 PDF
+                  </Link>
+                  <button
+                    type="button"
+                    className="detail-panel-close"
+                    onClick={() => setSelectedId(null)}
+                    aria-label="Fechar"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               {selected.observacao && (
