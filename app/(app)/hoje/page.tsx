@@ -94,22 +94,22 @@ export default async function HojePage() {
                 </Link>
               </div>
               <div className="summary-cards" style={{ marginBottom: 0 }}>
-                <div className="summary-card">
+                <Link href="/dashboard" className="summary-card summary-card-clickable">
                   <div className="summary-card-label">Concluídos hoje</div>
                   <div className="summary-card-value">
                     {stats.completedToday}/{stats.totalChecklists}
                   </div>
-                </div>
-                <div className="summary-card">
+                </Link>
+                <Link href="/dashboard" className="summary-card summary-card-clickable">
                   <div className="summary-card-label">Em andamento</div>
                   <div className="summary-card-value">{stats.inProgress}</div>
-                </div>
-                <div className="summary-card">
+                </Link>
+                <Link href="/dashboard" className="summary-card summary-card-clickable">
                   <div className="summary-card-label">Conformidade</div>
                   <div className="summary-card-value">
                     {stats.complianceRate !== null ? `${stats.complianceRate}%` : "—"}
                   </div>
-                </div>
+                </Link>
               </div>
             </div>
           ) : !isRh ? (
