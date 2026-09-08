@@ -1,7 +1,10 @@
 import { getCurrentUser } from "@/lib/auth/dal";
 import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
+import { canCoverOtherUnits, getCoveringUnit } from "@/lib/auth/covering-unit";
+import { getUnits } from "@/lib/data/units";
 import { AppNav } from "./AppNav";
+import { CoveringUnitBanner } from "./CoveringUnitBanner";
 
 export default async function AppLayout({
   children,
@@ -9,6 +12,10 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+  const showCoveringUnitBanner = canCoverOtherUnits(user);
+  const [covering, units] = showCoveringUnitBanner
+    ? await Promise.all([getCoveringUnit(), getUnits()])
+    : [null, []];
 
   return (
     <div className="app-shell">
@@ -22,6 +29,9 @@ export default async function AppLayout({
         canWriteShiftLog={user.profile === "gerente" || user.profile === "lider"}
       />
       <div className="app-main">
+        {showCoveringUnitBanner && (
+          <CoveringUnitBanner units={units} homeUnitId={user.unitId} covering={covering} />
+        )}
         <div className="content">
           <div className="tab-content">{children}</div>
         </div>

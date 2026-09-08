@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { restoIngestaRecords } from "@/lib/db/schema";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { addHistoryEntry } from "@/lib/data/history";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 
 export type RestoIngestaFormState = { error?: string } | undefined;
 
@@ -22,7 +23,8 @@ export async function createRestoIngestaRecord(
     };
   }
 
-  if (!user.unitId) {
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
+  if (!effectiveUnitId) {
     return { error: "Seu usuário não está vinculado a uma unidade" };
   }
 
@@ -47,7 +49,7 @@ export async function createRestoIngestaRecord(
   }
 
   await db.insert(restoIngestaRecords).values({
-    unitId: user.unitId,
+    unitId: effectiveUnitId,
     userId: user.id,
     date,
     experienciasVendidas,

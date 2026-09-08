@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { filletingRecords } from "@/lib/db/schema";
 import { canSubmitFilleting } from "@/lib/data/filleting";
 import { addHistoryEntry } from "@/lib/data/history";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 
 export type FilletingFormState = { error?: string } | undefined;
 
@@ -28,7 +29,8 @@ export async function createFilletingRecord(
     return { error: "Você não tem permissão para registrar dados de filetagem" };
   }
 
-  if (!user.unitId) {
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
+  if (!effectiveUnitId) {
     return { error: "Seu usuário não está vinculado a uma unidade" };
   }
 
@@ -66,7 +68,7 @@ export async function createFilletingRecord(
   }
 
   await db.insert(filletingRecords).values({
-    unitId: user.unitId,
+    unitId: effectiveUnitId,
     userId: user.id,
     date,
     responsavel,

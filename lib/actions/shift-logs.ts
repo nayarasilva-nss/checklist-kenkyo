@@ -12,6 +12,7 @@ import {
   TEAM_MANAGEMENT_ACTIONS,
 } from "@/lib/shift-log-constants";
 import { addHistoryEntry } from "@/lib/data/history";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 
 export type ShiftLogFormState = { error?: string } | undefined;
 
@@ -43,8 +44,9 @@ export async function createShiftLog(
   formData: FormData,
 ): Promise<ShiftLogFormState> {
   const user = await getCurrentUser();
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
 
-  if (!user.unitId) {
+  if (!effectiveUnitId) {
     return { error: "Seu usuário não está vinculado a uma unidade" };
   }
 
@@ -85,7 +87,7 @@ export async function createShiftLog(
   const [inserted] = await db
     .insert(shiftLogs)
     .values({
-      unitId: user.unitId,
+      unitId: effectiveUnitId,
       userId: user.id,
       date,
       setor,

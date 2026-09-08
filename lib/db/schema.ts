@@ -149,6 +149,12 @@ export const checklistCompletions = pgTable(
     justification: text("justification"),
     photoUrl: text("photo_url"),
     completedAt: timestamp("completed_at"),
+    // The unit this completion counts toward — normally the user's own
+    // unit, but a gerente/chefe covering another unit for the day can
+    // override it (see lib/auth/covering-unit.ts). Nullable because rows
+    // written before this column existed don't have it; queries fall back
+    // to the user's own unit_id for those via COALESCE.
+    unitId: integer("unit_id").references(() => units.id, { onDelete: "set null" }),
   },
   (table) => [
     uniqueIndex("completions_item_user_date_idx").on(

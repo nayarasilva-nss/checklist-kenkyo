@@ -8,6 +8,7 @@ import { checklistTypeItems, checklistTypes, checklistCompletions, shiftLogs } f
 import { todayISO } from "@/lib/data/checklists";
 import { recordAnomaly } from "@/lib/actions/anomalies";
 import { guessSetorFromText } from "@/lib/anomaly-constants";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 
 const STATUS_VALUES = ["conforme", "nao-conforme", "nao-se-aplica"] as const;
 type Status = (typeof STATUS_VALUES)[number];
@@ -68,6 +69,7 @@ export async function setChecklistItemStatus(
   }
 
   const date = todayISO();
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
 
   if (status === "conforme" && context.requiresShiftLog) {
     const [shiftLog] = await db
@@ -93,6 +95,7 @@ export async function setChecklistItemStatus(
       justification: status === "nao-conforme" ? justification : null,
       photoUrl,
       completedAt: new Date(),
+      unitId: effectiveUnitId,
     })
     .onConflictDoUpdate({
       target: [
@@ -105,6 +108,7 @@ export async function setChecklistItemStatus(
         justification: status === "nao-conforme" ? justification : null,
         photoUrl,
         completedAt: new Date(),
+        unitId: effectiveUnitId,
       },
     })
     .returning({ id: checklistCompletions.id });
@@ -114,9 +118,9 @@ export async function setChecklistItemStatus(
   // ela abre uma anomalia automaticamente, ligada a esta completion (o
   // índice único em sourceChecklistCompletionId evita duplicar caso o item
   // seja resalvo com a mesma justificativa).
-  if (status === "nao-conforme" && user.unitId) {
+  if (status === "nao-conforme" && effectiveUnitId) {
     await recordAnomaly({
-      unitId: user.unitId,
+      unitId: effectiveUnitId,
       userId: user.id,
       date,
       relator: user.name,

@@ -16,8 +16,14 @@ export async function getDashboardStats(unitId: number | null, date: string = to
   );
   const totalChecklists = Number(totalResult.rows[0]?.count ?? 0);
 
+  // A completion's own unit_id wins when set (covers a gerente/chefe
+  // completing it while covering another unit); rows written before that
+  // column existed fall back to the completing user's own unit. The
+  // effective unit is computed in a subquery first, then filtered inside
+  // the LEFT JOIN's own ON condition (not WHERE) — items with zero
+  // completions must still show up as "not done" instead of disappearing.
   const unitCompletionFilter = unitId
-    ? sql`and cc.user_id in (select id from users where unit_id = ${unitId})`
+    ? sql`and cc.effective_unit_id = ${unitId}`
     : sql``;
 
   const completedTodayResult = await db.execute<{ count: string }>(sql`
@@ -25,7 +31,11 @@ export async function getDashboardStats(unitId: number | null, date: string = to
     from (
       select cti.checklist_type_id
       from checklist_type_items cti
-      left join checklist_completions cc
+      left join (
+        select cc.*, coalesce(cc.unit_id, u.unit_id) as effective_unit_id
+        from checklist_completions cc
+        join users u on u.id = cc.user_id
+      ) cc
         on cc.item_id = cti.id
         and cc.date = ${today}
         and cc.status != 'pending'
@@ -36,8 +46,8 @@ export async function getDashboardStats(unitId: number | null, date: string = to
   `);
   const completedToday = Number(completedTodayResult.rows[0]?.count ?? 0);
 
-  const unitJoin = unitId
-    ? sql`join users u on u.id = cc.user_id and u.unit_id = ${unitId}`
+  const complianceUnitFilter = unitId
+    ? sql`and coalesce(cc.unit_id, u.unit_id) = ${unitId}`
     : sql``;
 
   const complianceResult = await db.execute<{
@@ -48,8 +58,9 @@ export async function getDashboardStats(unitId: number | null, date: string = to
       count(*) filter (where cc.status = 'conforme')::text as conforme,
       count(*) filter (where cc.status in ('conforme', 'nao-conforme'))::text as total
     from checklist_completions cc
-    ${unitJoin}
+    join users u on u.id = cc.user_id
     where date_trunc('month', cc.date::timestamp) = date_trunc('month', ${today}::timestamp)
+    ${complianceUnitFilter}
   `);
   const conforme = Number(complianceResult.rows[0]?.conforme ?? 0);
   const totalEvaluated = Number(complianceResult.rows[0]?.total ?? 0);
@@ -65,7 +76,12 @@ export async function getDashboardStats(unitId: number | null, date: string = to
 }
 
 export async function getRanking(unitId: number | null, date: string = todayISO()) {
-  const unitFilter = unitId ? sql`and u.unit_id = ${unitId}` : sql``;
+  // Grouped by (user, effective unit) rather than just user: a gerente/
+  // chefe covering another unit that week needs their tally split between
+  // their home unit and the covered one, not blended into one row that'd
+  // either double-count against their home unit or vanish from the
+  // covered unit's ranking entirely.
+  const unitFilter = unitId ? sql`and sc.effective_unit_id = ${unitId}` : sql``;
 
   const result = await db.execute<{
     name: string;
@@ -74,31 +90,38 @@ export async function getRanking(unitId: number | null, date: string = todayISO(
     conforme: string;
     total: string;
   }>(sql`
-    with completed_sessions as (
-      select cc.user_id, cc.checklist_type_id, cc.date
+    with sessions_with_unit as (
+      select
+        cc.user_id, cc.checklist_type_id, cc.date, cc.status, cc.item_id,
+        coalesce(cc.unit_id, u.unit_id) as effective_unit_id
       from checklist_completions cc
-      where cc.status != 'pending'
-        and date_trunc('week', cc.date::timestamp) = date_trunc('week', ${date}::timestamp)
-      group by cc.user_id, cc.checklist_type_id, cc.date
-      having count(distinct cc.item_id) = (
+      join users u on u.id = cc.user_id
+      where date_trunc('week', cc.date::timestamp) = date_trunc('week', ${date}::timestamp)
+    ),
+    completed_sessions as (
+      select user_id, checklist_type_id, date, effective_unit_id
+      from sessions_with_unit s
+      where status != 'pending'
+      group by user_id, checklist_type_id, date, effective_unit_id
+      having count(distinct item_id) = (
         select count(*)
         from checklist_type_items cti
-        where cti.checklist_type_id = cc.checklist_type_id
+        where cti.checklist_type_id = s.checklist_type_id
       )
     ),
     session_counts as (
-      select user_id, count(*)::int as completions
+      select user_id, effective_unit_id, count(*)::int as completions
       from completed_sessions
-      group by user_id
+      group by user_id, effective_unit_id
     ),
     item_stats as (
       select
-        cc.user_id,
-        count(*) filter (where cc.status = 'conforme')::int as conforme,
-        count(*) filter (where cc.status in ('conforme', 'nao-conforme'))::int as total
-      from checklist_completions cc
-      where date_trunc('week', cc.date::timestamp) = date_trunc('week', ${date}::timestamp)
-      group by cc.user_id
+        user_id,
+        effective_unit_id,
+        count(*) filter (where status = 'conforme')::int as conforme,
+        count(*) filter (where status in ('conforme', 'nao-conforme'))::int as total
+      from sessions_with_unit
+      group by user_id, effective_unit_id
     )
     select
       u.name as name,
@@ -106,10 +129,11 @@ export async function getRanking(unitId: number | null, date: string = todayISO(
       sc.completions::text as completions,
       coalesce(ist.conforme, 0)::text as conforme,
       coalesce(ist.total, 0)::text as total
-    from users u
-    join session_counts sc on sc.user_id = u.id
-    left join item_stats ist on ist.user_id = u.id
-    left join units un on un.id = u.unit_id
+    from session_counts sc
+    join users u on u.id = sc.user_id
+    left join item_stats ist
+      on ist.user_id = sc.user_id and ist.effective_unit_id = sc.effective_unit_id
+    left join units un on un.id = sc.effective_unit_id
     where true
     ${unitFilter}
     order by sc.completions desc

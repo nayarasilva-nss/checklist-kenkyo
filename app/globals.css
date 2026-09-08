@@ -1426,6 +1426,27 @@ button {
   background: var(--neutral-bg);
 }
 
+.covering-unit-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--warning-bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.covering-unit-label {
+  color: var(--warning-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.covering-unit-banner select {
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
 .detail-panel {
   background: var(--bg-rail);
   border-radius: 13px;

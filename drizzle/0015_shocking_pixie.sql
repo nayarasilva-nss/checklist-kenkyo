@@ -1,0 +1,2 @@
+ALTER TABLE "checklist_completions" ADD COLUMN "unit_id" integer;--> statement-breakpoint
+ALTER TABLE "checklist_completions" ADD CONSTRAINT "checklist_completions_unit_id_units_id_fk" FOREIGN KEY ("unit_id") REFERENCES "public"."units"("id") ON DELETE set null ON UPDATE no action;

@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { anomalies } from "@/lib/db/schema";
 import { ANOMALY_SETORES, ANOMALY_TYPES } from "@/lib/data/anomalies";
 import { addHistoryEntry } from "@/lib/data/history";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 
 export type AnomalyFormState = { error?: string } | undefined;
 
@@ -101,8 +102,9 @@ export async function createAnomaly(
   formData: FormData,
 ): Promise<AnomalyFormState> {
   const user = await getCurrentUser();
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
 
-  if (!user.unitId) {
+  if (!effectiveUnitId) {
     return { error: "Seu usuário não está vinculado a uma unidade" };
   }
 
@@ -136,7 +138,7 @@ export async function createAnomaly(
   if (!causaPercebida) return { error: "Descreva a causa percebida" };
 
   await recordAnomaly({
-    unitId: user.unitId,
+    unitId: effectiveUnitId,
     userId: user.id,
     date,
     relator,
