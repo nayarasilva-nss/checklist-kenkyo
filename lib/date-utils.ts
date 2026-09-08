@@ -38,6 +38,20 @@ export function daysAgoISO(days: number): string {
   return formatBrazilDate(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
 }
 
+/**
+ * YYYY-MM-DD, `days` days before the given YYYY-MM-DD date — pure calendar
+ * arithmetic on the date's own components (via Date.UTC/getUTCDate), not
+ * "now". Deliberately does NOT go through formatBrazilDate: that reformats
+ * an instant into Brazil's local date, which would shift this by the
+ * UTC-3 offset since there's no real instant here, just a calendar date.
+ */
+export function daysBeforeISO(dateISO: string, days: number): string {
+  const [year, month, day] = dateISO.split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 /** "Bom dia" / "Boa tarde" / "Boa noite", based on Brazil local time. */
 export function greeting(): string {
   const hour = Number(

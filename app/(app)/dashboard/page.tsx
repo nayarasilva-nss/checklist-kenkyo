@@ -3,38 +3,45 @@ import { getDashboardStats, getRanking, getUsersWithoutChecklistToday } from "@/
 import { getFilletingMonthlySummary } from "@/lib/data/filleting";
 import { getRestoIngestaMonthlySummary } from "@/lib/data/resto-ingesta";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
+import { todayISO } from "@/lib/data/checklists";
 import { UnitFilter } from "../UnitFilter";
+import { DateFilter } from "../DateFilter";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ unit?: string }>;
+  searchParams: Promise<{ unit?: string; date?: string }>;
 }) {
   const user = await getCurrentUser();
   const isGestor = user.profile === "gestor";
-  const { unit: rawUnit } = await searchParams;
+  const { unit: rawUnit, date: rawDate } = await searchParams;
+  const date = rawDate || todayISO();
+  const isToday = date === todayISO();
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const unitId = resolveUnitScope(user, requestedUnitId);
 
   const [stats, ranking, units, filletingSummary, restoIngestaSummary, missingChecklist] =
     await Promise.all([
-      getDashboardStats(unitId),
-      getRanking(unitId),
+      getDashboardStats(unitId, date),
+      getRanking(unitId, date),
       isGestor ? getUnits() : Promise.resolve([]),
-      getFilletingMonthlySummary(unitId),
-      getRestoIngestaMonthlySummary(unitId),
-      getUsersWithoutChecklistToday(unitId),
+      getFilletingMonthlySummary(unitId, date),
+      getRestoIngestaMonthlySummary(unitId, date),
+      getUsersWithoutChecklistToday(unitId, date),
     ]);
+
+  const dateLabel = new Date(`${date}T00:00:00`).toLocaleDateString("pt-BR");
 
   return (
     <>
       <h2>Dashboard</h2>
 
-      {isGestor && (
-        <UnitFilter units={units} value={requestedUnitId} />
-      )}
+      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 20 }}>
+        <DateFilter date={date} unit={rawUnit} action="/dashboard" />
+        {isGestor && <UnitFilter units={units} value={requestedUnitId} />}
+      </div>
 
       {!isGestor && user.unitId === null && (
         <p className="empty-state">
@@ -48,7 +55,7 @@ export default async function DashboardPage({
           <strong>
             ⚠️ {missingChecklist.length}{" "}
             {missingChecklist.length === 1 ? "pessoa ainda não fez" : "pessoas ainda não fizeram"}{" "}
-            nenhum checklist hoje:
+            nenhum checklist {isToday ? "hoje" : `em ${dateLabel}`}:
           </strong>{" "}
           {missingChecklist
             .map((u) => (u.unitName ? `${u.name} (${u.unitName})` : u.name))
@@ -63,7 +70,7 @@ export default async function DashboardPage({
           <div className="subtitle">cadastrados</div>
         </div>
         <div className="card success">
-          <h3>Concluídos Hoje</h3>
+          <h3>{isToday ? "Concluídos Hoje" : "Concluídos"}</h3>
           <div className="value">{stats.completedToday}</div>
           <div className="subtitle">de {stats.totalChecklists}</div>
         </div>
@@ -77,7 +84,7 @@ export default async function DashboardPage({
           <div className="value">
             {stats.complianceRate === null ? "-" : `${stats.complianceRate}%`}
           </div>
-          <div className="subtitle">mês atual</div>
+          <div className="subtitle">{isToday ? "mês atual" : `mês de ${dateLabel}`}</div>
         </div>
         <div className="card warning">
           <h3>🐟 Perda na Filetagem</h3>
@@ -86,7 +93,7 @@ export default async function DashboardPage({
               ? "-"
               : `${filletingSummary.avgLossPercent.toFixed(1)}%`}
           </div>
-          <div className="subtitle">média do mês atual</div>
+          <div className="subtitle">média do {isToday ? "mês atual" : `mês de ${dateLabel}`}</div>
         </div>
         <div className="card info">
           <h3>🍽️ Resto Ingesta</h3>
@@ -95,12 +102,14 @@ export default async function DashboardPage({
               ? "-"
               : `${restoIngestaSummary.avgWastePerPersonKg.toFixed(3)} kg`}
           </div>
-          <div className="subtitle">desperdício médio por pessoa · mês atual</div>
+          <div className="subtitle">
+            desperdício médio por pessoa · {isToday ? "mês atual" : `mês de ${dateLabel}`}
+          </div>
         </div>
       </div>
 
       <h2 style={{ marginTop: 30, marginBottom: 20 }}>
-        🏆 Ranking de Colaboradores (semana atual)
+        🏆 Ranking de Colaboradores ({isToday ? "semana atual" : `semana de ${dateLabel}`})
       </h2>
       {ranking.length === 0 ? (
         <p className="empty-state">Nenhum checklist concluído ainda</p>

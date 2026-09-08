@@ -3,12 +3,14 @@
 export function DateFilter({
   date,
   unit,
+  action,
 }: {
   date: string;
   unit?: string;
+  action: string;
 }) {
   return (
-    <form action="/relatorio">
+    <form action={action}>
       {unit && <input type="hidden" name="unit" value={unit} />}
       <div className="form-group" style={{ marginBottom: 0 }}>
         <label htmlFor="reportDateFilter">Data:</label>

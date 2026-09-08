@@ -8,8 +8,8 @@ import { checklistCompletions, checklistTypes, units, users } from "@/lib/db/sch
 // what the Checklist page considers "today".
 import { checklistDayISO as todayISO } from "@/lib/date-utils";
 
-export async function getDashboardStats(unitId: number | null) {
-  const today = todayISO();
+export async function getDashboardStats(unitId: number | null, date: string = todayISO()) {
+  const today = date;
 
   const totalResult = await db.execute<{ count: string }>(
     sql`select count(*)::text as count from checklist_types`,
@@ -142,8 +142,9 @@ export type MissingChecklistUser = {
  */
 export async function getUsersWithoutChecklistToday(
   unitId: number | null,
+  date: string = todayISO(),
 ): Promise<MissingChecklistUser[]> {
-  const today = todayISO();
+  const today = date;
 
   const candidates = await db
     .select({

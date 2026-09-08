@@ -45,12 +45,13 @@ export async function getRestoIngestaRecords(unitId: number | null) {
   });
 }
 
-export async function getRestoIngestaMonthlySummary(unitId: number | null) {
+export async function getRestoIngestaMonthlySummary(unitId: number | null, date?: string) {
   const unitFilter = unitId !== null ? sql`and unit_id = ${unitId}` : sql``;
+  const monthOf = date ? sql`${date}::date` : sql`current_date`;
   const result = await db.execute<{ avg_waste: string | null }>(sql`
     select avg(desperdicio_kg / nullif(experiencias_vendidas, 0))::text as avg_waste
     from resto_ingesta_records
-    where date_trunc('month', date) = date_trunc('month', current_date)
+    where date_trunc('month', date) = date_trunc('month', ${monthOf})
     ${unitFilter}
   `);
   const raw = result.rows[0]?.avg_waste;
