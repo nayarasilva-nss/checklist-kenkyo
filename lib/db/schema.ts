@@ -119,6 +119,10 @@ export const checklistTypeItems = pgTable("checklist_type_items", {
   // already submitted a diário de bordo (shift_logs row) for that date —
   // see setChecklistItemStatus.
   requiresShiftLog: boolean("requires_shift_log").notNull().default(false),
+  // When true, this item can only be marked "conforme" if the user has
+  // already criado a requisição de estoque (interna ou externa) nesse dia
+  // de checklist — see setChecklistItemStatus.
+  requiresRequisicao: boolean("requires_requisicao").notNull().default(false),
 });
 
 // Deprecated: superseded by checklistTypes/checklistTypeItems, which now

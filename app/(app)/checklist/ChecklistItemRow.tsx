@@ -13,6 +13,7 @@ type Item = {
   label: string;
   requiresPhoto: boolean;
   requiresShiftLog: boolean;
+  requiresRequisicao: boolean;
   status: CompletionStatus;
   justification: string | null;
   photoUrl: string | null;
@@ -163,6 +164,9 @@ export function ChecklistItemRow({
         )}
         {item.requiresShiftLog && (
           <span className="requires-photo-badge">Exige diário de bordo enviado</span>
+        )}
+        {item.requiresRequisicao && (
+          <span className="requires-photo-badge">Exige requisição de insumos enviada</span>
         )}
       </div>
 

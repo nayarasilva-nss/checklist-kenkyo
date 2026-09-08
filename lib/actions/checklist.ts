@@ -1,14 +1,21 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
-import { checklistTypeItems, checklistTypes, checklistCompletions, shiftLogs } from "@/lib/db/schema";
+import {
+  checklistTypeItems,
+  checklistTypes,
+  checklistCompletions,
+  shiftLogs,
+  requisicoes,
+} from "@/lib/db/schema";
 import { todayISO } from "@/lib/data/checklists";
 import { recordAnomaly } from "@/lib/actions/anomalies";
 import { guessSetorFromText } from "@/lib/anomaly-constants";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
+import { checklistDayForInstant } from "@/lib/date-utils";
 
 const STATUS_VALUES = ["conforme", "nao-conforme", "nao-se-aplica"] as const;
 type Status = (typeof STATUS_VALUES)[number];
@@ -25,6 +32,7 @@ async function getItemContext(itemId: number, checklistTypeId: number) {
     .select({
       requiresPhoto: checklistTypeItems.requiresPhoto,
       requiresShiftLog: checklistTypeItems.requiresShiftLog,
+      requiresRequisicao: checklistTypeItems.requiresRequisicao,
       itemLabel: checklistTypeItems.label,
       checklistTypeName: checklistTypes.name,
     })
@@ -80,6 +88,23 @@ export async function setChecklistItemStatus(
     if (!shiftLog) {
       return {
         error: "Você precisa preencher o diário de bordo de hoje antes de marcar esta tarefa como conforme.",
+      };
+    }
+  }
+
+  if (status === "conforme" && context.requiresRequisicao) {
+    const recentRequisicoes = await db
+      .select({ createdAt: requisicoes.createdAt })
+      .from(requisicoes)
+      .where(eq(requisicoes.requesterId, user.id))
+      .orderBy(desc(requisicoes.createdAt))
+      .limit(5);
+    const hasToday = recentRequisicoes.some(
+      (r) => checklistDayForInstant(r.createdAt) === date,
+    );
+    if (!hasToday) {
+      return {
+        error: "Você precisa preencher a requisição de insumos de hoje antes de marcar esta tarefa como conforme.",
       };
     }
   }

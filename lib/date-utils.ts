@@ -25,7 +25,14 @@ const CHECKLIST_DAY_ROLLOVER_HOUR = 2;
  * previous calendar day until 2am.
  */
 export function checklistDayISO(): string {
-  const shifted = new Date(Date.now() - CHECKLIST_DAY_ROLLOVER_HOUR * 60 * 60 * 1000);
+  return checklistDayForInstant(new Date());
+}
+
+/** Same "checklist day" (02:00 BRT rollover) as checklistDayISO(), but for
+ * an arbitrary instant instead of "now" — e.g. to check whether a record
+ * timestamped earlier counts as belonging to today's checklist day. */
+export function checklistDayForInstant(instant: Date): string {
+  const shifted = new Date(instant.getTime() - CHECKLIST_DAY_ROLLOVER_HOUR * 60 * 60 * 1000);
   return formatBrazilDate(shifted);
 }
 

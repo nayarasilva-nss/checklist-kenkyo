@@ -127,6 +127,13 @@
       "when": 1788890968493,
       "tag": "0017_bitter_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788891669550,
+      "tag": "0018_daffy_thundra",
+      "breakpoints": true
     }
   ]
 }

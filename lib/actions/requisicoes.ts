@@ -108,49 +108,10 @@ export async function createRequisicao(
   revalidateRequisicaoViews();
 }
 
-export async function updateRequisicao(
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const user = await getCurrentUser();
-  const id = Number(formData.get("id"));
-  if (!id) return { error: "Requisição inválida" };
-
-  const [existing] = await db.select().from(requisicoes).where(eq(requisicoes.id, id)).limit(1);
-  if (!existing) return { error: "Requisição não encontrada" };
-  if (existing.requesterId !== user.id) {
-    return { error: "Você só pode editar suas próprias requisições" };
-  }
-  if (existing.status !== "aberta") {
-    return { error: "Essa requisição já foi conferida e não pode mais ser editada" };
-  }
-
-  const urgente = formData.get("urgente") === "on";
-  const observacao = String(formData.get("observacao") ?? "").trim();
-  const itens = parseItens(formData);
-
-  if (itens.length === 0) {
-    return { error: "Selecione ao menos um item" };
-  }
-
-  await db
-    .update(requisicoes)
-    .set({ urgente, observacao, editedAt: new Date() })
-    .where(eq(requisicoes.id, id));
-
-  await db.delete(requisicaoItens).where(eq(requisicaoItens.requisicaoId, id));
-  await db.insert(requisicaoItens).values(
-    itens.map((item) => ({
-      requisicaoId: id,
-      catalogItemId: item.catalogItemId,
-      nome: item.nome,
-      unidadeMedida: item.unidadeMedida,
-      qtdPedida: item.qtdPedida.toFixed(2),
-    })),
-  );
-
-  revalidateRequisicaoViews();
-}
+// Não existe edição depois de enviada — o pedido só pode ser ajustado
+// enquanto ainda está sendo montado no formulário (antes do "Enviar
+// requisição"). Depois disso, a única forma de mudar é cancelar e criar de
+// novo. Ver NovaRequisicaoForm.tsx.
 
 export async function cancelRequisicao(formData: FormData) {
   const user = await getCurrentUser();

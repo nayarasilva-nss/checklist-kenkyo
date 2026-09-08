@@ -1,0 +1,1 @@
+ALTER TABLE "checklist_type_items" ADD COLUMN "requires_requisicao" boolean DEFAULT false NOT NULL;
