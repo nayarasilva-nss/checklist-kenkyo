@@ -7,6 +7,7 @@ import {
   getJobFunctions,
 } from "@/lib/data/manage";
 import { deleteUnit, deleteJobFunction } from "@/lib/actions/manage";
+import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
 import { AddUserForm } from "./AddUserForm";
 import { UserRow } from "./UserRow";
 import { AddChecklistTypeForm } from "./AddChecklistTypeForm";
@@ -14,12 +15,17 @@ import { ChecklistTypeRow } from "./ChecklistTypeRow";
 import { AddUnitForm } from "./AddUnitForm";
 import { AddJobFunctionForm } from "./AddJobFunctionForm";
 import { DeleteButton } from "./DeleteButton";
+import { AddCategoryForm } from "./AddCategoryForm";
+import { CategoryRow } from "./CategoryRow";
+import { AddCatalogItemForm } from "./AddCatalogItemForm";
+import { CatalogItemRow } from "./CatalogItemRow";
 
 const TABS = [
   { key: "usuarios", label: "Usuários" },
   { key: "modelos", label: "Modelos de checklist" },
   { key: "unidades", label: "Unidades" },
   { key: "funcoes", label: "Funções" },
+  { key: "catalogo", label: "Catálogo" },
 ] as const;
 
 export default async function GerenciarPage({
@@ -32,12 +38,15 @@ export default async function GerenciarPage({
   const { tab: rawTab } = await searchParams;
   const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "usuarios";
 
-  const [users, checklistTypes, units, jobFunctions] = await Promise.all([
-    getUsers(),
-    getChecklistTypesWithCounts(),
-    getUnits(),
-    getJobFunctions(),
-  ]);
+  const [users, checklistTypes, units, jobFunctions, catalogCategories, catalogItems] =
+    await Promise.all([
+      getUsers(),
+      getChecklistTypesWithCounts(),
+      getUnits(),
+      getJobFunctions(),
+      getCatalogCategories(),
+      getCatalogItems(),
+    ]);
 
   return (
     <>
@@ -144,6 +153,34 @@ export default async function GerenciarPage({
           </div>
           <div className="detail-panel" style={{ minHeight: "auto" }}>
             <AddJobFunctionForm />
+          </div>
+        </div>
+      )}
+
+      {tab === "catalogo" && (
+        <div className="board-layout">
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Categorias · {catalogCategories.length}
+            </div>
+            {catalogCategories.map((category) => (
+              <CategoryRow key={category.id} category={category} />
+            ))}
+          </div>
+          <div className="detail-panel" style={{ minHeight: "auto" }}>
+            <AddCategoryForm />
+          </div>
+
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Produtos · {catalogItems.length}
+            </div>
+            {catalogItems.map((item) => (
+              <CatalogItemRow key={item.id} item={item} categories={catalogCategories} />
+            ))}
+          </div>
+          <div className="detail-panel" style={{ minHeight: "auto" }}>
+            <AddCatalogItemForm categories={catalogCategories} />
           </div>
         </div>
       )}

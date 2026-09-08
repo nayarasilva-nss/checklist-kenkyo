@@ -36,6 +36,15 @@ export const leaderSelfAssessmentEnum = pgEnum("leader_self_assessment", [
   "apagando_incendio",
 ]);
 export const anomalyStatusEnum = pgEnum("anomaly_status", ["aberta", "tratada"]);
+export const catalogUnitMeasureEnum = pgEnum("catalog_unit_measure", [
+  "kg",
+  "g",
+  "un",
+  "L",
+  "ml",
+  "cx",
+  "pct",
+]);
 
 export const units = pgTable(
   "units",
@@ -292,6 +301,33 @@ export const shiftLogPendencias = pgTable("shift_log_pendencias", {
   prazo: date("prazo"),
   concluida: boolean("concluida").notNull().default(false),
 });
+
+// Catálogo de itens de estoque — base para o módulo de requisição
+// (checklist-kenkyo/spec-requisicao-kenkyo.md). Só o perfil "gestor" edita
+// categorias e produtos (ver requireGestor em lib/actions/catalog.ts).
+export const catalogCategories = pgTable(
+  "catalog_categories",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("catalog_categories_name_idx").on(table.name)],
+);
+
+export const catalogItems = pgTable(
+  "catalog_items",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    categoryId: integer("category_id").references(() => catalogCategories.id, {
+      onDelete: "set null",
+    }),
+    unitMeasure: catalogUnitMeasureEnum("unit_measure").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("catalog_items_name_idx").on(table.name)],
+);
 
 export const history = pgTable("history", {
   id: serial("id").primaryKey(),
