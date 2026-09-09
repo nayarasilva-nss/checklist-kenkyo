@@ -22,7 +22,7 @@ export default async function RequisicoesPage({
   const criarTiposPermitidos = tiposPermitidos(user);
 
   const tabs =
-    scope.mode === "estoque" || scope.mode === "gestor"
+    scope.mode === "unit" || scope.mode === "all"
       ? (["interna", "externa"] as const)
       : criarTiposPermitidos;
 

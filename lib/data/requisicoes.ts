@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, units, users } from "@/lib/db/schema";
-import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/auth/requisicoes";
+import { canConferirInterna, tiposPermitidos } from "@/lib/auth/requisicoes";
 
 export type RequisicaoViewer = {
   id: number;
@@ -12,24 +12,24 @@ export type RequisicaoViewer = {
 };
 
 export type RequisicaoScope =
-  | { mode: "estoque"; unitId: number }
-  | { mode: "gestor"; userId: number }
+  | { mode: "unit"; unitId: number }
+  | { mode: "all" }
   | { mode: "own"; userId: number; unitId: number };
 
 /**
- * Líder de Estoque/Produção vê tudo da própria unidade, interna e externa
- * (é quem confere, não quem cria). Gestor não opera uma unidade fixa: na
- * aba interna vê só as próprias (pode criar, mas não confere interna); na
- * aba externa vê de todas as unidades (confere, além de poder criar).
- * Quem só pode criar vê as próprias. rh não tem fila de requisição — ver
- * spec-requisicao-kenkyo.md seção 3 e lib/auth/requisicoes.ts.
+ * Gerente vê todas as requisições (interna e externa) da própria unidade,
+ * não só as que ele criou — mesmo escopo do Líder de Estoque/Produção, que
+ * além de ver também confere (ver canConferirInterna/Externa). Gestor não
+ * opera uma unidade fixa: vê tudo, de todas as unidades. Quem só pode
+ * criar (cargos de praça) vê as próprias. rh não tem fila de requisição —
+ * ver spec-requisicao-kenkyo.md seção 3 e lib/auth/requisicoes.ts.
  */
 export function resolveRequisicaoScope(viewer: RequisicaoViewer): RequisicaoScope | null {
-  if (canConferirInterna(viewer)) {
-    return { mode: "estoque", unitId: viewer.unitId ?? -1 };
+  if (viewer.profile === "gestor") {
+    return { mode: "all" };
   }
-  if (canConferirExterna(viewer)) {
-    return { mode: "gestor", userId: viewer.id };
+  if (viewer.profile === "gerente" || canConferirInterna(viewer)) {
+    return { mode: "unit", unitId: viewer.unitId ?? -1 };
   }
   if (tiposPermitidos(viewer).length === 0) return null;
   return { mode: "own", userId: viewer.id, unitId: viewer.unitId ?? -1 };
@@ -59,15 +59,11 @@ function baseQuery() {
 
 export async function getRequisicoesByScope(scope: RequisicaoScope, tipo?: string | null) {
   const conditions = [
-    scope.mode === "estoque"
+    scope.mode === "unit"
       ? eq(requisicoes.unitId, scope.unitId)
       : scope.mode === "own"
         ? eq(requisicoes.requesterId, scope.userId)
-        // "gestor": interna só as próprias (não confere); externa, todas
-        // as unidades (confere) — sem filtro de solicitante.
-        : scope.mode === "gestor" && tipo === "interna"
-          ? eq(requisicoes.requesterId, scope.userId)
-          : undefined,
+        : undefined, // "all": todas as unidades, sem filtro de solicitante
     tipo === "interna" || tipo === "externa" ? eq(requisicoes.tipo, tipo) : undefined,
   ].filter((c) => c !== undefined);
 
