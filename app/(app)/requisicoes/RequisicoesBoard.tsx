@@ -181,11 +181,11 @@ export function RequisicoesBoard({
 
       <div className="board-layout">
         <div className="data-table">
-          <div className="data-table-head" style={{ gridTemplateColumns: "90px 1fr 130px 110px" }}>
-            <span>Status</span>
-            <span>Itens</span>
-            <span>Solicitante</span>
+          <div className="data-table-head" style={{ gridTemplateColumns: "110px 1fr 1fr 100px" }}>
             <span>Data</span>
+            <span>Solicitante</span>
+            <span>Unidade</span>
+            <span>Status</span>
           </div>
           {records.length === 0 ? (
             <div className="data-table-empty">Nenhuma requisição por aqui.</div>
@@ -194,24 +194,18 @@ export function RequisicoesBoard({
               <div
                 key={r.id}
                 className={`data-table-row${selectedId === r.id ? " selected" : ""}`}
-                style={{ gridTemplateColumns: "90px 1fr 130px 110px" }}
+                style={{ gridTemplateColumns: "110px 1fr 1fr 100px" }}
                 onClick={() => openDetail(r.id)}
               >
+                <span>{formatDate(r.createdAt)}</span>
+                <span>{r.requesterName}</span>
+                <span>{r.unitName}</span>
                 <span>
+                  {r.urgente && <span className="badge badge-danger">URGENTE</span>}{" "}
                   <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-neutral"}`}>
                     {STATUS_LABEL[r.status] ?? r.status}
                   </span>
                 </span>
-                <span>
-                  {r.urgente && <span className="badge badge-danger">URGENTE</span>}{" "}
-                  {r.itens
-                    .slice(0, 3)
-                    .map((i) => `${i.nome} (${i.qtdPedida}${i.unidadeMedida})`)
-                    .join(", ")}
-                  {r.itens.length > 3 ? ` +${r.itens.length - 3}` : ""}
-                </span>
-                <span>{r.requesterName}</span>
-                <span>{formatDate(r.createdAt)}</span>
               </div>
             ))
           )}
