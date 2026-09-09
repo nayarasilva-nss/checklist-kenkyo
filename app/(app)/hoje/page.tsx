@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { getChecklistsForUser, todayISO as checklistTodayISO } from "@/lib/data/checklists";
 import {
   getDashboardStats,
@@ -38,10 +39,13 @@ export default async function HojePage({
   searchParams: Promise<{ unit?: string; date?: string }>;
 }) {
   const user = await getCurrentUser();
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
   const viewer = {
     id: user.id,
     profile: user.profile,
     jobFunctionId: user.jobFunctionId,
+    unitId: user.unitId,
+    effectiveUnitId,
   };
 
   const isGestor = user.profile === "gestor";

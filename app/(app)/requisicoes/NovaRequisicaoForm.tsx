@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { createRequisicao } from "@/lib/actions/requisicoes";
+import { createRequisicao, updateRequisicao } from "@/lib/actions/requisicoes";
 import { QuantidadeStepper } from "./QuantidadeStepper";
 
 type CatalogItem = {
@@ -19,12 +19,21 @@ type SelectedItem = {
   qtdPedida: number;
 };
 
+export type EditingRequisicao = {
+  id: number;
+  tipo: "interna" | "externa";
+  urgente: boolean;
+  observacao: string;
+  itens: { catalogItemId: number | null; nome: string; unidadeMedida: string; qtdPedida: number }[];
+};
+
 export function NovaRequisicaoForm({
   tiposPermitidos,
   categorias,
   catalogItems,
   units,
   todayWeekday,
+  editing,
   onSuccess,
 }: {
   tiposPermitidos: ("interna" | "externa")[];
@@ -35,18 +44,27 @@ export function NovaRequisicaoForm({
   units: { id: number; name: string }[];
   // 0=domingo..6=sábado, calculado no servidor (hora de Brasília).
   todayWeekday: number;
+  // Presente = editando uma requisição já enviada em vez de criar uma nova.
+  editing?: EditingRequisicao;
   onSuccess: () => void;
 }) {
   const categoriasHoje = categorias.filter((c) => c.orderDays.includes(todayWeekday));
-  const [tipo, setTipo] = useState(tiposPermitidos[0] ?? "interna");
+  const [tipo, setTipo] = useState(editing?.tipo ?? tiposPermitidos[0] ?? "interna");
   const [unitId, setUnitId] = useState(units[0]?.id ?? "");
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState<number | "todas">("todas");
-  const [selecionados, setSelecionados] = useState<Record<number, SelectedItem>>({});
+  const [selecionados, setSelecionados] = useState<Record<number, SelectedItem>>(() => {
+    if (!editing) return {};
+    const initial: Record<number, SelectedItem> = {};
+    editing.itens.forEach((item, i) => {
+      initial[item.catalogItemId ?? -(i + 1)] = item;
+    });
+    return initial;
+  });
   const [customNome, setCustomNome] = useState("");
   const [customUnidade, setCustomUnidade] = useState("un");
-  const [urgente, setUrgente] = useState(false);
-  const [observacao, setObservacao] = useState("");
+  const [urgente, setUrgente] = useState(editing?.urgente ?? false);
+  const [observacao, setObservacao] = useState(editing?.observacao ?? "");
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
@@ -104,6 +122,7 @@ export function NovaRequisicaoForm({
       return;
     }
     const fd = new FormData();
+    if (editing) fd.set("id", String(editing.id));
     fd.set("tipo", tipo);
     if (units.length > 0) fd.set("unitId", String(unitId));
     fd.set("urgente", urgente ? "on" : "off");
@@ -111,7 +130,7 @@ export function NovaRequisicaoForm({
     fd.set("itensJson", JSON.stringify(Object.values(selecionados)));
 
     startTransition(async () => {
-      const result = await createRequisicao(undefined, fd);
+      const result = await (editing ? updateRequisicao : createRequisicao)(undefined, fd);
       if (result?.error) {
         setError(result.error);
       } else {
@@ -123,7 +142,7 @@ export function NovaRequisicaoForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      {tiposPermitidos.length > 1 && (
+      {!editing && tiposPermitidos.length > 1 && (
         <div className="filter-pills">
           {tiposPermitidos.map((t) => (
             <button
@@ -289,7 +308,7 @@ export function NovaRequisicaoForm({
           {totalItens} {totalItens === 1 ? "item selecionado" : "itens selecionados"}
         </span>
         <button className="btn-save" type="submit" disabled={isPending}>
-          Enviar requisição
+          {editing ? "Salvar alterações" : "Enviar requisição"}
         </button>
       </div>
     </form>

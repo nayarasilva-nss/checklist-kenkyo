@@ -17,16 +17,22 @@ type Item = {
 };
 
 export function ChecklistHistoryRow({
+  checklistTypeId,
   checklistName,
+  userId,
   userName,
+  unitId,
   unitName,
   date,
   completedItems,
   totalItems,
   items,
 }: {
+  checklistTypeId: number;
   checklistName: string;
+  userId: number;
   userName: string;
+  unitId: number | null;
   unitName: string | null;
   date: string;
   completedItems: number;
@@ -35,6 +41,13 @@ export function ChecklistHistoryRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const done = totalItems > 0 && completedItems >= totalItems;
+
+  const pdfParams = new URLSearchParams({
+    checklistTypeId: String(checklistTypeId),
+    userId: String(userId),
+    date,
+  });
+  if (unitId !== null) pdfParams.set("unitId", String(unitId));
 
   return (
     <div className="history-item">
@@ -50,6 +63,9 @@ export function ChecklistHistoryRow({
           <span className={`status-pill ${done ? "completed" : "pending"}`}>
             {completedItems}/{totalItems} {done ? "concluído" : "em andamento"}
           </span>
+          <a className="btn-small" href={`/historico/imprimir?${pdfParams.toString()}`} target="_blank" rel="noopener noreferrer">
+            📥 PDF
+          </a>
           <button className="btn-small" type="button" onClick={() => setExpanded((e) => !e)}>
             {expanded ? "Ocultar" : "Ver detalhes"}
           </button>

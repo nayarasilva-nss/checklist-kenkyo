@@ -127,6 +127,7 @@ export async function setChecklistItemStatus(
         checklistCompletions.itemId,
         checklistCompletions.userId,
         checklistCompletions.date,
+        checklistCompletions.unitId,
       ],
       set: {
         status: status as Status,

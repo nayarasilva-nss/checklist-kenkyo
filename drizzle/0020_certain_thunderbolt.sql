@@ -1,0 +1,2 @@
+DROP INDEX "completions_item_user_date_idx";--> statement-breakpoint
+CREATE UNIQUE INDEX "completions_item_user_date_unit_idx" ON "checklist_completions" USING btree ("item_id","user_id","date","unit_id");

@@ -8,6 +8,7 @@ export type ChecklistHistorySummary = {
   checklistName: string;
   userId: number;
   userName: string;
+  unitId: number | null;
   unitName: string | null;
   date: string;
   completedItems: number;
@@ -32,6 +33,7 @@ export async function getChecklistHistorySummary(unitId: number | null, limit = 
     checklist_name: string;
     user_id: number;
     user_name: string;
+    effective_unit_id: number | null;
     unit_name: string | null;
     date: string;
     completed_items: string;
@@ -43,6 +45,7 @@ export async function getChecklistHistorySummary(unitId: number | null, limit = 
       ct.name as checklist_name,
       cc.user_id,
       u.name as user_name,
+      coalesce(cc.unit_id, u.unit_id) as effective_unit_id,
       un.name as unit_name,
       cc.date::text as date,
       count(*) filter (where cc.status != 'pending')::text as completed_items,
@@ -53,7 +56,7 @@ export async function getChecklistHistorySummary(unitId: number | null, limit = 
     join users u on u.id = cc.user_id
     left join units un on un.id = coalesce(cc.unit_id, u.unit_id)
     where true ${unitFilter}
-    group by cc.checklist_type_id, ct.name, cc.user_id, u.name, un.name, cc.date
+    group by cc.checklist_type_id, ct.name, cc.user_id, u.name, coalesce(cc.unit_id, u.unit_id), un.name, cc.date
     order by cc.date desc, last_completed_at desc
     limit ${limit}
   `);
@@ -63,6 +66,7 @@ export async function getChecklistHistorySummary(unitId: number | null, limit = 
     checklistName: r.checklist_name,
     userId: r.user_id,
     userName: r.user_name,
+    unitId: r.effective_unit_id,
     unitName: r.unit_name,
     date: r.date,
     completedItems: Number(r.completed_items),
@@ -71,8 +75,12 @@ export async function getChecklistHistorySummary(unitId: number | null, limit = 
   })) satisfies ChecklistHistorySummary[];
 }
 
+/** unitId here is the *effective* unit (getChecklistHistorySummary's
+ * unitId) — needed since the same checklistTypeId/userId/date can now
+ * have two separate completions (own unit + a covered unit), and
+ * without it items from both would merge into one list. */
 export async function getChecklistHistoryItems(
-  combos: { checklistTypeId: number; userId: number; date: string }[],
+  combos: { checklistTypeId: number; userId: number; date: string; unitId: number | null }[],
 ) {
   const map = new Map<string, ChecklistHistoryItem[]>();
   if (combos.length === 0) return map;
@@ -86,6 +94,7 @@ export async function getChecklistHistoryItems(
       checklistTypeId: checklistCompletions.checklistTypeId,
       userId: checklistCompletions.userId,
       date: checklistCompletions.date,
+      unitId: checklistCompletions.unitId,
       label: checklistTypeItems.label,
       status: checklistCompletions.status,
       justification: checklistCompletions.justification,
@@ -102,15 +111,22 @@ export async function getChecklistHistoryItems(
     )
     .orderBy(asc(checklistTypeItems.position));
 
-  for (const row of rows) {
-    const key = `${row.checklistTypeId}-${row.userId}-${row.date}`;
-    const list = map.get(key) ?? [];
-    list.push({
-      label: row.label,
-      status: row.status,
-      justification: row.justification,
-      photoUrl: row.photoUrl,
-    });
+  for (const combo of combos) {
+    const key = `${combo.checklistTypeId}-${combo.userId}-${combo.date}-${combo.unitId ?? "null"}`;
+    const list = rows
+      .filter(
+        (row) =>
+          row.checklistTypeId === combo.checklistTypeId &&
+          row.userId === combo.userId &&
+          row.date === combo.date &&
+          (row.unitId ?? combo.unitId) === combo.unitId,
+      )
+      .map((row) => ({
+        label: row.label,
+        status: row.status,
+        justification: row.justification,
+        photoUrl: row.photoUrl,
+      }));
     map.set(key, list);
   }
 

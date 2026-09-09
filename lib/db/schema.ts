@@ -176,10 +176,15 @@ export const checklistCompletions = pgTable(
     unitId: integer("unit_id").references(() => units.id, { onDelete: "set null" }),
   },
   (table) => [
-    uniqueIndex("completions_item_user_date_idx").on(
+    // Includes unitId (not just item/user/date) so a gerente/chefe who
+    // covers another unit today can complete the same checklist template
+    // separately for their own unit and the covered one, instead of the
+    // second submission silently overwriting the first.
+    uniqueIndex("completions_item_user_date_unit_idx").on(
       table.itemId,
       table.userId,
       table.date,
+      table.unitId,
     ),
   ],
 );

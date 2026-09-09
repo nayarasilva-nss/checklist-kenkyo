@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { getChecklistForUser } from "@/lib/data/checklists";
 import { ChecklistItemRow } from "../ChecklistItemRow";
 
@@ -17,6 +18,8 @@ export default async function ChecklistDetailPage({
     id: user.id,
     profile: user.profile,
     jobFunctionId: user.jobFunctionId,
+    unitId: user.unitId,
+    effectiveUnitId: await resolveEffectiveUnitId(user),
   };
 
   const checklist = checklistTypeId
@@ -57,9 +60,6 @@ export default async function ChecklistDetailPage({
             </p>
           )}
         </div>
-        <a className="btn-pdf" href={`/api/checklists/${checklist.id}/export`}>
-          📥 Enviar PDF
-        </a>
       </div>
 
       <div className="today-checklist-progress-bar" style={{ maxWidth: "none", marginBottom: 22 }}>

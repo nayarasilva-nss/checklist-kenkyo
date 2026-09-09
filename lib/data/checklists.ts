@@ -6,6 +6,7 @@ import {
   checklistTypeItems,
   checklistCompletions,
   users,
+  units,
   type completionStatusEnum,
 } from "@/lib/db/schema";
 import { checklistDayISO } from "@/lib/date-utils";
@@ -42,9 +43,28 @@ function checklistVisibleToViewer(
   return visibleToViewer(checklistType.jobFunctionId, viewer);
 }
 
+/** Picks, per item, the completion matching the viewer's current
+ * effective unit — falling back to their home unit for rows written
+ * before covering-unit existed (unitId null). Lets the same person hold
+ * separate completion state for their own unit and a unit they're
+ * covering today, instead of one overwriting the other. */
+function pickByEffectiveUnit<T extends { itemId: number; unitId: number | null }>(
+  completions: T[],
+  homeUnitId: number | null,
+  effectiveUnitId: number | null,
+) {
+  const map = new Map<number, T>();
+  for (const c of completions) {
+    if ((c.unitId ?? homeUnitId) === effectiveUnitId) {
+      map.set(c.itemId, c);
+    }
+  }
+  return map;
+}
+
 export async function getChecklistsForUser(
   type: "daily" | "weekly",
-  viewer: Viewer & { id: number },
+  viewer: Viewer & { id: number; unitId: number | null; effectiveUnitId: number | null },
   date: string = todayISO(),
 ) {
   const allTypes = await db
@@ -95,7 +115,7 @@ export async function getChecklistsForUser(
           )
       : [];
 
-  const completionByItem = new Map(completions.map((c) => [c.itemId, c]));
+  const completionByItem = pickByEffectiveUnit(completions, viewer.unitId, viewer.effectiveUnitId);
   const itemsByType = new Map<number, typeof items>();
   for (const item of items) {
     const list = itemsByType.get(item.checklistTypeId) ?? [];
@@ -128,7 +148,7 @@ export async function getChecklistsForUser(
 
 export async function getChecklistForUser(
   checklistTypeId: number,
-  viewer: Viewer & { id: number },
+  viewer: Viewer & { id: number; unitId: number | null; effectiveUnitId: number | null },
   date: string = todayISO(),
 ) {
   const [checklistType] = await db
@@ -160,7 +180,7 @@ export async function getChecklistForUser(
             ),
           )
       : [];
-  const completionByItem = new Map(completions.map((c) => [c.itemId, c]));
+  const completionByItem = pickByEffectiveUnit(completions, viewer.unitId, viewer.effectiveUnitId);
 
   let assignedUserName: string | null = null;
   if (checklistType.assignedUserId) {
@@ -195,10 +215,18 @@ export async function getChecklistForUser(
   };
 }
 
+/**
+ * unitId disambiguates which of a user's completions to show for a given
+ * checklist/date, now that the same person can hold separate completion
+ * state for their own unit and a unit they covered that day (see
+ * pickByEffectiveUnit). Pass the effective unit that combo belongs to —
+ * getChecklistHistorySummary's unitId is exactly that.
+ */
 export async function getChecklistExportData(
   checklistTypeId: number,
   userId: number,
-  date: string = todayISO(),
+  date: string,
+  unitId: number | null,
 ) {
   const [checklistType] = await db
     .select()
@@ -207,6 +235,17 @@ export async function getChecklistExportData(
     .limit(1);
 
   if (!checklistType) return null;
+
+  const [requester] = await db
+    .select({ name: users.name, homeUnitId: users.unitId })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!requester) return null;
+
+  const [unit] = unitId
+    ? await db.select({ name: units.name }).from(units).where(eq(units.id, unitId)).limit(1)
+    : [null];
 
   const items = await db
     .select()
@@ -229,10 +268,13 @@ export async function getChecklistExportData(
           )
       : [];
 
-  const completionByItem = new Map(completions.map((c) => [c.itemId, c]));
+  const completionByItem = pickByEffectiveUnit(completions, requester.homeUnitId, unitId);
 
   return {
     checklistType,
+    userName: requester.name,
+    unitName: unit?.name ?? null,
+    date,
     items: items.map((item) => {
       const completion = completionByItem.get(item.id);
       return {

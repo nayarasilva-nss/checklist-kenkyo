@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { getChecklistsForUser } from "@/lib/data/checklists";
 
 const TYPE_LABELS = { daily: "📋 Diários", weekly: "📋 Semanais" } as const;
@@ -18,6 +19,8 @@ export default async function ChecklistPage({
     id: user.id,
     profile: user.profile,
     jobFunctionId: user.jobFunctionId,
+    unitId: user.unitId,
+    effectiveUnitId: await resolveEffectiveUnitId(user),
   };
   const checklists = await getChecklistsForUser(type, viewer);
 

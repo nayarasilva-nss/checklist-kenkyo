@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/auth/requisicoes";
 import { resolveRequisicaoScope, getRequisicoesByScope } from "@/lib/data/requisicoes";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
@@ -13,7 +14,8 @@ export default async function RequisicoesPage({
   searchParams: Promise<{ tipo?: string }>;
 }) {
   const user = await getCurrentUser();
-  const scope = resolveRequisicaoScope(user);
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
+  const scope = resolveRequisicaoScope({ ...user, unitId: effectiveUnitId });
   if (!scope) {
     redirect("/hoje");
   }
@@ -31,7 +33,7 @@ export default async function RequisicoesPage({
   const canConferir = activeTipo === "interna" ? canConferirInterna(user) : canConferirExterna(user);
   const canCreate = criarTiposPermitidos.length > 0;
   // Quem não tem unidade fixa (Gestor) escolhe a unidade na hora de criar.
-  const needsUnitPicker = canCreate && !user.unitId;
+  const needsUnitPicker = canCreate && !effectiveUnitId;
 
   const [records, categorias, catalogItems, units] = await Promise.all([
     getRequisicoesByScope(scope, activeTipo),

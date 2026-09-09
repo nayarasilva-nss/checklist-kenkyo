@@ -32,6 +32,7 @@ export default async function HistoricoPage({
       checklistTypeId: s.checklistTypeId,
       userId: s.userId,
       date: s.date,
+      unitId: s.unitId,
     })),
   );
 
@@ -55,14 +56,19 @@ export default async function HistoricoPage({
         ) : (
           checklistSummary.map((s) => (
             <ChecklistHistoryRow
-              key={`${s.checklistTypeId}-${s.userId}-${s.date}`}
+              key={`${s.checklistTypeId}-${s.userId}-${s.date}-${s.unitId ?? "null"}`}
+              checklistTypeId={s.checklistTypeId}
               checklistName={s.checklistName}
+              userId={s.userId}
               userName={s.userName}
+              unitId={s.unitId}
               unitName={s.unitName}
               date={s.date}
               completedItems={s.completedItems}
               totalItems={s.totalItems}
-              items={itemsByCombo.get(`${s.checklistTypeId}-${s.userId}-${s.date}`) ?? []}
+              items={
+                itemsByCombo.get(`${s.checklistTypeId}-${s.userId}-${s.date}-${s.unitId ?? "null"}`) ?? []
+              }
             />
           ))
         )}

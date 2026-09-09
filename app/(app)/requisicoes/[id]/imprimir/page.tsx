@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao } from "@/lib/auth/requisicoes";
 import { getRequisicaoWithItens, resolveRequisicaoScope } from "@/lib/data/requisicoes";
 import { ImprimirButton } from "./ImprimirButton";
@@ -45,7 +46,8 @@ export default async function ImprimirRequisicaoPage({
   // resolveRequisicaoScope) — senão alguém que já vê o pedido lá (ex:
   // Gerente vendo tudo da unidade) clicava em PDF e caía de volta na
   // lista sem entender por quê.
-  const scope = resolveRequisicaoScope(user);
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
+  const scope = resolveRequisicaoScope({ ...user, unitId: effectiveUnitId });
   const podeVer =
     requisicao.requesterId === user.id ||
     canConferirRequisicao(user, requisicao.tipo as "interna" | "externa") ||

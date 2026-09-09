@@ -3,11 +3,13 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao, canRequestExterna, canRequestInterna } from "@/lib/auth/requisicoes";
 import type { RequisicaoTipo } from "@/lib/auth/requisicoes";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, catalogUnitMeasureEnum } from "@/lib/db/schema";
 import { addHistoryEntry } from "@/lib/data/history";
+import { checklistDayForInstant, checklistDayISO } from "@/lib/date-utils";
 
 export type ActionState = { error?: string } | undefined;
 
@@ -74,8 +76,10 @@ export async function createRequisicao(
     return { error: "Você não tem permissão para criar requisição externa" };
   }
 
-  // Quem não tem unidade fixa (hoje, Gestor) escolhe na hora de criar.
-  let unitId = user.unitId;
+  // Unidade efetiva do dia — quem está cobrindo outra unidade cria pra
+  // lá, não pra unidade de origem. Quem não tem unidade fixa (hoje,
+  // Gestor) escolhe na hora.
+  let unitId = await resolveEffectiveUnitId(user);
   if (!unitId) {
     const rawUnitId = Number(formData.get("unitId"));
     if (!rawUnitId) {
@@ -116,10 +120,57 @@ export async function createRequisicao(
   revalidateRequisicaoViews();
 }
 
-// Não existe edição depois de enviada — o pedido só pode ser ajustado
-// enquanto ainda está sendo montado no formulário (antes do "Enviar
-// requisição"). Depois disso, a única forma de mudar é cancelar e criar de
-// novo. Ver NovaRequisicaoForm.tsx.
+/** Editável só pelo próprio solicitante, enquanto "aberta" e só até o dia
+ * de checklist virar (02:00 BRT) — depois disso, mesmo ainda "aberta",
+ * não dá mais pra editar (só cancelar). */
+function podeEditar(existing: { requesterId: number; status: string; createdAt: Date }, userId: number) {
+  return (
+    existing.requesterId === userId &&
+    existing.status === "aberta" &&
+    checklistDayForInstant(existing.createdAt) === checklistDayISO()
+  );
+}
+
+export async function updateRequisicao(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  const id = Number(formData.get("id"));
+  if (!id) return { error: "Requisição inválida" };
+
+  const [existing] = await db.select().from(requisicoes).where(eq(requisicoes.id, id)).limit(1);
+  if (!existing) return { error: "Requisição não encontrada" };
+  if (!podeEditar(existing, user.id)) {
+    return { error: "Essa requisição não pode mais ser editada — o dia já virou ou ela já foi conferida/cancelada." };
+  }
+
+  const urgente = formData.get("urgente") === "on";
+  const observacao = String(formData.get("observacao") ?? "").trim();
+  const itens = parseItens(formData);
+
+  if (itens.length === 0) {
+    return { error: "Selecione ao menos um item" };
+  }
+
+  await db
+    .update(requisicoes)
+    .set({ urgente, observacao, editedAt: new Date() })
+    .where(eq(requisicoes.id, id));
+
+  await db.delete(requisicaoItens).where(eq(requisicaoItens.requisicaoId, id));
+  await db.insert(requisicaoItens).values(
+    itens.map((item) => ({
+      requisicaoId: id,
+      catalogItemId: item.catalogItemId,
+      nome: item.nome,
+      unidadeMedida: item.unidadeMedida,
+      qtdPedida: item.qtdPedida.toFixed(2),
+    })),
+  );
+
+  revalidateRequisicaoViews();
+}
 
 export async function cancelRequisicao(formData: FormData) {
   const user = await getCurrentUser();

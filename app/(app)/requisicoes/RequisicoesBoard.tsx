@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cancelRequisicao, conferirRequisicao } from "@/lib/actions/requisicoes";
 import { NovaRequisicaoForm } from "./NovaRequisicaoForm";
+import type { EditingRequisicao } from "./NovaRequisicaoForm";
 import { QuantidadeStepper } from "./QuantidadeStepper";
 
 type RequisicaoItem = {
@@ -29,6 +30,7 @@ type Requisicao = {
   editedAt: Date | null;
   concluidoEm: Date | null;
   itens: RequisicaoItem[];
+  podeEditar: boolean;
 };
 
 const STATUS_BADGE: Record<string, string> = {
@@ -136,8 +138,10 @@ export function RequisicoesBoard({
   const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const selected = records.find((r) => r.id === selectedId) ?? null;
+  const editingRecord = records.find((r) => r.id === editingId) ?? null;
 
   function setTipoParam(value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
@@ -290,6 +294,18 @@ export function RequisicoesBoard({
 
               {selected.requesterId === currentUserId && selected.status === "aberta" && (
                 <div className="detail-panel-footer">
+                  {selected.podeEditar && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => {
+                        setSelectedId(null);
+                        setEditingId(selected.id);
+                      }}
+                    >
+                      Editar requisição
+                    </button>
+                  )}
                   <form
                     action={cancelRequisicao}
                     onSubmit={(e) => {
@@ -313,15 +329,26 @@ export function RequisicoesBoard({
         </div>
       </div>
 
-      {creating && (
-        <div className="modal-backdrop" onClick={() => setCreating(false)}>
+      {(creating || editingRecord) && (
+        <div
+          className="modal-backdrop"
+          onClick={() => {
+            setCreating(false);
+            setEditingId(null);
+          }}
+        >
           <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
             <div className="detail-panel-header">
-              <div className="detail-panel-title">Nova requisição</div>
+              <div className="detail-panel-title">
+                {editingRecord ? "Editar requisição" : "Nova requisição"}
+              </div>
               <button
                 type="button"
                 className="detail-panel-close"
-                onClick={() => setCreating(false)}
+                onClick={() => {
+                  setCreating(false);
+                  setEditingId(null);
+                }}
                 aria-label="Fechar"
               >
                 ×
@@ -333,7 +360,27 @@ export function RequisicoesBoard({
               catalogItems={catalogItems}
               units={units}
               todayWeekday={todayWeekday}
-              onSuccess={() => setCreating(false)}
+              editing={
+                editingRecord
+                  ? ({
+                      id: editingRecord.id,
+                      tipo: editingRecord.tipo === "externa" ? "externa" : "interna",
+                      urgente: editingRecord.urgente,
+                      observacao: editingRecord.observacao,
+                      itens: editingRecord.itens.map((item) => ({
+                        catalogItemId:
+                          catalogItems.find((c) => c.name === item.nome)?.id ?? null,
+                        nome: item.nome,
+                        unidadeMedida: item.unidadeMedida,
+                        qtdPedida: Number(item.qtdPedida),
+                      })),
+                    } satisfies EditingRequisicao)
+                  : undefined
+              }
+              onSuccess={() => {
+                setCreating(false);
+                setEditingId(null);
+              }}
             />
           </div>
         </div>

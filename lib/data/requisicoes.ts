@@ -3,6 +3,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, units, users } from "@/lib/db/schema";
 import { canConferirInterna, tiposPermitidos } from "@/lib/auth/requisicoes";
+import { checklistDayForInstant, checklistDayISO } from "@/lib/date-utils";
 
 export type RequisicaoViewer = {
   id: number;
@@ -17,23 +18,22 @@ export type RequisicaoScope =
   | { mode: "own"; userId: number; unitId: number };
 
 /**
- * Gerente e Líder de Delivery veem todas as requisições (interna e
- * externa) da própria unidade, não só as que criaram — mesmo escopo do
- * Líder de Estoque/Produção, que além de ver também confere (ver
- * canConferirInterna/Externa). Gestor não opera uma unidade fixa: vê
- * tudo, de todas as unidades. Quem só pode criar (cargos de praça) vê as
- * próprias. rh não tem fila de requisição — ver
+ * Quem confere interna (Gerente, Líder de Delivery, Líder de
+ * Estoque/Produção) vê todas as requisições — interna e externa — da
+ * própria unidade, não só as que criou. Gestor não opera uma unidade
+ * fixa: vê tudo, de todas as unidades. Quem só pode criar (cargos de
+ * praça) vê as próprias. rh não tem fila de requisição — ver
  * spec-requisicao-kenkyo.md seção 3 e lib/auth/requisicoes.ts.
+ *
+ * `viewer.unitId` já deve vir resolvido pela unidade efetiva do dia
+ * (resolveEffectiveUnitId) — quem está cobrindo outra unidade hoje vê e
+ * cria requisições da unidade coberta, não da unidade de origem.
  */
 export function resolveRequisicaoScope(viewer: RequisicaoViewer): RequisicaoScope | null {
   if (viewer.profile === "gestor") {
     return { mode: "all" };
   }
-  if (
-    viewer.profile === "gerente" ||
-    viewer.jobFunctionName === "Líder de Delivery" ||
-    canConferirInterna(viewer)
-  ) {
+  if (canConferirInterna(viewer)) {
     return { mode: "unit", unitId: viewer.unitId ?? -1 };
   }
   if (tiposPermitidos(viewer).length === 0) return null;
@@ -90,7 +90,18 @@ export async function getRequisicoesByScope(scope: RequisicaoScope, tipo?: strin
     itensByRequisicao.set(item.requisicaoId, list);
   }
 
-  return records.map((r) => ({ ...r, itens: itensByRequisicao.get(r.id) ?? [] }));
+  return records.map((r) => ({
+    ...r,
+    itens: itensByRequisicao.get(r.id) ?? [],
+    podeEditar: canEditToday(r),
+  }));
+}
+
+/** Editável só enquanto "aberta" e até o dia de checklist virar (02:00
+ * BRT) — o solicitante ainda precisa ser conferido no servidor, isso só
+ * decide a janela de tempo. */
+function canEditToday(r: { status: string; createdAt: Date }) {
+  return r.status === "aberta" && checklistDayForInstant(r.createdAt) === checklistDayISO();
 }
 
 export async function getRequisicaoWithItens(id: number) {
@@ -103,5 +114,5 @@ export async function getRequisicaoWithItens(id: number) {
     .where(eq(requisicaoItens.requisicaoId, id))
     .orderBy(asc(requisicaoItens.id));
 
-  return { ...requisicao, itens };
+  return { ...requisicao, itens, podeEditar: canEditToday(requisicao) };
 }
