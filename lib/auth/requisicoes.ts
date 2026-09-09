@@ -26,10 +26,11 @@ export function tiposPermitidos(viewer: Viewer): RequisicaoTipo[] {
   return tipos;
 }
 
-/** Confere interna: Gerente, Líder de Delivery ou Líder de Estoque/Produção. */
+/** Confere interna: Gerente, Gestor, Líder de Delivery ou Líder de Estoque/Produção. */
 export function canConferirInterna(viewer: Viewer) {
   return (
     viewer.profile === "gerente" ||
+    viewer.profile === "gestor" ||
     viewer.jobFunctionName === "Líder de Delivery" ||
     viewer.jobFunctionName === "Líder de Estoque/Produção"
   );
