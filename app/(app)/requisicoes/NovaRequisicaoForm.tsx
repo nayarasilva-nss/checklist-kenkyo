@@ -232,7 +232,7 @@ export function NovaRequisicaoForm({
         ))}
       </div>
 
-      <div style={{ maxHeight: 260, overflowY: "auto", margin: "10px 0" }}>
+      <div className="req-item-list">
         {listaFiltrada.map((item) => {
           const sel = selecionados[item.id];
           return (
@@ -258,7 +258,7 @@ export function NovaRequisicaoForm({
 
       <div className="form-group">
         <label htmlFor="customNome">Item personalizado</label>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className="req-custom-item-row">
           <input
             id="customNome"
             value={customNome}
@@ -303,7 +303,7 @@ export function NovaRequisicaoForm({
 
       {error && <p className="login-error">{error}</p>}
 
-      <div className="inline-form-buttons">
+      <div className="inline-form-buttons req-submit-footer">
         <span className="pill-count">
           {totalItens} {totalItens === 1 ? "item selecionado" : "itens selecionados"}
         </span>

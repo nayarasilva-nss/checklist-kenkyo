@@ -188,12 +188,12 @@ export function RequisicoesBoard({
 
       <div className="board-layout">
         <div className="data-table">
-          <div className="data-table-head" style={{ gridTemplateColumns: "90px 110px 1fr 1fr 100px" }}>
-            <span>Tipo</span>
-            <span>Data</span>
-            <span>Solicitante</span>
-            <span>Unidade</span>
-            <span>Status</span>
+          <div className="data-table-head data-table-cols-requisicoes">
+            <span className="col-tipo">Tipo</span>
+            <span className="col-data">Data</span>
+            <span className="col-solicitante">Solicitante</span>
+            <span className="col-unidade">Unidade</span>
+            <span className="col-status">Status</span>
           </div>
           {records.length === 0 ? (
             <div className="data-table-empty">Nenhuma requisição por aqui.</div>
@@ -201,19 +201,18 @@ export function RequisicoesBoard({
             records.map((r) => (
               <div
                 key={r.id}
-                className={`data-table-row${selectedId === r.id ? " selected" : ""}`}
-                style={{ gridTemplateColumns: "90px 110px 1fr 1fr 100px" }}
+                className={`data-table-row data-table-cols-requisicoes${selectedId === r.id ? " selected" : ""}`}
                 onClick={() => openDetail(r.id)}
               >
-                <span>
+                <span className="col-tipo">
                   <span className={`badge ${r.tipo === "interna" ? "badge-info" : "badge-violet"}`}>
                     {r.tipo === "interna" ? "Interna" : "Externa"}
                   </span>
                 </span>
-                <span>{formatDate(r.createdAt)}</span>
-                <span>{r.requesterName}</span>
-                <span>{r.unitName}</span>
-                <span>
+                <span className="col-data">{formatDate(r.createdAt)}</span>
+                <span className="col-solicitante">{r.requesterName}</span>
+                <span className="col-unidade">{r.unitName}</span>
+                <span className="col-status">
                   {r.urgente && <span className="badge badge-danger">URGENTE</span>}{" "}
                   <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-neutral"}`}>
                     {STATUS_LABEL[r.status] ?? r.status}

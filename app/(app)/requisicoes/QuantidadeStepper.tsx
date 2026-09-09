@@ -32,8 +32,8 @@ export function QuantidadeStepper({
         onClick={() => onChange(round(Math.max(0, value - step)))}
         aria-label={`Diminuir quantidade de ${unidade}`}
         style={{
-          width: 30,
-          height: 30,
+          width: 38,
+          height: 38,
           flexShrink: 0,
           borderRadius: 7,
           border: "1px solid var(--border)",
@@ -60,8 +60,8 @@ export function QuantidadeStepper({
         onClick={() => onChange(round(value + step))}
         aria-label={`Aumentar quantidade de ${unidade}`}
         style={{
-          width: 30,
-          height: 30,
+          width: 38,
+          height: 38,
           flexShrink: 0,
           borderRadius: 7,
           border: "1px solid var(--kenkyo-red)",
