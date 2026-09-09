@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/auth/dal";
+import { getGestorFuncao } from "@/lib/auth/gestor-funcao";
 import {
   getShiftLogsByScope,
   resolveShiftLogScope,
@@ -31,10 +32,32 @@ export default async function DiarioDeBordoPage({
 
   const scope = resolveShiftLogScope(user, requestedUnitId);
 
-  const [records, units] = await Promise.all([
+  const [records, units, gestorAtuando] = await Promise.all([
     getShiftLogsByScope(scope),
     canViewAllUnits ? getUnits() : Promise.resolve([]),
+    isGestor ? getGestorFuncao() : Promise.resolve(null),
   ]);
+
+  // Gestor só registra diário de bordo quando escolheu "Função de hoje"
+  // (mesmo critério usado para liberar os checklists) — nesse dia, ele soma
+  // o formulário de registro ao board de leitura que já vê como gestor.
+  if (isGestor && gestorAtuando) {
+    return (
+      <>
+        <h2>Diário de Bordo da Liderança</h2>
+        <DiarioBordoForm />
+        <div style={{ marginTop: 32 }}>
+          <ShiftLogsBoard
+            records={records}
+            units={units}
+            canViewAllUnits={canViewAllUnits}
+            requestedUnitId={requestedUnitId}
+            canDelete={isGestor}
+          />
+        </div>
+      </>
+    );
+  }
 
   if (isGestor || isRh) {
     return (
