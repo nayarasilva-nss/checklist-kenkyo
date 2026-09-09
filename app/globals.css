@@ -163,7 +163,10 @@ button {
   padding: 12px;
   border: 2px solid var(--border);
   border-radius: 8px;
-  font-size: 14px;
+  /* 16px, not 14: iOS Safari auto-zooms the whole page on focus for any
+     input under 16px, which on a form with several fields in a row (like
+     Nova Requisição) makes the viewport zoom in and out constantly. */
+  font-size: 16px;
   font-family: inherit;
   transition: border-color 0.3s;
 }
@@ -1237,6 +1240,23 @@ button {
   margin-bottom: 16px;
 }
 
+/* For a pill row with many options (e.g. the 21 catalog categories) —
+   wrapping would eat most of the screen, so this scrolls horizontally
+   in one line instead. */
+.filter-pills-scroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+}
+
+.filter-pills-scroll .pill {
+  flex-shrink: 0;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -2278,5 +2298,44 @@ button {
     padding: 0 !important;
     margin: 0 !important;
     max-width: none !important;
+  }
+}
+
+/* Centered dialog for forms too rich for the 352px detail-panel side
+   column (e.g. Nova Requisição: search, category pills, item list with
+   qty inputs, custom item row, urgente + observação) — the side panel
+   squeezed them into one cramped strip on desktop. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px;
+  overflow-y: auto;
+}
+
+.modal-panel {
+  background: var(--bg-rail);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 640px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 700px) {
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-panel {
+    max-width: none;
+    border-radius: 16px 16px 0 0;
+    max-height: 92vh;
+    overflow-y: auto;
   }
 }

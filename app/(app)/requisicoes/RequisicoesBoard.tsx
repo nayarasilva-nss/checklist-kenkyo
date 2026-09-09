@@ -82,7 +82,7 @@ function ConferirForm({ requisicao, onDone }: { requisicao: Requisicao; onDone: 
               min={0}
               step={0.5}
               defaultValue={item.qtdPedida}
-              style={{ width: 70 }}
+              style={{ width: 70, fontSize: 16 }}
             />
             <span>{item.unidadeMedida}</span>
           </div>
@@ -219,29 +219,7 @@ export function RequisicoesBoard({
         </div>
 
         <div className="detail-panel">
-          {creating ? (
-            <>
-              <div className="detail-panel-header">
-                <div className="detail-panel-title">Nova requisição</div>
-                <button
-                  type="button"
-                  className="detail-panel-close"
-                  onClick={() => setCreating(false)}
-                  aria-label="Fechar"
-                >
-                  ×
-                </button>
-              </div>
-              <NovaRequisicaoForm
-                tiposPermitidos={criarTiposPermitidos}
-                categorias={categorias}
-                catalogItems={catalogItems}
-                units={units}
-                todayWeekday={todayWeekday}
-                onSuccess={() => setCreating(false)}
-              />
-            </>
-          ) : selected ? (
+          {selected ? (
             <>
               <div className="detail-panel-header">
                 <div>
@@ -327,6 +305,32 @@ export function RequisicoesBoard({
           )}
         </div>
       </div>
+
+      {creating && (
+        <div className="modal-backdrop" onClick={() => setCreating(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="detail-panel-header">
+              <div className="detail-panel-title">Nova requisição</div>
+              <button
+                type="button"
+                className="detail-panel-close"
+                onClick={() => setCreating(false)}
+                aria-label="Fechar"
+              >
+                ×
+              </button>
+            </div>
+            <NovaRequisicaoForm
+              tiposPermitidos={criarTiposPermitidos}
+              categorias={categorias}
+              catalogItems={catalogItems}
+              units={units}
+              todayWeekday={todayWeekday}
+              onSuccess={() => setCreating(false)}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

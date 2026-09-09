@@ -178,7 +178,7 @@ export function NovaRequisicaoForm({
         />
       </div>
 
-      <div className="filter-pills">
+      <div className="filter-pills-scroll">
         <button
           type="button"
           className={`pill${categoria === "todas" ? " active" : ""}`}
@@ -228,7 +228,7 @@ export function NovaRequisicaoForm({
                   step={0.5}
                   value={sel?.qtdPedida ?? 0}
                   onChange={(e) => setQtd(item, Math.max(0, Number(e.target.value) || 0))}
-                  style={{ width: 64 }}
+                  style={{ width: 64, fontSize: 16 }}
                 />
                 <span>{item.unitMeasure}</span>
               </div>
