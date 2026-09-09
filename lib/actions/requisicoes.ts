@@ -9,6 +9,7 @@ import type { RequisicaoTipo } from "@/lib/auth/requisicoes";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, catalogUnitMeasureEnum } from "@/lib/db/schema";
 import { addHistoryEntry } from "@/lib/data/history";
+import { resolveRequisicaoScope } from "@/lib/data/requisicoes";
 import { checklistDayForInstant, checklistDayISO } from "@/lib/date-utils";
 
 export type ActionState = { error?: string } | undefined;
@@ -200,6 +201,20 @@ export async function conferirRequisicao(
   if (!canConferirRequisicao(user, existing.tipo as RequisicaoTipo)) {
     return { error: "Você não tem permissão para conferir essa requisição" };
   }
+
+  // canConferirRequisicao só olha o cargo — quem confere por unidade
+  // (Gerente, Líder de Delivery, Líder de Estoque/Produção) só pode
+  // conferir requisições da própria unidade efetiva do dia, mesma regra
+  // já aplicada na listagem e no PDF. Gestor (scope "all") confere de
+  // qualquer unidade.
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
+  const scope = resolveRequisicaoScope({ ...user, unitId: effectiveUnitId });
+  const podeConferir =
+    scope?.mode === "all" || (scope?.mode === "unit" && scope.unitId === existing.unitId);
+  if (!podeConferir) {
+    return { error: "Você não tem permissão para conferir essa requisição" };
+  }
+
   if (existing.status !== "aberta") {
     return { error: "Essa requisição já foi conferida" };
   }
