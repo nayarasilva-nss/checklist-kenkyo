@@ -281,6 +281,11 @@ export const anomalies = pgTable(
   ],
 );
 
+// Um diário de bordo por pessoa por dia — imposto em createShiftLog
+// (lib/actions/shift-logs.ts), não aqui: registros duplicados antigos já
+// existiam em produção antes dessa regra, então uma unique constraint no
+// banco quebraria a migração. Qualquer outra ocorrência no mesmo dia deve
+// virar anomalia, não um segundo diário.
 export const shiftLogs = pgTable("shift_logs", {
   id: serial("id").primaryKey(),
   unitId: integer("unit_id")

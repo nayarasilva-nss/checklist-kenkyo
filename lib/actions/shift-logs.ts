@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
@@ -82,6 +82,20 @@ export async function createShiftLog(
   if (!desvioDescricao) return { error: "Descreva o principal desvio do turno" };
   if (!LEADER_SELF_ASSESSMENT.some((a) => a.value === autoavaliacao)) {
     return { error: "Selecione sua autoavaliação como líder" };
+  }
+
+  // Só um diário de bordo por pessoa por dia — qualquer outra ocorrência
+  // no mesmo dia deve ser registrada como anomalia, não um segundo diário.
+  const [existing] = await db
+    .select({ id: shiftLogs.id })
+    .from(shiftLogs)
+    .where(and(eq(shiftLogs.userId, user.id), eq(shiftLogs.date, date)))
+    .limit(1);
+  if (existing) {
+    return {
+      error:
+        "Você já registrou o diário de bordo de hoje. Qualquer outra ocorrência do turno deve ser registrada como anomalia.",
+    };
   }
 
   const [inserted] = await db
