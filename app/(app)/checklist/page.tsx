@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
+import { resolveEffectiveJobFunctionId } from "@/lib/auth/gestor-funcao";
 import { getChecklistsForUser } from "@/lib/data/checklists";
 
 const TYPE_LABELS = { daily: "📋 Diários", weekly: "📋 Semanais" } as const;
@@ -18,7 +19,7 @@ export default async function ChecklistPage({
   const viewer = {
     id: user.id,
     profile: user.profile,
-    jobFunctionId: user.jobFunctionId,
+    jobFunctionId: await resolveEffectiveJobFunctionId(user),
     unitId: user.unitId,
     effectiveUnitId: await resolveEffectiveUnitId(user),
   };
@@ -44,7 +45,7 @@ export default async function ChecklistPage({
       {checklists.length === 0 ? (
         <p className="empty-state">
           {isGestor
-            ? "Nenhum modelo cadastrado para esse tipo ainda. Crie um em Gerenciar > Modelos de Checklist."
+            ? "Nenhum checklist aqui — selecione uma função de hoje no topo da tela se estiver em trabalho operacional, ou crie um modelo em Gerenciar > Modelos de Checklist."
             : "Nenhum checklist disponível para você ainda. Peça a um Gestor para criar um modelo para a sua função."}
         </p>
       ) : (

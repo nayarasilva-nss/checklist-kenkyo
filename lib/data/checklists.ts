@@ -24,21 +24,25 @@ export type Viewer = {
   jobFunctionId: number | null;
 };
 
+// A jobFunctionId of null on the checklist itself means "visible to
+// everyone" (generic/Padrão templates) — for anyone with a real função.
 function visibleToViewer(jobFunctionId: number | null, viewer: Viewer) {
-  return (
-    viewer.profile === "gestor" ||
-    jobFunctionId === null ||
-    jobFunctionId === viewer.jobFunctionId
-  );
+  return jobFunctionId === null || jobFunctionId === viewer.jobFunctionId;
 }
 
 function checklistVisibleToViewer(
   checklistType: { jobFunctionId: number | null; assignedUserId: number | null },
   viewer: Viewer & { id: number },
 ) {
-  if (viewer.profile === "gestor") return true;
   if (checklistType.assignedUserId !== null) {
     return checklistType.assignedUserId === viewer.id;
+  }
+  // Gestor doesn't get every checklist by default, not even the generic
+  // ones — viewer.jobFunctionId must already be their *effective* one
+  // (resolveEffectiveJobFunctionId), which is null until they pick a
+  // função for the day (they're not operating any checklist that day).
+  if (viewer.profile === "gestor" && viewer.jobFunctionId === null) {
+    return false;
   }
   return visibleToViewer(checklistType.jobFunctionId, viewer);
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
+import { resolveEffectiveJobFunctionId } from "@/lib/auth/gestor-funcao";
 import { getChecklistForUser } from "@/lib/data/checklists";
 import { ChecklistItemRow } from "../ChecklistItemRow";
 
@@ -17,7 +18,7 @@ export default async function ChecklistDetailPage({
   const viewer = {
     id: user.id,
     profile: user.profile,
-    jobFunctionId: user.jobFunctionId,
+    jobFunctionId: await resolveEffectiveJobFunctionId(user),
     unitId: user.unitId,
     effectiveUnitId: await resolveEffectiveUnitId(user),
   };

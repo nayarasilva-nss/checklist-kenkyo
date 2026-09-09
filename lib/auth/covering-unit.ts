@@ -22,12 +22,20 @@ type CoveringUnitPayload = {
  * Carla's vacation in Goianésia — and need their checklist/anomalia/
  * filetagem/resto-ingesta/diário de bordo entries that day to count
  * toward that unit instead of their own. Líder is deliberately excluded.
+ * Gestor has no unit at all normally, but picks one here too when they
+ * opt into operational work for the day (see lib/auth/gestor-funcao.ts) —
+ * without a unit, their checklist completions would have nowhere to be
+ * attributed.
  */
 export function canCoverOtherUnits(viewer: {
   profile: string;
   jobFunctionName: string | null;
 }) {
-  return viewer.profile === "gerente" || (viewer.jobFunctionName?.startsWith("Chefe") ?? false);
+  return (
+    viewer.profile === "gerente" ||
+    viewer.profile === "gestor" ||
+    (viewer.jobFunctionName?.startsWith("Chefe") ?? false)
+  );
 }
 
 async function encryptCoveringUnit(payload: CoveringUnitPayload) {

@@ -2,11 +2,13 @@ import { getCurrentUser } from "@/lib/auth/dal";
 import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { canCoverOtherUnits, getCoveringUnit } from "@/lib/auth/covering-unit";
+import { getGestorFuncao } from "@/lib/auth/gestor-funcao";
 import { resolveRequisicaoScope } from "@/lib/data/requisicoes";
 import { tiposPermitidos } from "@/lib/auth/requisicoes";
-import { getUnits } from "@/lib/data/units";
+import { getUnits, getJobFunctions } from "@/lib/data/units";
 import { AppNav } from "./AppNav";
 import { CoveringUnitBanner } from "./CoveringUnitBanner";
+import { GestorFuncaoBanner } from "./GestorFuncaoBanner";
 
 export default async function AppLayout({
   children,
@@ -15,11 +17,15 @@ export default async function AppLayout({
 }) {
   const user = await getCurrentUser();
   const showCoveringUnitBanner = canCoverOtherUnits(user);
+  const isGestor = user.profile === "gestor";
   const showRequisicoes = resolveRequisicaoScope(user) !== null;
   const canCreateRequisicao = tiposPermitidos(user).length > 0;
-  const [covering, units] = showCoveringUnitBanner
-    ? await Promise.all([getCoveringUnit(), getUnits()])
-    : [null, []];
+  const [covering, units, atuando, jobFunctions] = await Promise.all([
+    showCoveringUnitBanner ? getCoveringUnit() : Promise.resolve(null),
+    showCoveringUnitBanner ? getUnits() : Promise.resolve([]),
+    isGestor ? getGestorFuncao() : Promise.resolve(null),
+    isGestor ? getJobFunctions() : Promise.resolve([]),
+  ]);
 
   return (
     <div className="app-shell">
@@ -37,6 +43,9 @@ export default async function AppLayout({
       <div className="app-main">
         {showCoveringUnitBanner && (
           <CoveringUnitBanner units={units} homeUnitId={user.unitId} covering={covering} />
+        )}
+        {isGestor && (
+          <GestorFuncaoBanner jobFunctions={jobFunctions} atuando={atuando} />
         )}
         <div className="content">
           <div className="tab-content">{children}</div>

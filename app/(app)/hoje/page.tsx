@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
+import { resolveEffectiveJobFunctionId } from "@/lib/auth/gestor-funcao";
 import { getChecklistsForUser, todayISO as checklistTodayISO } from "@/lib/data/checklists";
 import {
   getDashboardStats,
@@ -43,7 +44,7 @@ export default async function HojePage({
   const viewer = {
     id: user.id,
     profile: user.profile,
-    jobFunctionId: user.jobFunctionId,
+    jobFunctionId: await resolveEffectiveJobFunctionId(user),
     unitId: user.unitId,
     effectiveUnitId,
   };
