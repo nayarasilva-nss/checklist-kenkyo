@@ -186,147 +186,141 @@ export function RequisicoesBoard({
         </div>
       )}
 
-      <div className="board-layout">
-        <div className="data-table">
-          <div className="data-table-head data-table-cols-requisicoes">
-            <span className="col-tipo">Tipo</span>
-            <span className="col-data">Data</span>
-            <span className="col-solicitante">Solicitante</span>
-            <span className="col-unidade">Unidade</span>
-            <span className="col-status">Status</span>
-          </div>
-          {records.length === 0 ? (
-            <div className="data-table-empty">Nenhuma requisição por aqui.</div>
-          ) : (
-            records.map((r) => (
-              <div
-                key={r.id}
-                className={`data-table-row data-table-cols-requisicoes${selectedId === r.id ? " selected" : ""}`}
-                onClick={() => openDetail(r.id)}
-              >
-                <span className="col-tipo">
-                  <span className={`badge ${r.tipo === "interna" ? "badge-info" : "badge-violet"}`}>
-                    {r.tipo === "interna" ? "Interna" : "Externa"}
-                  </span>
-                </span>
-                <span className="col-data">{formatDate(r.createdAt)}</span>
-                <span className="col-solicitante">{r.requesterName}</span>
-                <span className="col-unidade">{r.unitName}</span>
-                <span className="col-status">
-                  {r.urgente && <span className="badge badge-danger">URGENTE</span>}{" "}
-                  <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-neutral"}`}>
-                    {STATUS_LABEL[r.status] ?? r.status}
-                  </span>
-                </span>
-              </div>
-            ))
-          )}
+      <div className="data-table">
+        <div className="data-table-head data-table-cols-requisicoes">
+          <span className="col-tipo">Tipo</span>
+          <span className="col-data">Data</span>
+          <span className="col-solicitante">Solicitante</span>
+          <span className="col-unidade">Unidade</span>
+          <span className="col-status">Status</span>
         </div>
+        {records.length === 0 ? (
+          <div className="data-table-empty">Nenhuma requisição por aqui.</div>
+        ) : (
+          records.map((r) => (
+            <div
+              key={r.id}
+              className={`data-table-row data-table-cols-requisicoes${selectedId === r.id ? " selected" : ""}`}
+              onClick={() => openDetail(r.id)}
+            >
+              <span className="col-tipo">
+                <span className={`badge ${r.tipo === "interna" ? "badge-info" : "badge-violet"}`}>
+                  {r.tipo === "interna" ? "Interna" : "Externa"}
+                </span>
+              </span>
+              <span className="col-data">{formatDate(r.createdAt)}</span>
+              <span className="col-solicitante">{r.requesterName}</span>
+              <span className="col-unidade">{r.unitName}</span>
+              <span className="col-status">
+                {r.urgente && <span className="badge badge-danger">URGENTE</span>}{" "}
+                <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-neutral"}`}>
+                  {STATUS_LABEL[r.status] ?? r.status}
+                </span>
+              </span>
+            </div>
+          ))
+        )}
+      </div>
 
-        <div className="detail-panel">
-          {selected ? (
-            <>
-              <div className="detail-panel-header">
-                <div>
-                  <span className={`badge ${STATUS_BADGE[selected.status] ?? "badge-neutral"}`}>
-                    {STATUS_LABEL[selected.status] ?? selected.status}
-                  </span>
-                  <div className="detail-panel-title" style={{ marginTop: 8 }}>
-                    Requisição {selected.tipo} · {selected.unitName}
-                  </div>
-                  <div className="detail-panel-meta">
-                    {selected.requesterName} · {formatDate(selected.createdAt)}
-                  </div>
+      {selected && (
+        <div className="modal-backdrop" onClick={() => setSelectedId(null)}>
+          <div className="modal-panel modal-panel-wide" onClick={(e) => e.stopPropagation()}>
+            <div className="detail-panel-header">
+              <div>
+                <span className={`badge ${STATUS_BADGE[selected.status] ?? "badge-neutral"}`}>
+                  {STATUS_LABEL[selected.status] ?? selected.status}
+                </span>
+                <div className="detail-panel-title" style={{ marginTop: 8 }}>
+                  Requisição {selected.tipo} · {selected.unitName}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {/* Plain <a>, not next/link: Link's client-side routing
-                      interception doesn't play well with target="_blank"
-                      in this Next.js version — clicking it silently did
-                      nothing instead of opening the print page. */}
-                  <a
-                    href={`/requisicoes/${selected.id}/imprimir`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-pdf"
-                  >
-                    📥 PDF
-                  </a>
+                <div className="detail-panel-meta">
+                  {selected.requesterName} · {formatDate(selected.createdAt)}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* Plain <a>, not next/link: Link's client-side routing
+                    interception doesn't play well with target="_blank"
+                    in this Next.js version — clicking it silently did
+                    nothing instead of opening the print page. */}
+                <a
+                  href={`/requisicoes/${selected.id}/imprimir`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-pdf"
+                >
+                  📥 PDF
+                </a>
+                <button
+                  type="button"
+                  className="detail-panel-close"
+                  onClick={() => setSelectedId(null)}
+                  aria-label="Fechar"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {selected.observacao && (
+              <div className="detail-panel-fields">
+                <div>
+                  <div className="detail-panel-field-label">Observação</div>
+                  <div className="detail-panel-field-value">{selected.observacao}</div>
+                </div>
+              </div>
+            )}
+
+            {canConferir && selected.status === "aberta" ? (
+              <ConferirForm requisicao={selected} onDone={() => setSelectedId(null)} />
+            ) : (
+              <div>
+                {selected.itens.map((item) => (
+                  <div className="list-item" key={item.id}>
+                    <div className="info">
+                      <h4>{item.nome}</h4>
+                      <p>
+                        Pedido: {item.qtdPedida}
+                        {item.unidadeMedida}
+                        {item.qtdConferida !== null &&
+                          ` · Conferido: ${item.qtdConferida}${item.unidadeMedida}`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {selected.requesterId === currentUserId && selected.status === "aberta" && (
+              <div className="detail-panel-footer">
+                {selected.podeEditar && (
                   <button
                     type="button"
-                    className="detail-panel-close"
-                    onClick={() => setSelectedId(null)}
-                    aria-label="Fechar"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-
-              {selected.observacao && (
-                <div className="detail-panel-fields">
-                  <div>
-                    <div className="detail-panel-field-label">Observação</div>
-                    <div className="detail-panel-field-value">{selected.observacao}</div>
-                  </div>
-                </div>
-              )}
-
-              {canConferir && selected.status === "aberta" ? (
-                <ConferirForm requisicao={selected} onDone={() => setSelectedId(null)} />
-              ) : (
-                <div>
-                  {selected.itens.map((item) => (
-                    <div className="list-item" key={item.id}>
-                      <div className="info">
-                        <h4>{item.nome}</h4>
-                        <p>
-                          Pedido: {item.qtdPedida}
-                          {item.unidadeMedida}
-                          {item.qtdConferida !== null &&
-                            ` · Conferido: ${item.qtdConferida}${item.unidadeMedida}`}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {selected.requesterId === currentUserId && selected.status === "aberta" && (
-                <div className="detail-panel-footer">
-                  {selected.podeEditar && (
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      onClick={() => {
-                        setSelectedId(null);
-                        setEditingId(selected.id);
-                      }}
-                    >
-                      Editar requisição
-                    </button>
-                  )}
-                  <form
-                    action={cancelRequisicao}
-                    onSubmit={(e) => {
-                      if (!confirm("Cancelar esta requisição?")) e.preventDefault();
-                      else setSelectedId(null);
+                    className="btn-secondary"
+                    onClick={() => {
+                      setSelectedId(null);
+                      setEditingId(selected.id);
                     }}
                   >
-                    <input type="hidden" name="id" value={selected.id} />
-                    <button type="submit" className="btn-destructive">
-                      Cancelar requisição
-                    </button>
-                  </form>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="detail-panel-empty">
-              Selecione uma requisição na lista para ver os detalhes.
-            </div>
-          )}
+                    Editar requisição
+                  </button>
+                )}
+                <form
+                  action={cancelRequisicao}
+                  onSubmit={(e) => {
+                    if (!confirm("Cancelar esta requisição?")) e.preventDefault();
+                    else setSelectedId(null);
+                  }}
+                >
+                  <input type="hidden" name="id" value={selected.id} />
+                  <button type="submit" className="btn-destructive">
+                    Cancelar requisição
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {(creating || editingRecord) && (
         <div

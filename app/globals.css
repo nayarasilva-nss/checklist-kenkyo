@@ -2366,6 +2366,14 @@ button {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 
+/* Requisição detail: replaces the old 352px side panel, which squeezed
+   status/itens/ações into a cramped strip next to the list on desktop.
+   A bit wider than the create/edit modal since it's read-mostly content
+   (item table + observação), not a form. */
+.modal-panel-wide {
+  max-width: 760px;
+}
+
 @media (max-width: 700px) {
   .modal-backdrop {
     padding: 0;
