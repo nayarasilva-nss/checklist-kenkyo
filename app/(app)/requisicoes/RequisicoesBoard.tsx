@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cancelRequisicao, conferirRequisicao } from "@/lib/actions/requisicoes";
 import { NovaRequisicaoForm } from "./NovaRequisicaoForm";
@@ -234,13 +233,18 @@ export function RequisicoesBoard({
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Link
+                  {/* Plain <a>, not next/link: Link's client-side routing
+                      interception doesn't play well with target="_blank"
+                      in this Next.js version — clicking it silently did
+                      nothing instead of opening the print page. */}
+                  <a
                     href={`/requisicoes/${selected.id}/imprimir`}
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="btn-pdf"
                   >
                     📥 PDF
-                  </Link>
+                  </a>
                   <button
                     type="button"
                     className="detail-panel-close"
