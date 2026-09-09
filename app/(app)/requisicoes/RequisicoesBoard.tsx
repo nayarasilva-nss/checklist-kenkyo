@@ -181,7 +181,8 @@ export function RequisicoesBoard({
 
       <div className="board-layout">
         <div className="data-table">
-          <div className="data-table-head" style={{ gridTemplateColumns: "110px 1fr 1fr 100px" }}>
+          <div className="data-table-head" style={{ gridTemplateColumns: "90px 110px 1fr 1fr 100px" }}>
+            <span>Tipo</span>
             <span>Data</span>
             <span>Solicitante</span>
             <span>Unidade</span>
@@ -194,9 +195,14 @@ export function RequisicoesBoard({
               <div
                 key={r.id}
                 className={`data-table-row${selectedId === r.id ? " selected" : ""}`}
-                style={{ gridTemplateColumns: "110px 1fr 1fr 100px" }}
+                style={{ gridTemplateColumns: "90px 110px 1fr 1fr 100px" }}
                 onClick={() => openDetail(r.id)}
               >
+                <span>
+                  <span className={`badge ${r.tipo === "interna" ? "badge-info" : "badge-violet"}`}>
+                    {r.tipo === "interna" ? "Interna" : "Externa"}
+                  </span>
+                </span>
                 <span>{formatDate(r.createdAt)}</span>
                 <span>{r.requesterName}</span>
                 <span>{r.unitName}</span>
