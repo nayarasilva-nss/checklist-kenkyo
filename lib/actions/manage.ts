@@ -193,6 +193,31 @@ export async function createJobFunction(
   revalidateManageViews();
 }
 
+export async function updateJobFunction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireGestor();
+
+  const id = Number(formData.get("id"));
+  const name = String(formData.get("name") ?? "").trim();
+  if (!id || !name) {
+    return { error: "Preencha o nome da função" };
+  }
+
+  const existing = await db
+    .select({ id: jobFunctions.id })
+    .from(jobFunctions)
+    .where(and(eq(jobFunctions.name, name), ne(jobFunctions.id, id)))
+    .limit(1);
+  if (existing.length > 0) {
+    return { error: "Já existe uma função com esse nome" };
+  }
+
+  await db.update(jobFunctions).set({ name }).where(eq(jobFunctions.id, id));
+  revalidateManageViews();
+}
+
 export async function deleteJobFunction(formData: FormData) {
   await requireGestor();
   const id = Number(formData.get("id"));

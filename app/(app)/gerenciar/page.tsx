@@ -6,7 +6,7 @@ import {
   getUnits,
   getJobFunctions,
 } from "@/lib/data/manage";
-import { deleteUnit, deleteJobFunction } from "@/lib/actions/manage";
+import { deleteUnit } from "@/lib/actions/manage";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
 import { AddUserForm } from "./AddUserForm";
 import { UserRow } from "./UserRow";
@@ -14,6 +14,7 @@ import { AddChecklistTypeForm } from "./AddChecklistTypeForm";
 import { ChecklistTypeRow } from "./ChecklistTypeRow";
 import { AddUnitForm } from "./AddUnitForm";
 import { AddJobFunctionForm } from "./AddJobFunctionForm";
+import { JobFunctionRow } from "./JobFunctionRow";
 import { DeleteButton } from "./DeleteButton";
 import { AddCategoryForm } from "./AddCategoryForm";
 import { CategoryRow } from "./CategoryRow";
@@ -137,18 +138,7 @@ export default async function GerenciarPage({
               Funções · {jobFunctions.length}
             </div>
             {jobFunctions.map((jobFunction) => (
-              <div className="list-item" key={jobFunction.id}>
-                <div className="info">
-                  <h4>{jobFunction.name}</h4>
-                </div>
-                <div className="list-item-actions">
-                  <DeleteButton
-                    action={deleteJobFunction}
-                    id={jobFunction.id}
-                    confirmText={`Deletar a função "${jobFunction.name}"?`}
-                  />
-                </div>
-              </div>
+              <JobFunctionRow key={jobFunction.id} jobFunction={jobFunction} />
             ))}
           </div>
           <div className="detail-panel" style={{ minHeight: "auto" }}>
