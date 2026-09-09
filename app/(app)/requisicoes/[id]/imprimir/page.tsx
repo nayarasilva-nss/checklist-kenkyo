@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { canConferirRequisicao } from "@/lib/auth/requisicoes";
-import { getRequisicaoWithItens } from "@/lib/data/requisicoes";
+import { getRequisicaoWithItens, resolveRequisicaoScope } from "@/lib/data/requisicoes";
 import { ImprimirButton } from "./ImprimirButton";
 
 const TIPO_LABEL: Record<string, string> = {
@@ -41,9 +41,16 @@ export default async function ImprimirRequisicaoPage({
   const requisicao = await getRequisicaoWithItens(id);
   if (!requisicao) notFound();
 
+  // Mesma regra de quem enxerga a requisição na lista (ver
+  // resolveRequisicaoScope) — senão alguém que já vê o pedido lá (ex:
+  // Gerente vendo tudo da unidade) clicava em PDF e caía de volta na
+  // lista sem entender por quê.
+  const scope = resolveRequisicaoScope(user);
   const podeVer =
     requisicao.requesterId === user.id ||
-    canConferirRequisicao(user, requisicao.tipo as "interna" | "externa");
+    canConferirRequisicao(user, requisicao.tipo as "interna" | "externa") ||
+    scope?.mode === "all" ||
+    (scope?.mode === "unit" && scope.unitId === requisicao.unitId);
   if (!podeVer) redirect("/requisicoes");
 
   const conferidoLabel = requisicao.tipo === "interna" ? "saiu" : "entregue";
