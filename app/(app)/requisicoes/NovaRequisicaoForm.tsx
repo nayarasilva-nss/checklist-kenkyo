@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { createRequisicao } from "@/lib/actions/requisicoes";
+import { QuantidadeStepper } from "./QuantidadeStepper";
 
 type CatalogItem = {
   id: number;
@@ -222,15 +223,11 @@ export function NovaRequisicaoForm({
                 <p>{item.categoryName ?? "Sem categoria"}</p>
               </div>
               <div className="list-item-actions">
-                <input
-                  type="number"
-                  min={0}
-                  step={0.5}
+                <QuantidadeStepper
                   value={sel?.qtdPedida ?? 0}
-                  onChange={(e) => setQtd(item, Math.max(0, Number(e.target.value) || 0))}
-                  style={{ width: 64, fontSize: 16 }}
+                  unidade={item.unitMeasure}
+                  onChange={(v) => setQtd(item, v)}
                 />
-                <span>{item.unitMeasure}</span>
               </div>
             </div>
           );

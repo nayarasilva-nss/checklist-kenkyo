@@ -58,7 +58,12 @@ export default async function ImprimirRequisicaoPage({
   return (
     <div className="print-doc">
       <style>{`
+        /* Plain white, same as the PDF this page is meant to produce —
+           not the app's cream theme background. */
+        body { background: #ffffff; }
         .print-doc {
+          background: #ffffff;
+          min-height: 100vh;
           max-width: 760px;
           margin: 0 auto;
           padding: 32px 24px 60px;

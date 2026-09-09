@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cancelRequisicao, conferirRequisicao } from "@/lib/actions/requisicoes";
 import { NovaRequisicaoForm } from "./NovaRequisicaoForm";
+import { QuantidadeStepper } from "./QuantidadeStepper";
 
 type RequisicaoItem = {
   id: number;
@@ -49,10 +50,17 @@ function formatDate(d: Date) {
 function ConferirForm({ requisicao, onDone }: { requisicao: Requisicao; onDone: () => void }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>();
+  const [qtds, setQtds] = useState<Record<number, number>>(() =>
+    Object.fromEntries(requisicao.itens.map((item) => [item.id, Number(item.qtdPedida)])),
+  );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const fd = new FormData(event.currentTarget);
+    const fd = new FormData();
+    fd.set("id", String(requisicao.id));
+    for (const [itemId, qtd] of Object.entries(qtds)) {
+      fd.set(`qtd-${itemId}`, String(qtd));
+    }
     startTransition(async () => {
       const result = await conferirRequisicao(undefined, fd);
       if (result?.error) setError(result.error);
@@ -67,7 +75,6 @@ function ConferirForm({ requisicao, onDone }: { requisicao: Requisicao; onDone: 
 
   return (
     <form onSubmit={handleSubmit}>
-      <input type="hidden" name="id" value={requisicao.id} />
       {requisicao.itens.map((item) => (
         <div className="list-item" key={item.id}>
           <div className="info">
@@ -75,15 +82,11 @@ function ConferirForm({ requisicao, onDone }: { requisicao: Requisicao; onDone: 
             <p>Pedido: {item.qtdPedida}{item.unidadeMedida}</p>
           </div>
           <div className="list-item-actions">
-            <input
-              type="number"
-              name={`qtd-${item.id}`}
-              min={0}
-              step={0.5}
-              defaultValue={item.qtdPedida}
-              style={{ width: 70, fontSize: 16 }}
+            <QuantidadeStepper
+              value={qtds[item.id] ?? 0}
+              unidade={item.unidadeMedida}
+              onChange={(v) => setQtds((prev) => ({ ...prev, [item.id]: v }))}
             />
-            <span>{item.unidadeMedida}</span>
           </div>
         </div>
       ))}

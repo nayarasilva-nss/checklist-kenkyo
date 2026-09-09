@@ -1047,8 +1047,17 @@ button {
   flex-wrap: wrap;
 }
 
+.list-item .info {
+  /* Without this, a long product/user name sizes to its own content
+     width instead of wrapping, which on a narrow screen pushes the row
+     wider than the viewport instead of breaking the line. */
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
 .list-item .info h4 {
   margin-bottom: 4px;
+  overflow-wrap: break-word;
 }
 
 .list-item .info p {
@@ -1058,7 +1067,9 @@ button {
 
 .list-item-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .btn-small {
@@ -2298,6 +2309,10 @@ button {
     padding: 0 !important;
     margin: 0 !important;
     max-width: none !important;
+    /* .app-shell paints the cream --bg behind everything; a printed page
+       narrower than the paper (e.g. requisição's 760px column) would
+       otherwise show that color in the margins instead of white. */
+    background: #ffffff !important;
   }
 }
 
