@@ -49,7 +49,12 @@ export function NovaRequisicaoForm({
   onSuccess: () => void;
 }) {
   const categoriasHoje = categorias.filter((c) => c.orderDays.includes(todayWeekday));
-  const [tipo, setTipo] = useState(editing?.tipo ?? tiposPermitidos[0] ?? "interna");
+  // Quando só há uma opção (ou já estamos editando), não há o que
+  // escolher — senão o tipo começa em branco e a pessoa precisa
+  // selecionar Interna/Externa antes de enviar (ver handleSubmit).
+  const [tipo, setTipo] = useState<"interna" | "externa" | null>(
+    editing?.tipo ?? (tiposPermitidos.length === 1 ? tiposPermitidos[0] : null),
+  );
   const [unitId, setUnitId] = useState(units[0]?.id ?? "");
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState<number | "todas">("todas");
@@ -113,6 +118,10 @@ export function NovaRequisicaoForm({
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!tipo) {
+      setError("Selecione se a requisição é interna ou externa");
+      return;
+    }
     if (totalItens === 0) {
       setError("Selecione ao menos um item");
       return;
