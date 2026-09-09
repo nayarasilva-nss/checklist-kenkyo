@@ -9,23 +9,26 @@ export type ShiftLogViewer = {
   unitId: number | null;
 };
 
-export type ShiftLogScope = { unitId: number | null };
+export type ShiftLogScope =
+  | { mode: "unit"; unitId: number | null }
+  | { mode: "own"; userId: number };
 
 /**
  * Gestor / RH: sees every shift log (or filtered by requestedUnitId).
- * Everyone else (líder, gerente, chefe): sees every shift log from their
- * own unit, so the next shift's leader can read the previous handoff —
- * unlike Anomalias, this isn't restricted to "own records only" because
- * continuity between shifts is the whole point of the feature.
+ * Everyone else (líder, gerente, chefe): sees only their own — the
+ * histórico is personal, not a shared unit view. Open pendências across
+ * the whole unit are still surfaced separately on Hoje
+ * (getOpenPendenciasForUnit), regardless of who opened them, since those
+ * are outstanding action items rather than someone's own record.
  */
 export function resolveShiftLogScope(
   viewer: ShiftLogViewer,
   requestedUnitId: number | null,
 ): ShiftLogScope {
   if (viewer.profile === "gestor" || viewer.profile === "rh") {
-    return { unitId: requestedUnitId };
+    return { mode: "unit", unitId: requestedUnitId };
   }
-  return { unitId: viewer.unitId ?? -1 };
+  return { mode: "own", userId: viewer.id };
 }
 
 function baseQuery() {
@@ -56,7 +59,13 @@ function baseQuery() {
 
 export async function getShiftLogsByScope(scope: ShiftLogScope) {
   const records = await baseQuery()
-    .where(scope.unitId !== null ? eq(shiftLogs.unitId, scope.unitId) : undefined)
+    .where(
+      scope.mode === "unit"
+        ? scope.unitId !== null
+          ? eq(shiftLogs.unitId, scope.unitId)
+          : undefined
+        : eq(shiftLogs.userId, scope.userId),
+    )
     .orderBy(desc(shiftLogs.date), desc(shiftLogs.id))
     .limit(200);
 

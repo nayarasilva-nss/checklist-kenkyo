@@ -70,7 +70,7 @@ export default async function DiarioDeBordoPage({
         <div className="hoje-column">
           <div className="today-card">
             <div className="today-card-title" style={{ marginBottom: 14 }}>
-              Turnos anteriores
+              Seus turnos anteriores
             </div>
             {timeline.length === 0 ? (
               <p className="empty-state">Nenhum diário de bordo registrado ainda</p>
