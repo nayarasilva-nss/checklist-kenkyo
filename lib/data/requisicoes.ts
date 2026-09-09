@@ -17,18 +17,23 @@ export type RequisicaoScope =
   | { mode: "own"; userId: number; unitId: number };
 
 /**
- * Gerente vê todas as requisições (interna e externa) da própria unidade,
- * não só as que ele criou — mesmo escopo do Líder de Estoque/Produção, que
- * além de ver também confere (ver canConferirInterna/Externa). Gestor não
- * opera uma unidade fixa: vê tudo, de todas as unidades. Quem só pode
- * criar (cargos de praça) vê as próprias. rh não tem fila de requisição —
- * ver spec-requisicao-kenkyo.md seção 3 e lib/auth/requisicoes.ts.
+ * Gerente e Líder de Delivery veem todas as requisições (interna e
+ * externa) da própria unidade, não só as que criaram — mesmo escopo do
+ * Líder de Estoque/Produção, que além de ver também confere (ver
+ * canConferirInterna/Externa). Gestor não opera uma unidade fixa: vê
+ * tudo, de todas as unidades. Quem só pode criar (cargos de praça) vê as
+ * próprias. rh não tem fila de requisição — ver
+ * spec-requisicao-kenkyo.md seção 3 e lib/auth/requisicoes.ts.
  */
 export function resolveRequisicaoScope(viewer: RequisicaoViewer): RequisicaoScope | null {
   if (viewer.profile === "gestor") {
     return { mode: "all" };
   }
-  if (viewer.profile === "gerente" || canConferirInterna(viewer)) {
+  if (
+    viewer.profile === "gerente" ||
+    viewer.jobFunctionName === "Líder de Delivery" ||
+    canConferirInterna(viewer)
+  ) {
     return { mode: "unit", unitId: viewer.unitId ?? -1 };
   }
   if (tiposPermitidos(viewer).length === 0) return null;
