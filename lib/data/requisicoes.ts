@@ -1,9 +1,19 @@
 import "server-only";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, units, users } from "@/lib/db/schema";
 import { canConferirInterna, tiposPermitidos } from "@/lib/auth/requisicoes";
 import { checklistDayForInstant, checklistDayISO } from "@/lib/date-utils";
+
+// Uma requisição interna costuma ser enviada num dia e separada/conferida
+// no outro (ex: pedida à noite, montada de manhã) — então "excedente de
+// algo já enviado" não pode ficar preso ao dia de checklist atual. Isso
+// só limita o quão pra trás a lista de vínculo/validação olha, pra não
+// listar (ou aceitar) coisa muito antiga.
+const LINK_WINDOW_DAYS = 3;
+export function linkWindowCutoff() {
+  return new Date(Date.now() - LINK_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+}
 
 export type RequisicaoViewer = {
   id: number;
@@ -116,12 +126,14 @@ export async function getRequisicoesByScope(scope: RequisicaoScope, tipo?: strin
   }));
 }
 
-/** Requisições de hoje, mesma unidade e tipo, que podem ser apontadas
- * como "original" ao criar um excedente — usado pelo seletor na Nova
- * Requisição. */
-export async function getTodayRequisicoesForLink(unitId: number, tipo: string) {
+/** Requisições recentes (mesma unidade e tipo, não canceladas) que podem
+ * ser apontadas como "original" ao criar um excedente — usado pelo
+ * seletor na Nova Requisição. Não trava no dia de checklist atual: o
+ * pedido normalmente foi enviado no dia anterior e só é separado/
+ * conferido no dia seguinte. */
+export async function getRequisicoesForLink(unitId: number, tipo: string) {
   if (tipo !== "interna" && tipo !== "externa") return [];
-  const records = await db
+  return db
     .select({
       id: requisicoes.id,
       createdAt: requisicoes.createdAt,
@@ -129,10 +141,15 @@ export async function getTodayRequisicoesForLink(unitId: number, tipo: string) {
     })
     .from(requisicoes)
     .innerJoin(users, eq(users.id, requisicoes.requesterId))
-    .where(and(eq(requisicoes.unitId, unitId), eq(requisicoes.tipo, tipo)))
+    .where(
+      and(
+        eq(requisicoes.unitId, unitId),
+        eq(requisicoes.tipo, tipo),
+        ne(requisicoes.status, "cancelada"),
+        gte(requisicoes.createdAt, linkWindowCutoff()),
+      ),
+    )
     .orderBy(desc(requisicoes.createdAt));
-
-  return records.filter((r) => checklistDayForInstant(r.createdAt) === checklistDayISO());
 }
 
 /** Editável só enquanto "aberta" e até o dia de checklist virar (02:00

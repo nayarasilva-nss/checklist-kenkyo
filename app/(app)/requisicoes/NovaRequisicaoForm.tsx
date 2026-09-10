@@ -29,8 +29,13 @@ export type EditingRequisicao = {
 
 type LinkCandidate = { id: number; createdAt: Date; requesterName: string };
 
-function formatTime(d: Date) {
-  return new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+function formatDateTime(d: Date) {
+  return new Date(d).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function NovaRequisicaoForm({
@@ -186,7 +191,7 @@ export function NovaRequisicaoForm({
       {!editing && candidatosVinculo.length > 0 && (
         <div className="form-group">
           <label htmlFor="relatedRequisicaoId">
-            Isso é excedente de uma requisição já enviada hoje?
+            Isso é excedente de uma requisição já enviada?
           </label>
           <select
             id="relatedRequisicaoId"
@@ -196,7 +201,7 @@ export function NovaRequisicaoForm({
             <option value="">Não, é um pedido novo</option>
             {candidatosVinculo.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.requesterName} às {formatTime(c.createdAt)}
+                {c.requesterName} em {formatDateTime(c.createdAt)}
               </option>
             ))}
           </select>

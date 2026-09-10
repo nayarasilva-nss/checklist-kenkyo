@@ -5,7 +5,7 @@ import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/a
 import {
   resolveRequisicaoScope,
   getRequisicoesByScope,
-  getTodayRequisicoesForLink,
+  getRequisicoesForLink,
 } from "@/lib/data/requisicoes";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
 import { getUnits } from "@/lib/data/units";
@@ -50,10 +50,10 @@ export default async function RequisicoesPage({
       // hoje (needsUnitPicker=true, ex: Gestor sem "Unidade de hoje",
       // escolhe a unidade só depois de abrir o formulário).
       canCreate && effectiveUnitId && criarTiposPermitidos.includes("interna")
-        ? getTodayRequisicoesForLink(effectiveUnitId, "interna")
+        ? getRequisicoesForLink(effectiveUnitId, "interna")
         : Promise.resolve([]),
       canCreate && effectiveUnitId && criarTiposPermitidos.includes("externa")
-        ? getTodayRequisicoesForLink(effectiveUnitId, "externa")
+        ? getRequisicoesForLink(effectiveUnitId, "externa")
         : Promise.resolve([]),
     ]);
 

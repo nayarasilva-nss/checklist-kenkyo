@@ -9,7 +9,7 @@ import type { RequisicaoTipo } from "@/lib/auth/requisicoes";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, catalogUnitMeasureEnum } from "@/lib/db/schema";
 import { addHistoryEntry } from "@/lib/data/history";
-import { resolveRequisicaoScope } from "@/lib/data/requisicoes";
+import { resolveRequisicaoScope, linkWindowCutoff } from "@/lib/data/requisicoes";
 import { checklistDayForInstant, checklistDayISO } from "@/lib/date-utils";
 
 export type ActionState = { error?: string } | undefined;
@@ -97,10 +97,13 @@ export async function createRequisicao(
     return { error: "Selecione ao menos um item" };
   }
 
-  // Excedente de uma requisição já enviada hoje (esqueceram um item, ou
+  // Excedente de uma requisição já enviada (esqueceram um item, ou
   // pediram pouco e precisaram de mais depois) — em vez de editar o
   // pedido original e perder o rastro do que foi previsto vs. do que
-  // faltou, isso só linka as duas pra quem confere ver junto.
+  // faltou, isso só linka as duas pra quem confere ver junto. Não trava
+  // no dia de checklist atual: o pedido normalmente foi enviado no dia
+  // anterior e só é separado no seguinte (mesma janela de
+  // getRequisicoesForLink).
   const rawRelatedId = Number(formData.get("relatedRequisicaoId"));
   let relatedRequisicaoId: number | null = null;
   if (rawRelatedId) {
@@ -113,7 +116,7 @@ export async function createRequisicao(
       related &&
       related.tipo === tipo &&
       related.unitId === unitId &&
-      checklistDayForInstant(related.createdAt) === checklistDayISO()
+      related.createdAt >= linkWindowCutoff()
     ) {
       relatedRequisicaoId = related.id;
     }
