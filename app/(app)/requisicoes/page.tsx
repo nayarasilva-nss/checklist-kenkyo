@@ -71,6 +71,7 @@ export default async function RequisicoesPage({
       todayWeekday={todayWeekdayBrazil()}
       criarTiposPermitidos={criarTiposPermitidos}
       linkCandidates={{ interna: linkCandidatesInterna, externa: linkCandidatesExterna }}
+      canDelete={user.profile === "gestor"}
     />
   );
 }

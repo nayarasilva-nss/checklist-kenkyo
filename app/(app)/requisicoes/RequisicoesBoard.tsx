@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { cancelRequisicao, conferirRequisicao } from "@/lib/actions/requisicoes";
+import { cancelRequisicao, conferirRequisicao, deleteRequisicao } from "@/lib/actions/requisicoes";
 import { NovaRequisicaoForm } from "./NovaRequisicaoForm";
 import type { EditingRequisicao } from "./NovaRequisicaoForm";
 import { QuantidadeStepper } from "./QuantidadeStepper";
@@ -119,6 +119,7 @@ export function RequisicoesBoard({
   todayWeekday,
   criarTiposPermitidos,
   linkCandidates,
+  canDelete,
 }: {
   records: Requisicao[];
   tipo: string | null;
@@ -138,6 +139,7 @@ export function RequisicoesBoard({
   todayWeekday: number;
   criarTiposPermitidos: ("interna" | "externa")[];
   linkCandidates: { interna: LinkCandidate[]; externa: LinkCandidate[] };
+  canDelete: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -341,6 +343,30 @@ export function RequisicoesBoard({
                   <input type="hidden" name="id" value={selected.id} />
                   <button type="submit" className="btn-destructive">
                     Cancelar requisição
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {canDelete && (
+              <div className="detail-panel-footer">
+                <form
+                  action={deleteRequisicao}
+                  onSubmit={(e) => {
+                    if (
+                      !confirm(
+                        "Excluir esta requisição definitivamente? Isso remove o registro por completo, diferente de cancelar — não pode ser desfeito.",
+                      )
+                    ) {
+                      e.preventDefault();
+                    } else {
+                      setSelectedId(null);
+                    }
+                  }}
+                >
+                  <input type="hidden" name="id" value={selected.id} />
+                  <button type="submit" className="btn-destructive">
+                    Excluir requisição
                   </button>
                 </form>
               </div>
