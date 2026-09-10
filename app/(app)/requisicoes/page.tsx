@@ -39,23 +39,30 @@ export default async function RequisicoesPage({
   // Quem não tem unidade fixa (Gestor) escolhe a unidade na hora de criar.
   const needsUnitPicker = canCreate && !effectiveUnitId;
 
-  const [records, categorias, catalogItems, units, linkCandidatesInterna, linkCandidatesExterna] =
-    await Promise.all([
-      getRequisicoesByScope(scope, activeTipo),
-      canCreate ? getCatalogCategories() : Promise.resolve([]),
-      canCreate ? getCatalogItems() : Promise.resolve([]),
-      needsUnitPicker ? getUnits() : Promise.resolve([]),
-      // Candidatas a "requisição original" pro seletor de excedente —
-      // só dá pra saber a unidade de antemão quando ela já é fixa/efetiva
-      // hoje (needsUnitPicker=true, ex: Gestor sem "Unidade de hoje",
-      // escolhe a unidade só depois de abrir o formulário).
-      canCreate && effectiveUnitId && criarTiposPermitidos.includes("interna")
-        ? getRequisicoesForLink(effectiveUnitId, "interna")
-        : Promise.resolve([]),
-      canCreate && effectiveUnitId && criarTiposPermitidos.includes("externa")
-        ? getRequisicoesForLink(effectiveUnitId, "externa")
-        : Promise.resolve([]),
-    ]);
+  const [records, categorias, catalogItems, units] = await Promise.all([
+    getRequisicoesByScope(scope, activeTipo),
+    canCreate ? getCatalogCategories() : Promise.resolve([]),
+    canCreate ? getCatalogItems() : Promise.resolve([]),
+    needsUnitPicker ? getUnits() : Promise.resolve([]),
+  ]);
+
+  // Candidatas a "requisição original" pro seletor de excedente, por
+  // unidade — quem não tem unidade fixa (Gestor) só escolhe a unidade
+  // dentro do formulário, então buscamos pra todas as unidades que ele
+  // pode escolher, não só a efetiva do dia.
+  const unitIdsParaVinculo = needsUnitPicker ? units.map((u) => u.id) : effectiveUnitId ? [effectiveUnitId] : [];
+  const linkCandidatesByUnit: Record<number, { interna: Awaited<ReturnType<typeof getRequisicoesForLink>>; externa: Awaited<ReturnType<typeof getRequisicoesForLink>> }> = {};
+  if (canCreate && unitIdsParaVinculo.length > 0) {
+    await Promise.all(
+      unitIdsParaVinculo.map(async (unitId) => {
+        const [interna, externa] = await Promise.all([
+          criarTiposPermitidos.includes("interna") ? getRequisicoesForLink(unitId, "interna") : Promise.resolve([]),
+          criarTiposPermitidos.includes("externa") ? getRequisicoesForLink(unitId, "externa") : Promise.resolve([]),
+        ]);
+        linkCandidatesByUnit[unitId] = { interna, externa };
+      }),
+    );
+  }
 
   return (
     <RequisicoesBoard
@@ -70,7 +77,8 @@ export default async function RequisicoesPage({
       units={units}
       todayWeekday={todayWeekdayBrazil()}
       criarTiposPermitidos={criarTiposPermitidos}
-      linkCandidates={{ interna: linkCandidatesInterna, externa: linkCandidatesExterna }}
+      linkCandidatesByUnit={linkCandidatesByUnit}
+      fixedUnitId={effectiveUnitId}
       canDelete={user.profile === "gestor"}
     />
   );

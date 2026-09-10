@@ -118,7 +118,8 @@ export function RequisicoesBoard({
   units,
   todayWeekday,
   criarTiposPermitidos,
-  linkCandidates,
+  linkCandidatesByUnit,
+  fixedUnitId,
   canDelete,
 }: {
   records: Requisicao[];
@@ -138,7 +139,8 @@ export function RequisicoesBoard({
   units: { id: number; name: string }[];
   todayWeekday: number;
   criarTiposPermitidos: ("interna" | "externa")[];
-  linkCandidates: { interna: LinkCandidate[]; externa: LinkCandidate[] };
+  linkCandidatesByUnit: Record<number, { interna: LinkCandidate[]; externa: LinkCandidate[] }>;
+  fixedUnitId: number | null;
   canDelete: boolean;
 }) {
   const router = useRouter();
@@ -406,7 +408,8 @@ export function RequisicoesBoard({
               catalogItems={catalogItems}
               units={units}
               todayWeekday={todayWeekday}
-              linkCandidates={editingRecord ? undefined : linkCandidates}
+              linkCandidatesByUnit={editingRecord ? undefined : linkCandidatesByUnit}
+              fixedUnitId={fixedUnitId}
               editing={
                 editingRecord
                   ? ({

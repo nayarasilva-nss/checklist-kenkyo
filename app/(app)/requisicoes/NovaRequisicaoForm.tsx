@@ -46,7 +46,8 @@ export function NovaRequisicaoForm({
   todayWeekday,
   editing,
   onSuccess,
-  linkCandidates,
+  linkCandidatesByUnit,
+  fixedUnitId,
 }: {
   tiposPermitidos: ("interna" | "externa")[];
   categorias: { id: number; name: string; orderDays: number[] }[];
@@ -59,10 +60,14 @@ export function NovaRequisicaoForm({
   // Presente = editando uma requisição já enviada em vez de criar uma nova.
   editing?: EditingRequisicao;
   onSuccess: () => void;
-  // Requisições de hoje (mesma unidade) que dá pra apontar como
-  // "original" quando isso aqui é o excedente de algo já enviado —
-  // ausente ao editar (não faz sentido vincular uma edição).
-  linkCandidates?: { interna: LinkCandidate[]; externa: LinkCandidate[] };
+  // Requisições recentes que dá pra apontar como "original" quando isso
+  // aqui é o excedente de algo já enviado, por unidade (quem escolhe a
+  // unidade no formulário — Gestor sem unidade fixa — muda de candidatos
+  // conforme troca a unidade) — ausente ao editar.
+  linkCandidatesByUnit?: Record<number, { interna: LinkCandidate[]; externa: LinkCandidate[] }>;
+  // Unidade efetiva do dia, quando não há seletor de unidade no
+  // formulário (units vazio) — usada só pra indexar linkCandidatesByUnit.
+  fixedUnitId?: number | null;
 }) {
   const categoriasHoje = categorias.filter((c) => c.orderDays.includes(todayWeekday));
   // Quando só há uma opção (ou já estamos editando), não há o que
@@ -73,7 +78,9 @@ export function NovaRequisicaoForm({
   );
   const [unitId, setUnitId] = useState(units[0]?.id ?? "");
   const [relatedRequisicaoId, setRelatedRequisicaoId] = useState<number | "">("");
-  const candidatosVinculo = tipo ? (linkCandidates?.[tipo] ?? []) : [];
+  const activeUnitId = units.length > 0 ? (unitId || null) : (fixedUnitId ?? null);
+  const candidatosVinculo =
+    tipo && activeUnitId ? (linkCandidatesByUnit?.[activeUnitId]?.[tipo] ?? []) : [];
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState<number | "todas">("todas");
   const [selecionados, setSelecionados] = useState<Record<number, SelectedItem>>(() => {
@@ -188,6 +195,26 @@ export function NovaRequisicaoForm({
         </div>
       )}
 
+      {units.length > 0 && (
+        <div className="form-group">
+          <label htmlFor="requisicaoUnidade">Unidade</label>
+          <select
+            id="requisicaoUnidade"
+            value={unitId}
+            onChange={(e) => {
+              setUnitId(Number(e.target.value));
+              setRelatedRequisicaoId("");
+            }}
+          >
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {!editing && candidatosVinculo.length > 0 && (
         <div className="form-group">
           <label htmlFor="relatedRequisicaoId">
@@ -202,23 +229,6 @@ export function NovaRequisicaoForm({
             {candidatosVinculo.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.requesterName} em {formatDateTime(c.createdAt)}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {units.length > 0 && (
-        <div className="form-group">
-          <label htmlFor="requisicaoUnidade">Unidade</label>
-          <select
-            id="requisicaoUnidade"
-            value={unitId}
-            onChange={(e) => setUnitId(Number(e.target.value))}
-          >
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
               </option>
             ))}
           </select>
