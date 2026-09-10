@@ -1298,6 +1298,43 @@ button {
   margin-left: auto;
 }
 
+.req-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+
+.req-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.req-filter-field label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.req-filter-field input,
+.req-filter-field select {
+  font-size: 12.5px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-input);
+  border-radius: 7px;
+  background: var(--surface-input);
+  color: var(--text);
+  min-height: 32px;
+}
+
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

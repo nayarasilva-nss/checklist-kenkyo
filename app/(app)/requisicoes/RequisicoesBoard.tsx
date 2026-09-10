@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   cancelRequisicao,
@@ -159,6 +159,58 @@ export function RequisicoesBoard({
   const [tipoError, setTipoError] = useState<string | undefined>();
   const [isChangingTipo, startChangeTipo] = useTransition();
 
+  const [dataDe, setDataDe] = useState("");
+  const [dataAte, setDataAte] = useState("");
+  const [requesterFiltro, setRequesterFiltro] = useState<number | "">("");
+  const [statusFiltro, setStatusFiltro] = useState<string>("");
+  const [unitFiltro, setUnitFiltro] = useState<number | "">("");
+
+  const solicitantes = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const r of records) map.set(r.requesterId, r.requesterName);
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [records]);
+
+  const unidades = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const r of records) map.set(r.unitId, r.unitName);
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [records]);
+
+  function localDateValue(d: Date) {
+    const date = new Date(d);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  const filteredRecords = useMemo(() => {
+    return records.filter((r) => {
+      if (dataDe && localDateValue(r.createdAt) < dataDe) return false;
+      if (dataAte && localDateValue(r.createdAt) > dataAte) return false;
+      if (requesterFiltro && r.requesterId !== requesterFiltro) return false;
+      if (statusFiltro && r.status !== statusFiltro) return false;
+      if (unitFiltro && r.unitId !== unitFiltro) return false;
+      return true;
+    });
+  }, [records, dataDe, dataAte, requesterFiltro, statusFiltro, unitFiltro]);
+
+  const filtrosAtivos =
+    dataDe !== "" || dataAte !== "" || requesterFiltro !== "" || statusFiltro !== "" || unitFiltro !== "";
+
+  function limparFiltros() {
+    setDataDe("");
+    setDataAte("");
+    setRequesterFiltro("");
+    setStatusFiltro("");
+    setUnitFiltro("");
+  }
+
   const selected = records.find((r) => r.id === selectedId) ?? null;
   const editingRecord = records.find((r) => r.id === editingId) ?? null;
 
@@ -233,6 +285,77 @@ export function RequisicoesBoard({
         </div>
       )}
 
+      <div className="req-filters">
+        <div className="req-filter-field">
+          <label htmlFor="filtroDataDe">De</label>
+          <input
+            id="filtroDataDe"
+            type="date"
+            value={dataDe}
+            onChange={(e) => setDataDe(e.target.value)}
+          />
+        </div>
+        <div className="req-filter-field">
+          <label htmlFor="filtroDataAte">Até</label>
+          <input
+            id="filtroDataAte"
+            type="date"
+            value={dataAte}
+            onChange={(e) => setDataAte(e.target.value)}
+          />
+        </div>
+        <div className="req-filter-field">
+          <label htmlFor="filtroSolicitante">Solicitante</label>
+          <select
+            id="filtroSolicitante"
+            value={requesterFiltro}
+            onChange={(e) => setRequesterFiltro(e.target.value ? Number(e.target.value) : "")}
+          >
+            <option value="">Todos</option>
+            {solicitantes.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="req-filter-field">
+          <label htmlFor="filtroStatus">Status</label>
+          <select
+            id="filtroStatus"
+            value={statusFiltro}
+            onChange={(e) => setStatusFiltro(e.target.value)}
+          >
+            <option value="">Todos</option>
+            <option value="aberta">Aberta</option>
+            <option value="conferida">Conferida</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+        {unidades.length > 1 && (
+          <div className="req-filter-field">
+            <label htmlFor="filtroUnidade">Unidade</label>
+            <select
+              id="filtroUnidade"
+              value={unitFiltro}
+              onChange={(e) => setUnitFiltro(e.target.value ? Number(e.target.value) : "")}
+            >
+              <option value="">Todas</option>
+              {unidades.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {filtrosAtivos && (
+          <button type="button" className="btn-tertiary" onClick={limparFiltros}>
+            Limpar filtros
+          </button>
+        )}
+      </div>
+
       <div className="data-table">
         <div className="data-table-head data-table-cols-requisicoes">
           <span className="col-tipo">Tipo</span>
@@ -241,10 +364,12 @@ export function RequisicoesBoard({
           <span className="col-unidade">Unidade</span>
           <span className="col-status">Status</span>
         </div>
-        {records.length === 0 ? (
-          <div className="data-table-empty">Nenhuma requisição por aqui.</div>
+        {filteredRecords.length === 0 ? (
+          <div className="data-table-empty">
+            {filtrosAtivos ? "Nenhuma requisição encontrada com esses filtros." : "Nenhuma requisição por aqui."}
+          </div>
         ) : (
-          records.map((r) => (
+          filteredRecords.map((r) => (
             <div
               key={r.id}
               className={`data-table-row data-table-cols-requisicoes${selectedId === r.id ? " selected" : ""}`}
