@@ -97,9 +97,31 @@ export async function createRequisicao(
     return { error: "Selecione ao menos um item" };
   }
 
+  // Excedente de uma requisição já enviada hoje (esqueceram um item, ou
+  // pediram pouco e precisaram de mais depois) — em vez de editar o
+  // pedido original e perder o rastro do que foi previsto vs. do que
+  // faltou, isso só linka as duas pra quem confere ver junto.
+  const rawRelatedId = Number(formData.get("relatedRequisicaoId"));
+  let relatedRequisicaoId: number | null = null;
+  if (rawRelatedId) {
+    const [related] = await db
+      .select({ id: requisicoes.id, tipo: requisicoes.tipo, unitId: requisicoes.unitId, createdAt: requisicoes.createdAt })
+      .from(requisicoes)
+      .where(eq(requisicoes.id, rawRelatedId))
+      .limit(1);
+    if (
+      related &&
+      related.tipo === tipo &&
+      related.unitId === unitId &&
+      checklistDayForInstant(related.createdAt) === checklistDayISO()
+    ) {
+      relatedRequisicaoId = related.id;
+    }
+  }
+
   const [requisicao] = await db
     .insert(requisicoes)
-    .values({ tipo, unitId, requesterId: user.id, urgente, observacao })
+    .values({ tipo, unitId, requesterId: user.id, urgente, observacao, relatedRequisicaoId })
     .returning({ id: requisicoes.id });
 
   await db.insert(requisicaoItens).values(

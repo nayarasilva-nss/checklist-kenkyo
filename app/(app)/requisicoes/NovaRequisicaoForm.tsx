@@ -27,6 +27,12 @@ export type EditingRequisicao = {
   itens: { catalogItemId: number | null; nome: string; unidadeMedida: string; qtdPedida: number }[];
 };
 
+type LinkCandidate = { id: number; createdAt: Date; requesterName: string };
+
+function formatTime(d: Date) {
+  return new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
 export function NovaRequisicaoForm({
   tiposPermitidos,
   categorias,
@@ -35,6 +41,7 @@ export function NovaRequisicaoForm({
   todayWeekday,
   editing,
   onSuccess,
+  linkCandidates,
 }: {
   tiposPermitidos: ("interna" | "externa")[];
   categorias: { id: number; name: string; orderDays: number[] }[];
@@ -47,6 +54,10 @@ export function NovaRequisicaoForm({
   // Presente = editando uma requisição já enviada em vez de criar uma nova.
   editing?: EditingRequisicao;
   onSuccess: () => void;
+  // Requisições de hoje (mesma unidade) que dá pra apontar como
+  // "original" quando isso aqui é o excedente de algo já enviado —
+  // ausente ao editar (não faz sentido vincular uma edição).
+  linkCandidates?: { interna: LinkCandidate[]; externa: LinkCandidate[] };
 }) {
   const categoriasHoje = categorias.filter((c) => c.orderDays.includes(todayWeekday));
   // Quando só há uma opção (ou já estamos editando), não há o que
@@ -56,6 +67,8 @@ export function NovaRequisicaoForm({
     editing?.tipo ?? (tiposPermitidos.length === 1 ? tiposPermitidos[0] : null),
   );
   const [unitId, setUnitId] = useState(units[0]?.id ?? "");
+  const [relatedRequisicaoId, setRelatedRequisicaoId] = useState<number | "">("");
+  const candidatosVinculo = tipo ? (linkCandidates?.[tipo] ?? []) : [];
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState<number | "todas">("todas");
   const [selecionados, setSelecionados] = useState<Record<number, SelectedItem>>(() => {
@@ -137,6 +150,7 @@ export function NovaRequisicaoForm({
     fd.set("urgente", urgente ? "on" : "off");
     fd.set("observacao", observacao);
     fd.set("itensJson", JSON.stringify(Object.values(selecionados)));
+    if (relatedRequisicaoId) fd.set("relatedRequisicaoId", String(relatedRequisicaoId));
 
     startTransition(async () => {
       const result = await (editing ? updateRequisicao : createRequisicao)(undefined, fd);
@@ -158,11 +172,34 @@ export function NovaRequisicaoForm({
               key={t}
               type="button"
               className={`pill${tipo === t ? " active" : ""}`}
-              onClick={() => setTipo(t)}
+              onClick={() => {
+                setTipo(t);
+                setRelatedRequisicaoId("");
+              }}
             >
               {t === "interna" ? "Interna" : "Externa"}
             </button>
           ))}
+        </div>
+      )}
+
+      {!editing && candidatosVinculo.length > 0 && (
+        <div className="form-group">
+          <label htmlFor="relatedRequisicaoId">
+            Isso é excedente de uma requisição já enviada hoje?
+          </label>
+          <select
+            id="relatedRequisicaoId"
+            value={relatedRequisicaoId}
+            onChange={(e) => setRelatedRequisicaoId(e.target.value ? Number(e.target.value) : "")}
+          >
+            <option value="">Não, é um pedido novo</option>
+            {candidatosVinculo.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.requesterName} às {formatTime(c.createdAt)}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

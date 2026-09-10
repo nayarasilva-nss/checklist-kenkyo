@@ -148,6 +148,13 @@
       "when": 1788984983008,
       "tag": "0020_certain_thunderbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1788998388909,
+      "tag": "0021_light_the_twelve",
+      "breakpoints": true
     }
   ]
 }

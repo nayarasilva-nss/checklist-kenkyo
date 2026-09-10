@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/auth/requisicoes";
-import { resolveRequisicaoScope, getRequisicoesByScope } from "@/lib/data/requisicoes";
+import {
+  resolveRequisicaoScope,
+  getRequisicoesByScope,
+  getTodayRequisicoesForLink,
+} from "@/lib/data/requisicoes";
 import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
 import { getUnits } from "@/lib/data/units";
 import { todayWeekdayBrazil } from "@/lib/date-utils";
@@ -35,12 +39,23 @@ export default async function RequisicoesPage({
   // Quem não tem unidade fixa (Gestor) escolhe a unidade na hora de criar.
   const needsUnitPicker = canCreate && !effectiveUnitId;
 
-  const [records, categorias, catalogItems, units] = await Promise.all([
-    getRequisicoesByScope(scope, activeTipo),
-    canCreate ? getCatalogCategories() : Promise.resolve([]),
-    canCreate ? getCatalogItems() : Promise.resolve([]),
-    needsUnitPicker ? getUnits() : Promise.resolve([]),
-  ]);
+  const [records, categorias, catalogItems, units, linkCandidatesInterna, linkCandidatesExterna] =
+    await Promise.all([
+      getRequisicoesByScope(scope, activeTipo),
+      canCreate ? getCatalogCategories() : Promise.resolve([]),
+      canCreate ? getCatalogItems() : Promise.resolve([]),
+      needsUnitPicker ? getUnits() : Promise.resolve([]),
+      // Candidatas a "requisição original" pro seletor de excedente —
+      // só dá pra saber a unidade de antemão quando ela já é fixa/efetiva
+      // hoje (needsUnitPicker=true, ex: Gestor sem "Unidade de hoje",
+      // escolhe a unidade só depois de abrir o formulário).
+      canCreate && effectiveUnitId && criarTiposPermitidos.includes("interna")
+        ? getTodayRequisicoesForLink(effectiveUnitId, "interna")
+        : Promise.resolve([]),
+      canCreate && effectiveUnitId && criarTiposPermitidos.includes("externa")
+        ? getTodayRequisicoesForLink(effectiveUnitId, "externa")
+        : Promise.resolve([]),
+    ]);
 
   return (
     <RequisicoesBoard
@@ -55,6 +70,7 @@ export default async function RequisicoesPage({
       units={units}
       todayWeekday={todayWeekdayBrazil()}
       criarTiposPermitidos={criarTiposPermitidos}
+      linkCandidates={{ interna: linkCandidatesInterna, externa: linkCandidatesExterna }}
     />
   );
 }

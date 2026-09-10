@@ -53,6 +53,7 @@ function baseQuery() {
       observacao: requisicoes.observacao,
       status: requisicoes.status,
       conferidoPorId: requisicoes.conferidoPorId,
+      relatedRequisicaoId: requisicoes.relatedRequisicaoId,
       createdAt: requisicoes.createdAt,
       editedAt: requisicoes.editedAt,
       concluidoEm: requisicoes.concluidoEm,
@@ -60,6 +61,18 @@ function baseQuery() {
     .from(requisicoes)
     .innerJoin(units, eq(units.id, requisicoes.unitId))
     .innerJoin(users, eq(users.id, requisicoes.requesterId));
+}
+
+/** Contexto mínimo da requisição original pra quem vê o excedente saber
+ * o que ela complementa, sem precisar abrir as duas ao mesmo tempo. */
+async function fetchRelatedInfo(relatedIds: number[]) {
+  if (relatedIds.length === 0) return new Map<number, { createdAt: Date; requesterName: string }>();
+  const rows = await db
+    .select({ id: requisicoes.id, createdAt: requisicoes.createdAt, requesterName: users.name })
+    .from(requisicoes)
+    .innerJoin(users, eq(users.id, requisicoes.requesterId))
+    .where(inArray(requisicoes.id, relatedIds));
+  return new Map(rows.map((r) => [r.id, { createdAt: r.createdAt, requesterName: r.requesterName }]));
 }
 
 export async function getRequisicoesByScope(scope: RequisicaoScope, tipo?: string | null) {
@@ -90,11 +103,36 @@ export async function getRequisicoesByScope(scope: RequisicaoScope, tipo?: strin
     itensByRequisicao.set(item.requisicaoId, list);
   }
 
+  const relatedIds = records
+    .map((r) => r.relatedRequisicaoId)
+    .filter((id): id is number => id !== null);
+  const relatedById = await fetchRelatedInfo(relatedIds);
+
   return records.map((r) => ({
     ...r,
     itens: itensByRequisicao.get(r.id) ?? [],
     podeEditar: canEditToday(r),
+    related: r.relatedRequisicaoId ? (relatedById.get(r.relatedRequisicaoId) ?? null) : null,
   }));
+}
+
+/** Requisições de hoje, mesma unidade e tipo, que podem ser apontadas
+ * como "original" ao criar um excedente — usado pelo seletor na Nova
+ * Requisição. */
+export async function getTodayRequisicoesForLink(unitId: number, tipo: string) {
+  if (tipo !== "interna" && tipo !== "externa") return [];
+  const records = await db
+    .select({
+      id: requisicoes.id,
+      createdAt: requisicoes.createdAt,
+      requesterName: users.name,
+    })
+    .from(requisicoes)
+    .innerJoin(users, eq(users.id, requisicoes.requesterId))
+    .where(and(eq(requisicoes.unitId, unitId), eq(requisicoes.tipo, tipo)))
+    .orderBy(desc(requisicoes.createdAt));
+
+  return records.filter((r) => checklistDayForInstant(r.createdAt) === checklistDayISO());
 }
 
 /** Editável só enquanto "aberta" e até o dia de checklist virar (02:00
@@ -114,5 +152,9 @@ export async function getRequisicaoWithItens(id: number) {
     .where(eq(requisicaoItens.requisicaoId, id))
     .orderBy(asc(requisicaoItens.id));
 
-  return { ...requisicao, itens, podeEditar: canEditToday(requisicao) };
+  const related = requisicao.relatedRequisicaoId
+    ? ((await fetchRelatedInfo([requisicao.relatedRequisicaoId])).get(requisicao.relatedRequisicaoId) ?? null)
+    : null;
+
+  return { ...requisicao, itens, podeEditar: canEditToday(requisicao), related };
 }

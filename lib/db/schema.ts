@@ -10,6 +10,7 @@ import {
   boolean,
   numeric,
   uniqueIndex,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 export const profileEnum = pgEnum("profile", ["gestor", "gerente", "lider", "rh"]);
@@ -374,6 +375,16 @@ export const requisicoes = pgTable("requisicoes", {
   conferidoPorId: integer("conferido_por_id").references(() => users.id, {
     onDelete: "set null",
   }),
+  // Preenchido quando essa requisição é o excedente de algo que já foi
+  // pedido antes no mesmo dia (ex: esqueceram um item, ou pediram pouco
+  // e precisaram pegar mais à noite) — em vez de editar o pedido
+  // original e perder o rastro do que foi previsto vs. do que faltou,
+  // abre-se uma nova requisição apontando pra essa. onDelete "set null":
+  // a original pode ser cancelada sem arrastar o excedente junto.
+  relatedRequisicaoId: integer("related_requisicao_id").references(
+    (): AnyPgColumn => requisicoes.id,
+    { onDelete: "set null" },
+  ),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   editedAt: timestamp("edited_at"),
   concluidoEm: timestamp("concluido_em"),

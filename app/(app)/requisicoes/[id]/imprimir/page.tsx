@@ -225,6 +225,13 @@ export default async function ImprimirRequisicaoPage({
         </div>
       </div>
 
+      {requisicao.related && (
+        <div className="print-obs">
+          <strong>Excedente da requisição</strong> de {requisicao.related.requesterName} às{" "}
+          {formatDateTime(requisicao.related.createdAt)}.
+        </div>
+      )}
+
       {requisicao.observacao && (
         <div className="print-obs">
           <strong>Observação:</strong> {requisicao.observacao}

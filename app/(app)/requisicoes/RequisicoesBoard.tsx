@@ -15,6 +15,8 @@ type RequisicaoItem = {
   qtdConferida: string | null;
 };
 
+type LinkCandidate = { id: number; createdAt: Date; requesterName: string };
+
 type Requisicao = {
   id: number;
   tipo: string;
@@ -26,6 +28,8 @@ type Requisicao = {
   observacao: string;
   status: string;
   conferidoPorId: number | null;
+  relatedRequisicaoId: number | null;
+  related: { createdAt: Date; requesterName: string } | null;
   createdAt: Date;
   editedAt: Date | null;
   concluidoEm: Date | null;
@@ -114,6 +118,7 @@ export function RequisicoesBoard({
   units,
   todayWeekday,
   criarTiposPermitidos,
+  linkCandidates,
 }: {
   records: Requisicao[];
   tipo: string | null;
@@ -132,6 +137,7 @@ export function RequisicoesBoard({
   units: { id: number; name: string }[];
   todayWeekday: number;
   criarTiposPermitidos: ("interna" | "externa")[];
+  linkCandidates: { interna: LinkCandidate[]; externa: LinkCandidate[] };
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -213,6 +219,11 @@ export function RequisicoesBoard({
               <span className="col-unidade">{r.unitName}</span>
               <span className="col-status">
                 {r.urgente && <span className="badge badge-danger">URGENTE</span>}{" "}
+                {r.relatedRequisicaoId && (
+                  <span className="badge badge-info" title="Excedente de uma requisição já enviada">
+                    EXCEDENTE
+                  </span>
+                )}{" "}
                 <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-neutral"}`}>
                   {STATUS_LABEL[r.status] ?? r.status}
                 </span>
@@ -260,6 +271,22 @@ export function RequisicoesBoard({
                 </button>
               </div>
             </div>
+
+            {selected.related && (
+              <div
+                className="detail-panel-origin"
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedId(selected.relatedRequisicaoId)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setSelectedId(selected.relatedRequisicaoId);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                Excedente da requisição de {selected.related.requesterName} às{" "}
+                {formatDate(selected.related.createdAt)} — toque para ver a original
+              </div>
+            )}
 
             {selected.observacao && (
               <div className="detail-panel-fields">
@@ -353,6 +380,7 @@ export function RequisicoesBoard({
               catalogItems={catalogItems}
               units={units}
               todayWeekday={todayWeekday}
+              linkCandidates={editingRecord ? undefined : linkCandidates}
               editing={
                 editingRecord
                   ? ({
