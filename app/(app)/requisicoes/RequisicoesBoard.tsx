@@ -149,9 +149,28 @@ export function RequisicoesBoard({
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | undefined>();
+  const [isDeleting, startDelete] = useTransition();
 
   const selected = records.find((r) => r.id === selectedId) ?? null;
   const editingRecord = records.find((r) => r.id === editingId) ?? null;
+
+  function handleDelete(id: number) {
+    if (!confirm("Excluir esta requisição definitivamente? Isso remove o registro por completo, diferente de cancelar — não pode ser desfeito.")) {
+      return;
+    }
+    setDeleteError(undefined);
+    startDelete(async () => {
+      const fd = new FormData();
+      fd.set("id", String(id));
+      const result = await deleteRequisicao(undefined, fd);
+      if (result?.error) {
+        setDeleteError(result.error);
+      } else {
+        setSelectedId(null);
+      }
+    });
+  }
 
   function setTipoParam(value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
@@ -351,26 +370,16 @@ export function RequisicoesBoard({
             )}
 
             {canDelete && (
-              <div className="detail-panel-footer">
-                <form
-                  action={deleteRequisicao}
-                  onSubmit={(e) => {
-                    if (
-                      !confirm(
-                        "Excluir esta requisição definitivamente? Isso remove o registro por completo, diferente de cancelar — não pode ser desfeito.",
-                      )
-                    ) {
-                      e.preventDefault();
-                    } else {
-                      setSelectedId(null);
-                    }
-                  }}
+              <div className="detail-panel-footer" style={{ flexDirection: "column", alignItems: "flex-start" }}>
+                {deleteError && <p className="login-error">{deleteError}</p>}
+                <button
+                  type="button"
+                  className="btn-destructive"
+                  disabled={isDeleting}
+                  onClick={() => handleDelete(selected.id)}
                 >
-                  <input type="hidden" name="id" value={selected.id} />
-                  <button type="submit" className="btn-destructive">
-                    Excluir requisição
-                  </button>
-                </form>
+                  {isDeleting ? "Excluindo…" : "Excluir requisição"}
+                </button>
               </div>
             )}
           </div>

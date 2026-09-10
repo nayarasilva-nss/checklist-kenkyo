@@ -2,7 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
+import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao, canRequestExterna, canRequestInterna } from "@/lib/auth/requisicoes";
 import type { RequisicaoTipo } from "@/lib/auth/requisicoes";
@@ -218,11 +218,20 @@ export async function cancelRequisicao(formData: FormData) {
  * solicitante faz na própria requisição "aberta" e mantém o registro).
  * requisicaoItens vai junto via onDelete cascade; excedentes ligados a
  * essa aqui (related_requisicao_id) ficam com o vínculo nulo em vez de
- * também serem apagados. */
-export async function deleteRequisicao(formData: FormData) {
-  await requireGestor();
+ * também serem apagados. Retorna erro em vez de void (como as outras
+ * ações desta tela) pra falha ficar visível na UI em vez de "não
+ * acontecer nada". */
+export async function deleteRequisicao(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (user.profile !== "gestor") {
+    return { error: "Só o gestor pode excluir uma requisição" };
+  }
+
   const id = Number(formData.get("id"));
-  if (!id) return;
+  if (!id) return { error: "Requisição inválida" };
 
   await db.delete(requisicoes).where(eq(requisicoes.id, id));
 
