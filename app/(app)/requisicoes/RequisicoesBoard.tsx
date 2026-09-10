@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { cancelRequisicao, conferirRequisicao, deleteRequisicao } from "@/lib/actions/requisicoes";
+import {
+  cancelRequisicao,
+  conferirRequisicao,
+  deleteRequisicao,
+  updateRequisicaoTipo,
+} from "@/lib/actions/requisicoes";
 import { NovaRequisicaoForm } from "./NovaRequisicaoForm";
 import type { EditingRequisicao } from "./NovaRequisicaoForm";
 import { QuantidadeStepper } from "./QuantidadeStepper";
@@ -120,7 +125,7 @@ export function RequisicoesBoard({
   criarTiposPermitidos,
   linkCandidatesByUnit,
   fixedUnitId,
-  canDelete,
+  isGestor,
 }: {
   records: Requisicao[];
   tipo: string | null;
@@ -141,7 +146,7 @@ export function RequisicoesBoard({
   criarTiposPermitidos: ("interna" | "externa")[];
   linkCandidatesByUnit: Record<number, { interna: LinkCandidate[]; externa: LinkCandidate[] }>;
   fixedUnitId: number | null;
-  canDelete: boolean;
+  isGestor: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -151,9 +156,22 @@ export function RequisicoesBoard({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState<string | undefined>();
   const [isDeleting, startDelete] = useTransition();
+  const [tipoError, setTipoError] = useState<string | undefined>();
+  const [isChangingTipo, startChangeTipo] = useTransition();
 
   const selected = records.find((r) => r.id === selectedId) ?? null;
   const editingRecord = records.find((r) => r.id === editingId) ?? null;
+
+  function handleChangeTipo(id: number, tipo: "interna" | "externa") {
+    setTipoError(undefined);
+    startChangeTipo(async () => {
+      const fd = new FormData();
+      fd.set("id", String(id));
+      fd.set("tipo", tipo);
+      const result = await updateRequisicaoTipo(undefined, fd);
+      if (result?.error) setTipoError(result.error);
+    });
+  }
 
   function handleDelete(id: number) {
     if (!confirm("Excluir esta requisição definitivamente? Isso remove o registro por completo, diferente de cancelar — não pode ser desfeito.")) {
@@ -270,6 +288,26 @@ export function RequisicoesBoard({
                 <div className="detail-panel-meta">
                   {selected.requesterName} · {formatDate(selected.createdAt)}
                 </div>
+                {isGestor && (
+                  <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                    <label htmlFor="tipoOverride" style={{ fontSize: 12, color: "var(--text-faint)" }}>
+                      Tipo:
+                    </label>
+                    <select
+                      id="tipoOverride"
+                      value={selected.tipo}
+                      disabled={isChangingTipo}
+                      onChange={(e) => handleChangeTipo(selected.id, e.target.value as "interna" | "externa")}
+                      style={{ fontSize: 12.5, padding: "3px 6px" }}
+                    >
+                      <option value="interna">Interna</option>
+                      <option value="externa">Externa</option>
+                    </select>
+                    {tipoError && (
+                      <span style={{ fontSize: 11.5, color: "var(--danger-text)" }}>{tipoError}</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {/* Plain <a>, not next/link: Link's client-side routing
@@ -369,7 +407,7 @@ export function RequisicoesBoard({
               </div>
             )}
 
-            {canDelete && (
+            {isGestor && (
               <div className="detail-panel-footer" style={{ flexDirection: "column", alignItems: "flex-start" }}>
                 {deleteError && <p className="login-error">{deleteError}</p>}
                 <button

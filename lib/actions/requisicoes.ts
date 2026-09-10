@@ -238,6 +238,31 @@ export async function deleteRequisicao(
   revalidateRequisicaoViews();
 }
 
+/** Corrige o tipo (interna/externa) de uma requisição já enviada — só
+ * Gestor, em qualquer status. Existe pra consertar lançamento errado
+ * (ex: pediram externa quando era pra ser interna); não reabre a janela
+ * de edição normal nem mexe nos itens/conferência já registrados. */
+export async function updateRequisicaoTipo(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (user.profile !== "gestor") {
+    return { error: "Só o gestor pode mudar o tipo de uma requisição" };
+  }
+
+  const id = Number(formData.get("id"));
+  const tipo = String(formData.get("tipo") ?? "");
+  if (!id) return { error: "Requisição inválida" };
+  if (tipo !== "interna" && tipo !== "externa") {
+    return { error: "Selecione o tipo de requisição" };
+  }
+
+  await db.update(requisicoes).set({ tipo }).where(eq(requisicoes.id, id));
+
+  revalidateRequisicaoViews();
+}
+
 export async function conferirRequisicao(
   _prevState: ActionState,
   formData: FormData,

@@ -79,7 +79,7 @@ export default async function RequisicoesPage({
       criarTiposPermitidos={criarTiposPermitidos}
       linkCandidatesByUnit={linkCandidatesByUnit}
       fixedUnitId={effectiveUnitId}
-      canDelete={user.profile === "gestor"}
+      isGestor={user.profile === "gestor"}
     />
   );
 }
