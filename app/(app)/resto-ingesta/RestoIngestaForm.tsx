@@ -4,7 +4,13 @@ import { useRef, useState, useTransition } from "react";
 import { createRestoIngestaRecord } from "@/lib/actions/resto-ingesta";
 import { todayISO } from "@/lib/date-utils";
 
-export function RestoIngestaForm() {
+export function RestoIngestaForm({
+  units,
+}: {
+  // Só não-vazio pra quem não tem unidade fixa — hoje, Gestor — que por
+  // isso precisa escolher pra qual unidade é o registro.
+  units?: { id: number; name: string }[];
+} = {}) {
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
@@ -26,6 +32,18 @@ export function RestoIngestaForm() {
   return (
     <form className="inline-form" ref={formRef} onSubmit={handleSubmit}>
       <h4>Registrar Resto Ingesta</h4>
+      {units && units.length > 0 && (
+        <div className="form-group">
+          <label htmlFor="riUnitId">Unidade</label>
+          <select id="riUnitId" name="unitId" required>
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="form-group">
         <label htmlFor="ridate">Data</label>
         <input id="ridate" name="date" type="date" defaultValue={todayISO()} required />

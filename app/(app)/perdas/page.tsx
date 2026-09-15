@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import {
   canSubmitFilleting,
   getFilletingRecords,
@@ -35,6 +36,11 @@ export default async function PerdasPage({
   const tab = rawTab === "resto" ? "resto" : "filetagem";
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const unitId = resolveUnitScope(user, requestedUnitId);
+
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
+  // Quem não tem unidade fixa hoje (Gestor sem "Unidade de hoje")
+  // escolhe a unidade dentro do formulário ao registrar.
+  const needsUnitPicker = isGestor && !effectiveUnitId;
 
   const units = isGestor ? await getUnits() : [];
 
@@ -73,9 +79,17 @@ export default async function PerdasPage({
       )}
 
       {tab === "filetagem" ? (
-        <FiletagemTab user={user} unitId={unitId} />
+        <FiletagemTab
+          user={user}
+          unitId={unitId}
+          unitPickerOptions={needsUnitPicker ? units : []}
+        />
       ) : (
-        <RestoIngestaTab user={user} unitId={unitId} />
+        <RestoIngestaTab
+          user={user}
+          unitId={unitId}
+          unitPickerOptions={needsUnitPicker ? units : []}
+        />
       )}
     </>
   );
@@ -84,9 +98,11 @@ export default async function PerdasPage({
 async function FiletagemTab({
   user,
   unitId,
+  unitPickerOptions,
 }: {
   user: { profile: string; unitId: number | null; jobFunctionName: string | null; name: string };
   unitId: number | null;
+  unitPickerOptions: { id: number; name: string }[];
 }) {
   const isGestor = user.profile === "gestor";
   const [records, summary] = await Promise.all([
@@ -106,7 +122,7 @@ async function FiletagemTab({
     <>
       {canSubmitFilleting(user) && (
         <div className="today-card" style={{ marginBottom: 20 }}>
-          <FiletagemForm defaultResponsavel={user.name} />
+          <FiletagemForm defaultResponsavel={user.name} units={unitPickerOptions} />
         </div>
       )}
 
@@ -183,9 +199,11 @@ async function FiletagemTab({
 async function RestoIngestaTab({
   user,
   unitId,
+  unitPickerOptions,
 }: {
   user: { profile: string };
   unitId: number | null;
+  unitPickerOptions: { id: number; name: string }[];
 }) {
   const isGestor = user.profile === "gestor";
   const [records, summary] = await Promise.all([
@@ -197,7 +215,7 @@ async function RestoIngestaTab({
     <>
       {canSubmitRestoIngesta(user) && (
         <div className="today-card" style={{ marginBottom: 20 }}>
-          <RestoIngestaForm />
+          <RestoIngestaForm units={unitPickerOptions} />
         </div>
       )}
 

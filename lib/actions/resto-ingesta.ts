@@ -23,9 +23,16 @@ export async function createRestoIngestaRecord(
     };
   }
 
-  const effectiveUnitId = await resolveEffectiveUnitId(user);
+  // Unidade efetiva do dia — quem está cobrindo outra unidade registra
+  // pra lá. Quem não tem unidade fixa (hoje, Gestor) escolhe na hora,
+  // via unitId no formulário (ver units em RestoIngestaForm).
+  let effectiveUnitId = await resolveEffectiveUnitId(user);
   if (!effectiveUnitId) {
-    return { error: "Seu usuário não está vinculado a uma unidade" };
+    const rawUnitId = Number(formData.get("unitId"));
+    if (!rawUnitId) {
+      return { error: "Selecione a unidade" };
+    }
+    effectiveUnitId = rawUnitId;
   }
 
   const date = String(formData.get("date") ?? "").trim();

@@ -14,8 +14,12 @@ type NumericField =
 
 export function FiletagemForm({
   defaultResponsavel,
+  units,
 }: {
   defaultResponsavel: string;
+  // Só não-vazio pra quem não tem unidade fixa — hoje, Gestor — que por
+  // isso precisa escolher pra qual unidade é o registro.
+  units?: { id: number; name: string }[];
 }) {
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
@@ -69,6 +73,18 @@ export function FiletagemForm({
   return (
     <form className="inline-form" ref={formRef} onSubmit={handleSubmit}>
       <h4>Registrar Filetagem</h4>
+      {units && units.length > 0 && (
+        <div className="form-group">
+          <label htmlFor="fUnitId">Unidade</label>
+          <select id="fUnitId" name="unitId" required>
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="form-row-inline">
         <div className="form-group">
           <label htmlFor="fdate">Data</label>
