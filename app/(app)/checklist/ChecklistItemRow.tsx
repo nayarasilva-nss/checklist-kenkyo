@@ -135,15 +135,33 @@ export function ChecklistItemRow({
       setError(null);
       try {
         const compressed = await compressPhoto(photoFile);
+        if (compressed.size > 10 * 1024 * 1024) {
+          setUploading(false);
+          setError(
+            "Essa foto tem mais de 10MB mesmo depois de compactada — tente uma foto com menos resolução.",
+          );
+          return;
+        }
         const blob = await upload(
           `evidencias/${checklistTypeId}-${item.id}-${Date.now()}-${compressed.name}`,
           compressed,
           { access: "public", handleUploadUrl: "/api/upload" },
         );
         photoUrl = blob.url;
-      } catch {
+      } catch (err) {
         setUploading(false);
-        setError("Falha ao enviar a foto. Tente novamente.");
+        // A causa real (sessão expirada, tipo de arquivo rejeitado, rede
+        // caindo no meio do envio) vem em err.message — mostrar em vez de
+        // esconder atrás de uma mensagem genérica, senão fica impossível
+        // saber por que falhou quando alguém reporta "falha ao enviar foto".
+        console.error("Falha ao enviar foto de evidência:", err);
+        const detail = err instanceof Error ? err.message : "";
+        const amigavel = detail.includes("Não autenticado")
+          ? "Sua sessão expirou — atualize a página e tente de novo."
+          : detail.includes("exceeds")
+            ? "A foto é grande demais pra esse limite."
+            : detail || "Verifique sua conexão e tente de novo.";
+        setError(`Falha ao enviar a foto: ${amigavel}`);
         return;
       }
       setUploading(false);
