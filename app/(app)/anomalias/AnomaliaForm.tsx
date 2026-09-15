@@ -8,9 +8,13 @@ import { todayISO } from "@/lib/date-utils";
 export function AnomaliaForm({
   defaultRelator,
   onSuccess,
+  units,
 }: {
   defaultRelator: string;
   onSuccess?: () => void;
+  // Só passado (não-vazio) pra quem não tem unidade fixa — hoje, Gestor —
+  // que por isso precisa escolher pra qual unidade é a anomalia.
+  units?: { id: number; name: string }[];
 }) {
   const [error, setError] = useState<string | undefined>();
   const [success, setSuccess] = useState(false);
@@ -36,6 +40,19 @@ export function AnomaliaForm({
 
   return (
     <form className="inline-form" ref={formRef} onSubmit={handleSubmit}>
+      {units && units.length > 0 && (
+        <div className="form-group">
+          <label htmlFor="unitId">Unidade</label>
+          <select id="unitId" name="unitId" required>
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="form-group">
         <label htmlFor="aDate">Data do ocorrido</label>
         <input id="aDate" name="date" type="date" defaultValue={todayISO()} required />

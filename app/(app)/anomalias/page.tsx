@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/auth/dal";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import {
   getAnomaliesByScope,
   resolveAnomalyScope,
@@ -27,10 +28,14 @@ export default async function AnomaliasPage({
   const scope = resolveAnomalyScope(user, requestedUnitId);
 
   const sinceDate = dias ? daysAgoISO(Number(dias)) : null;
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
+  // Quem não tem unidade fixa hoje (Gestor sem "Unidade de hoje")
+  // escolhe a unidade dentro do formulário ao registrar.
+  const needsUnitPicker = !isRh && !effectiveUnitId;
 
   const [records, units] = await Promise.all([
     getAnomaliesByScope(scope, { tipo, setor, sinceDate }),
-    canViewAllUnits ? getUnits() : Promise.resolve([]),
+    canViewAllUnits || needsUnitPicker ? getUnits() : Promise.resolve([]),
   ]);
 
   return (
@@ -45,6 +50,7 @@ export default async function AnomaliasPage({
       canCreate={!isRh}
       canDelete={isGestor}
       defaultRelator={user.name}
+      unitPickerOptions={needsUnitPicker ? units : []}
     />
   );
 }

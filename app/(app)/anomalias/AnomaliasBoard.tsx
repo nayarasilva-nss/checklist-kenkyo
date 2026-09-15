@@ -67,6 +67,7 @@ export function AnomaliasBoard({
   canCreate,
   canDelete,
   defaultRelator,
+  unitPickerOptions,
 }: {
   records: AnomalyRecord[];
   units: { id: number; name: string }[];
@@ -78,6 +79,9 @@ export function AnomaliasBoard({
   canCreate: boolean;
   canDelete: boolean;
   defaultRelator: string;
+  // Só não-vazio pra quem não tem unidade fixa hoje (Gestor sem
+  // "Unidade de hoje") — precisa escolher a unidade ao registrar.
+  unitPickerOptions: { id: number; name: string }[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -264,6 +268,7 @@ export function AnomaliasBoard({
               <AnomaliaForm
                 defaultRelator={defaultRelator}
                 onSuccess={() => setCreating(false)}
+                units={unitPickerOptions}
               />
             </>
           ) : selected ? (
