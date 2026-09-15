@@ -141,9 +141,13 @@ export function ChecklistItemRow({
           { access: "public", handleUploadUrl: "/api/upload" },
         );
         photoUrl = blob.url;
-      } catch {
+      } catch (uploadError) {
         setUploading(false);
-        setError("Falha ao enviar a foto. Tente novamente.");
+        setError(
+          uploadError instanceof Error
+            ? `Falha ao enviar a foto: ${uploadError.message}`
+            : "Falha ao enviar a foto. Tente novamente.",
+        );
         return;
       }
       setUploading(false);

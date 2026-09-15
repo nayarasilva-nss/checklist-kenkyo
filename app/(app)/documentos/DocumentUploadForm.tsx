@@ -30,9 +30,13 @@ export function DocumentUploadForm() {
         handleUploadUrl: "/api/upload",
       });
       fileUrl = blob.url;
-    } catch {
+    } catch (uploadError) {
       setUploading(false);
-      setError("Falha ao enviar o arquivo. Tente novamente.");
+      setError(
+        uploadError instanceof Error
+          ? `Falha ao enviar o arquivo: ${uploadError.message}`
+          : "Falha ao enviar o arquivo. Tente novamente.",
+      );
       return;
     }
     setUploading(false);

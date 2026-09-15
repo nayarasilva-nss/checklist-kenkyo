@@ -37,9 +37,10 @@ export async function POST(request: Request): Promise<NextResponse> {
             "image/png",
             "image/webp",
             "image/heic",
+            "image/heif",
           ],
           addRandomSuffix: true,
-          maximumSizeInBytes: 10 * 1024 * 1024,
+          maximumSizeInBytes: 20 * 1024 * 1024,
         };
       },
     });
