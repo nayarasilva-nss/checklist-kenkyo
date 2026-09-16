@@ -233,6 +233,38 @@ export const restoIngestaRecords = pgTable("resto_ingesta_records", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Controle do Líder de Bar (ver lib/data/utensil-breakage.ts).
+export const utensilBreakageRecords = pgTable("utensil_breakage_records", {
+  id: serial("id").primaryKey(),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => units.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  item: varchar("item", { length: 255 }).notNull(),
+  quantidade: integer("quantidade").notNull(),
+  motivo: text("motivo"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Controle do Líder de Delivery (ver lib/data/delivery-errors.ts).
+export const deliveryErrorRecords = pgTable("delivery_error_records", {
+  id: serial("id").primaryKey(),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => units.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  totalPedidos: integer("total_pedidos").notNull(),
+  pedidosComErro: integer("pedidos_com_erro").notNull(),
+  motivo: text("motivo"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),

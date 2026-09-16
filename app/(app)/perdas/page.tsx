@@ -11,17 +11,40 @@ import {
   getRestoIngestaRecords,
   getRestoIngestaMonthlySummary,
 } from "@/lib/data/resto-ingesta";
+import {
+  canSubmitUtensilBreakage,
+  getUtensilBreakageRecords,
+  getUtensilBreakageMonthlySummary,
+} from "@/lib/data/utensil-breakage";
+import {
+  canSubmitDeliveryError,
+  getDeliveryErrorRecords,
+  getDeliveryErrorMonthlySummary,
+} from "@/lib/data/delivery-errors";
 import { deleteFilletingRecord } from "@/lib/actions/filleting";
 import { deleteRestoIngestaRecord } from "@/lib/actions/resto-ingesta";
+import { deleteUtensilBreakageRecord } from "@/lib/actions/utensil-breakage";
+import { deleteDeliveryErrorRecord } from "@/lib/actions/delivery-errors";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { UnitFilter } from "../UnitFilter";
 import { DeleteButton } from "../gerenciar/DeleteButton";
 import { FiletagemForm } from "../filetagem/FiletagemForm";
 import { RestoIngestaForm } from "../resto-ingesta/RestoIngestaForm";
+import { QuebraUtensiliosForm } from "../quebra-utensilios/QuebraUtensiliosForm";
+import { PedidosErroForm } from "../pedidos-erro/PedidosErroForm";
 
 function lossBadge(pct: number) {
   if (pct < 32) return "badge-success";
   if (pct <= 45) return "badge-warning";
+  return "badge-danger";
+}
+
+// Erro de pedido é muito mais grave por ponto percentual que perda de
+// filetagem — uma taxa de 32% de pedidos errados seria um problema
+// sério, não "dentro do padrão". Limiares bem mais baixos.
+function deliveryErrorBadge(pct: number) {
+  if (pct < 5) return "badge-success";
+  if (pct <= 10) return "badge-warning";
   return "badge-danger";
 }
 
@@ -33,7 +56,10 @@ export default async function PerdasPage({
   const user = await getCurrentUser();
   const isGestor = user.profile === "gestor";
   const { tab: rawTab, unit: rawUnit } = await searchParams;
-  const tab = rawTab === "resto" ? "resto" : "filetagem";
+  const tab =
+    rawTab === "resto" || rawTab === "utensilios" || rawTab === "delivery"
+      ? rawTab
+      : "filetagem";
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const unitId = resolveUnitScope(user, requestedUnitId);
 
@@ -63,6 +89,18 @@ export default async function PerdasPage({
         >
           Resto ingesta
         </Link>
+        <Link
+          href={`/perdas?tab=utensilios${requestedUnitId ? `&unit=${requestedUnitId}` : ""}`}
+          className={`pill${tab === "utensilios" ? " active" : ""}`}
+        >
+          Quebra de utensílios
+        </Link>
+        <Link
+          href={`/perdas?tab=delivery${requestedUnitId ? `&unit=${requestedUnitId}` : ""}`}
+          className={`pill${tab === "delivery" ? " active" : ""}`}
+        >
+          Pedidos com erro
+        </Link>
       </div>
 
       {isGestor && (
@@ -78,14 +116,29 @@ export default async function PerdasPage({
         </p>
       )}
 
-      {tab === "filetagem" ? (
+      {tab === "filetagem" && (
         <FiletagemTab
           user={user}
           unitId={unitId}
           unitPickerOptions={needsUnitPicker ? units : []}
         />
-      ) : (
+      )}
+      {tab === "resto" && (
         <RestoIngestaTab
+          user={user}
+          unitId={unitId}
+          unitPickerOptions={needsUnitPicker ? units : []}
+        />
+      )}
+      {tab === "utensilios" && (
+        <UtensilBreakageTab
+          user={user}
+          unitId={unitId}
+          unitPickerOptions={needsUnitPicker ? units : []}
+        />
+      )}
+      {tab === "delivery" && (
+        <DeliveryErrorTab
           user={user}
           unitId={unitId}
           unitPickerOptions={needsUnitPicker ? units : []}
@@ -264,6 +317,172 @@ async function RestoIngestaTab({
                 {isGestor && (
                   <DeleteButton
                     action={deleteRestoIngestaRecord}
+                    id={record.id}
+                    confirmText={`Remover o registro de ${new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR")}?`}
+                  />
+                )}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </>
+  );
+}
+
+async function UtensilBreakageTab({
+  user,
+  unitId,
+  unitPickerOptions,
+}: {
+  user: { profile: string; jobFunctionName: string | null };
+  unitId: number | null;
+  unitPickerOptions: { id: number; name: string }[];
+}) {
+  const isGestor = user.profile === "gestor";
+  const [records, summary] = await Promise.all([
+    getUtensilBreakageRecords(unitId),
+    getUtensilBreakageMonthlySummary(unitId),
+  ]);
+
+  return (
+    <>
+      {canSubmitUtensilBreakage(user) && (
+        <div className="today-card" style={{ marginBottom: 20 }}>
+          <QuebraUtensiliosForm units={unitPickerOptions} />
+        </div>
+      )}
+
+      <div className="summary-cards" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+        <div className="summary-card">
+          <div className="summary-card-label">Total quebrado no mês</div>
+          <div className="summary-card-value">{summary.totalQuebrado}</div>
+        </div>
+        <div className="summary-card">
+          <div className="summary-card-label">Item mais quebrado</div>
+          <div className="summary-card-value" style={{ fontSize: 18 }}>
+            {summary.itemMaisQuebrado ?? "—"}
+          </div>
+        </div>
+      </div>
+
+      <div className="data-table">
+        <div
+          className="data-table-head"
+          style={{ gridTemplateColumns: "78px 1fr 100px 1fr 130px" }}
+        >
+          <span>Data</span>
+          <span>Item · Unidade</span>
+          <span>Qtd.</span>
+          <span>Motivo</span>
+          <span>Registrado por</span>
+        </div>
+        {records.length === 0 ? (
+          <div className="data-table-empty">Nenhum registro de quebra ainda</div>
+        ) : (
+          records.map((record) => (
+            <div
+              key={record.id}
+              className="data-table-row"
+              style={{ gridTemplateColumns: "78px 1fr 100px 1fr 130px", cursor: "default" }}
+            >
+              <span className="data-table-date">
+                {new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                })}
+              </span>
+              <span>
+                {record.item} · {record.unitName}
+              </span>
+              <span>{record.quantidade}</span>
+              <span>{record.motivo ?? "—"}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {record.userName}
+                {isGestor && (
+                  <DeleteButton
+                    action={deleteUtensilBreakageRecord}
+                    id={record.id}
+                    confirmText={`Remover o registro de quebra de ${record.item}?`}
+                  />
+                )}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </>
+  );
+}
+
+async function DeliveryErrorTab({
+  user,
+  unitId,
+  unitPickerOptions,
+}: {
+  user: { profile: string; jobFunctionName: string | null };
+  unitId: number | null;
+  unitPickerOptions: { id: number; name: string }[];
+}) {
+  const isGestor = user.profile === "gestor";
+  const [records, summary] = await Promise.all([
+    getDeliveryErrorRecords(unitId),
+    getDeliveryErrorMonthlySummary(unitId),
+  ]);
+
+  return (
+    <>
+      {canSubmitDeliveryError(user) && (
+        <div className="today-card" style={{ marginBottom: 20 }}>
+          <PedidosErroForm units={unitPickerOptions} />
+        </div>
+      )}
+
+      <div className="summary-cards" style={{ gridTemplateColumns: "repeat(1, 1fr)" }}>
+        <div className="summary-card">
+          <div className="summary-card-label">Taxa de erro média do mês</div>
+          <div className="summary-card-value">
+            {summary.errorRatePercent !== null ? `${summary.errorRatePercent.toFixed(1)}%` : "—"}
+          </div>
+        </div>
+      </div>
+
+      <div className="data-table">
+        <div
+          className="data-table-head"
+          style={{ gridTemplateColumns: "78px 1fr 100px 100px 90px" }}
+        >
+          <span>Data</span>
+          <span>Unidade</span>
+          <span>Total</span>
+          <span>Com erro</span>
+          <span>% Erro</span>
+        </div>
+        {records.length === 0 ? (
+          <div className="data-table-empty">Nenhum registro de pedidos com erro ainda</div>
+        ) : (
+          records.map((record) => (
+            <div
+              key={record.id}
+              className="data-table-row"
+              style={{ gridTemplateColumns: "78px 1fr 100px 100px 90px", cursor: "default" }}
+            >
+              <span className="data-table-date">
+                {new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                })}
+              </span>
+              <span>{record.unitName}</span>
+              <span>{record.totalPedidos}</span>
+              <span>{record.pedidosComErro}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span className={`badge ${deliveryErrorBadge(record.errorPercent)}`}>
+                  {record.errorPercent.toFixed(1)}%
+                </span>
+                {isGestor && (
+                  <DeleteButton
+                    action={deleteDeliveryErrorRecord}
                     id={record.id}
                     confirmText={`Remover o registro de ${new Date(`${record.date}T00:00:00`).toLocaleDateString("pt-BR")}?`}
                   />
