@@ -15,6 +15,7 @@ export const ANOMALY_SETORES = [
   "Produção",
   "Atendimento - Salão",
   "Atendimento - Delivery",
+  "Administrativo",
 ] as const;
 
 // Best-effort setor guess for anomalies generated automatically from a
