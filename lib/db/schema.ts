@@ -52,6 +52,16 @@ export const catalogUnitMeasureEnum = pgEnum("catalog_unit_measure", [
   "cx",
   "pct",
 ]);
+// "aberta": pendente de aprovação do gestor. "aprovada"/"reprovada":
+// decisão do gestor. Compra/entrega são rastreadas por item (ver
+// solicitacaoItens), não aqui — itens do mesmo pedido podem chegar em
+// momentos diferentes.
+export const solicitacaoStatusEnum = pgEnum("solicitacao_status", [
+  "aberta",
+  "aprovada",
+  "reprovada",
+  "cancelada",
+]);
 
 export const units = pgTable(
   "units",
@@ -461,6 +471,46 @@ export const requisicaoItens = pgTable("requisicao_itens", {
   unidadeMedida: catalogUnitMeasureEnum("unidade_medida").notNull(),
   qtdPedida: numeric("qtd_pedida", { precision: 10, scale: 3 }).notNull(),
   qtdConferida: numeric("qtd_conferida", { precision: 10, scale: 3 }),
+});
+
+// Solicitação de item avulso (ex: rádio comunicador, lâmpada do
+// aquecedor) — diferente de requisicoes (consumo de estoque, sem
+// aprovação): aqui todo pedido passa por aprovação do gestor antes da
+// compra ser providenciada (ver lib/auth/solicitacoes.ts).
+export const solicitacoes = pgTable("solicitacoes", {
+  id: serial("id").primaryKey(),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => units.id, { onDelete: "cascade" }),
+  requesterId: integer("requester_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  urgente: boolean("urgente").notNull().default(false),
+  observacao: text("observacao").notNull().default(""),
+  status: solicitacaoStatusEnum("status").notNull().default("aberta"),
+  aprovadoPorId: integer("aprovado_por_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  aprovadoEm: timestamp("aprovado_em"),
+  motivoReprovacao: text("motivo_reprovacao"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const solicitacaoItens = pgTable("solicitacao_itens", {
+  id: serial("id").primaryKey(),
+  solicitacaoId: integer("solicitacao_id")
+    .notNull()
+    .references(() => solicitacoes.id, { onDelete: "cascade" }),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  quantidade: integer("quantidade").notNull(),
+  // Preenchidos pelo gestor depois da aprovação, item a item — itens do
+  // mesmo pedido podem ser comprados/entregues em momentos diferentes.
+  comprado: boolean("comprado").notNull().default(false),
+  dataPrevistaEntrega: date("data_prevista_entrega"),
+  // Marcado por quem solicitou (ou pelo gestor) quando o item chega —
+  // é o que fecha o acompanhamento do pedido.
+  chegou: boolean("chegou").notNull().default(false),
 });
 
 export const history = pgTable("history", {

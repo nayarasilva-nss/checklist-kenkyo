@@ -1,0 +1,213 @@
+"use server";
+
+import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/auth/dal";
+import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
+import { canCreateSolicitacao, canApproveSolicitacao } from "@/lib/auth/solicitacoes";
+import { db } from "@/lib/db";
+import { solicitacoes, solicitacaoItens } from "@/lib/db/schema";
+
+export type ActionState = { error?: string } | undefined;
+
+function revalidateSolicitacaoViews() {
+  revalidatePath("/solicitacoes");
+}
+
+type ParsedItem = { nome: string; quantidade: number };
+
+function parseItens(formData: FormData): ParsedItem[] {
+  const raw = String(formData.get("itensJson") ?? "[]");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed
+    .map((entry) => ({
+      nome: typeof entry?.nome === "string" ? entry.nome.trim() : "",
+      quantidade: Number(entry?.quantidade),
+    }))
+    .filter(
+      (item): item is ParsedItem =>
+        item.nome.length > 0 && Number.isFinite(item.quantidade) && item.quantidade > 0,
+    );
+}
+
+export async function createSolicitacao(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+
+  if (!canCreateSolicitacao(user)) {
+    return { error: "Você não tem permissão para criar uma solicitação" };
+  }
+
+  // Unidade efetiva do dia — quem está cobrindo outra unidade pede pra
+  // lá. Quem não tem unidade fixa (hoje, Gestor) escolhe na hora, via
+  // unitId no formulário.
+  let effectiveUnitId = await resolveEffectiveUnitId(user);
+  if (!effectiveUnitId) {
+    const rawUnitId = Number(formData.get("unitId"));
+    if (!rawUnitId) {
+      return { error: "Selecione a unidade" };
+    }
+    effectiveUnitId = rawUnitId;
+  }
+
+  const date = String(formData.get("date") ?? "").trim();
+  const urgente = formData.get("urgente") === "on";
+  const observacao = String(formData.get("observacao") ?? "").trim();
+  const itens = parseItens(formData);
+
+  if (!date) return { error: "Informe a data" };
+  if (itens.length === 0) return { error: "Selecione ao menos um item" };
+
+  const [solicitacao] = await db
+    .insert(solicitacoes)
+    .values({ unitId: effectiveUnitId, requesterId: user.id, date, urgente, observacao })
+    .returning({ id: solicitacoes.id });
+
+  await db.insert(solicitacaoItens).values(
+    itens.map((item) => ({
+      solicitacaoId: solicitacao.id,
+      nome: item.nome,
+      quantidade: item.quantidade,
+    })),
+  );
+
+  revalidateSolicitacaoViews();
+}
+
+export async function cancelSolicitacao(formData: FormData) {
+  const user = await getCurrentUser();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+
+  const [existing] = await db.select().from(solicitacoes).where(eq(solicitacoes.id, id)).limit(1);
+  if (!existing || existing.requesterId !== user.id || existing.status !== "aberta") return;
+
+  await db.update(solicitacoes).set({ status: "cancelada" }).where(eq(solicitacoes.id, id));
+  revalidateSolicitacaoViews();
+}
+
+export async function approveSolicitacao(formData: FormData): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!canApproveSolicitacao(user)) {
+    return { error: "Só o gestor pode aprovar uma solicitação" };
+  }
+
+  const id = Number(formData.get("id"));
+  if (!id) return { error: "Solicitação inválida" };
+
+  const [existing] = await db.select().from(solicitacoes).where(eq(solicitacoes.id, id)).limit(1);
+  if (!existing || existing.status !== "aberta") {
+    return { error: "Essa solicitação já foi decidida" };
+  }
+
+  await db
+    .update(solicitacoes)
+    .set({ status: "aprovada", aprovadoPorId: user.id, aprovadoEm: new Date() })
+    .where(eq(solicitacoes.id, id));
+
+  revalidateSolicitacaoViews();
+}
+
+export async function reproveSolicitacao(formData: FormData): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!canApproveSolicitacao(user)) {
+    return { error: "Só o gestor pode reprovar uma solicitação" };
+  }
+
+  const id = Number(formData.get("id"));
+  if (!id) return { error: "Solicitação inválida" };
+  const motivo = String(formData.get("motivo") ?? "").trim() || null;
+
+  const [existing] = await db.select().from(solicitacoes).where(eq(solicitacoes.id, id)).limit(1);
+  if (!existing || existing.status !== "aberta") {
+    return { error: "Essa solicitação já foi decidida" };
+  }
+
+  await db
+    .update(solicitacoes)
+    .set({
+      status: "reprovada",
+      aprovadoPorId: user.id,
+      aprovadoEm: new Date(),
+      motivoReprovacao: motivo,
+    })
+    .where(eq(solicitacoes.id, id));
+
+  revalidateSolicitacaoViews();
+}
+
+/** Exclusão definitiva — só Gestor, diferente de cancelar. */
+export async function deleteSolicitacao(formData: FormData) {
+  const user = await getCurrentUser();
+  if (user.profile !== "gestor") return;
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  await db.delete(solicitacoes).where(eq(solicitacoes.id, id));
+  revalidateSolicitacaoViews();
+}
+
+/** Marca um item como comprado (ou desfaz), e a data prevista de
+ * entrega — só Gestor, só depois de aprovada. */
+export async function setItemComprado(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!canApproveSolicitacao(user)) {
+    return { error: "Só o gestor pode marcar um item como comprado" };
+  }
+
+  const itemId = Number(formData.get("itemId"));
+  const solicitacaoId = Number(formData.get("solicitacaoId"));
+  if (!itemId || !solicitacaoId) return { error: "Item inválido" };
+
+  const [existing] = await db
+    .select({ status: solicitacoes.status })
+    .from(solicitacoes)
+    .where(eq(solicitacoes.id, solicitacaoId))
+    .limit(1);
+  if (!existing || existing.status !== "aprovada") {
+    return { error: "A solicitação precisa estar aprovada antes de registrar a compra" };
+  }
+
+  const comprado = formData.get("comprado") === "on";
+  const dataPrevistaEntrega = String(formData.get("dataPrevistaEntrega") ?? "").trim() || null;
+
+  await db
+    .update(solicitacaoItens)
+    .set({ comprado, dataPrevistaEntrega })
+    .where(eq(solicitacaoItens.id, itemId));
+
+  revalidateSolicitacaoViews();
+}
+
+/** Marca a chegada de um item — quem pediu (acompanhando o próprio
+ * pedido) ou o gestor. */
+export async function setItemChegou(formData: FormData) {
+  const user = await getCurrentUser();
+  const itemId = Number(formData.get("itemId"));
+  const solicitacaoId = Number(formData.get("solicitacaoId"));
+  if (!itemId || !solicitacaoId) return;
+
+  const [existing] = await db
+    .select({ requesterId: solicitacoes.requesterId })
+    .from(solicitacoes)
+    .where(eq(solicitacoes.id, solicitacaoId))
+    .limit(1);
+  if (!existing) return;
+  if (existing.requesterId !== user.id && user.profile !== "gestor") return;
+
+  const chegou = formData.get("chegou") === "on";
+  await db.update(solicitacaoItens).set({ chegou }).where(eq(solicitacaoItens.id, itemId));
+
+  revalidateSolicitacaoViews();
+}

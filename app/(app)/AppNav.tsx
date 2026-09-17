@@ -16,7 +16,7 @@ const PROFILE_LABELS: Record<string, string> = {
   rh: "RH",
 };
 
-function buildGroups(profile: string, showRequisicoes: boolean): NavGroup[] {
+function buildGroups(profile: string, showRequisicoes: boolean, showSolicitacoes: boolean): NavGroup[] {
   if (profile === "rh") {
     return [
       {
@@ -39,6 +39,7 @@ function buildGroups(profile: string, showRequisicoes: boolean): NavGroup[] {
         { href: "/diario-de-bordo", label: "Diário de bordo" },
         { href: "/anomalias", label: "Anomalias" },
         ...(showRequisicoes ? [{ href: "/requisicoes", label: "Requisições" }] : []),
+        ...(showSolicitacoes ? [{ href: "/solicitacoes", label: "Solicitações" }] : []),
       ],
     },
     {
@@ -124,6 +125,7 @@ export function AppNav({
   canWriteShiftLog,
   showRequisicoes,
   canCreateRequisicao,
+  showSolicitacoes,
 }: {
   userName: string;
   profile: string;
@@ -134,9 +136,10 @@ export function AppNav({
   canWriteShiftLog: boolean;
   showRequisicoes: boolean;
   canCreateRequisicao: boolean;
+  showSolicitacoes: boolean;
 }) {
   const pathname = usePathname();
-  const groups = buildGroups(profile, showRequisicoes);
+  const groups = buildGroups(profile, showRequisicoes, showSolicitacoes);
   const scope =
     profile === "gestor" || profile === "rh"
       ? "Todas as unidades"
@@ -156,6 +159,9 @@ export function AppNav({
     ...(canCreateRequisicao
       ? [{ href: "/requisicoes", title: "Requisição", description: "Pedir itens ao estoque" }]
       : []),
+    ...(showSolicitacoes
+      ? [{ href: "/solicitacoes", title: "Solicitação", description: "Pedir item avulso (ex: rádio, lâmpada)" }]
+      : []),
     ...(canSubmitRestoIngesta
       ? [{ href: "/perdas?tab=resto", title: "Resto ingesta", description: "Lançar desperdício do dia" }]
       : []),
@@ -173,6 +179,9 @@ export function AppNav({
     { href: "/documentos", title: "Fichas e POPs", description: "Fichas técnicas e procedimentos" },
     ...(showRequisicoes
       ? [{ href: "/requisicoes", title: "Requisições", description: "Pedidos de estoque" }]
+      : []),
+    ...(showSolicitacoes
+      ? [{ href: "/solicitacoes", title: "Solicitações", description: "Itens avulsos, com aprovação" }]
       : []),
     ...(profile === "gestor"
       ? [{ href: "/gerenciar", title: "Gerenciar", description: "Usuários, unidades e modelos" }]
