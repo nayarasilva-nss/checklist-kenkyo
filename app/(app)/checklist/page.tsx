@@ -55,6 +55,7 @@ export default async function ChecklistPage({
             const done = checklist.items.filter(
               (item) => item.status !== "pending",
             ).length;
+            const bloqueado = checklist.prerequisitosPendentes.length > 0;
             return (
               <Link
                 key={checklist.id}
@@ -67,6 +68,11 @@ export default async function ChecklistPage({
                   {checklist.assignedUserName && (
                     <p className="items-count">
                       Atribuído a: {checklist.assignedUserName}
+                    </p>
+                  )}
+                  {bloqueado && (
+                    <p className="items-count">
+                      🔒 Termine primeiro: {checklist.prerequisitosPendentes.join(", ")}
                     </p>
                   )}
                 </div>

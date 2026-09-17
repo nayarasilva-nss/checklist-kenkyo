@@ -20,16 +20,19 @@ type ChecklistType = {
   jobFunctionName: string | null;
   assignedUserId: number | null;
   assignedUserName: string | null;
+  prerequisiteIds: number[];
 };
 
 export function ChecklistTypeRow({
   checklistType,
   jobFunctions,
   users,
+  allChecklistTypes,
 }: {
   checklistType: ChecklistType;
   jobFunctions: Option[];
   users: Option[];
+  allChecklistTypes: Option[];
 }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -147,6 +150,28 @@ export function ChecklistTypeRow({
           ))}
         </select>
       </div>
+      {allChecklistTypes.filter((c) => c.id !== checklistType.id).length > 0 && (
+        <div className="form-group">
+          <label>Pré-requisitos (opcional)</label>
+          <p className="items-count" style={{ marginBottom: 8 }}>
+            Esse checklist só libera depois que os selecionados abaixo estiverem 100% respondidos no dia.
+          </p>
+          {allChecklistTypes
+            .filter((c) => c.id !== checklistType.id)
+            .map((c) => (
+              <div className="item-editor-row item-editor-checkbox" key={c.id}>
+                <input
+                  type="checkbox"
+                  name="prerequisiteIds"
+                  value={c.id}
+                  id={`editChecklistPrereq-${checklistType.id}-${c.id}`}
+                  defaultChecked={checklistType.prerequisiteIds.includes(c.id)}
+                />
+                <label htmlFor={`editChecklistPrereq-${checklistType.id}-${c.id}`}>{c.name}</label>
+              </div>
+            ))}
+        </div>
+      )}
       <ChecklistItemsEditor name="itemsJson" initialItems={checklistType.items} />
       {error && <p className="login-error">{error}</p>}
       <div className="inline-form-buttons">

@@ -11,7 +11,7 @@ import {
   shiftLogs,
   requisicoes,
 } from "@/lib/db/schema";
-import { todayISO } from "@/lib/data/checklists";
+import { todayISO, getUnmetPrerequisites } from "@/lib/data/checklists";
 import { recordAnomaly } from "@/lib/actions/anomalies";
 import { guessSetorFromText } from "@/lib/anomaly-constants";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
@@ -78,6 +78,13 @@ export async function setChecklistItemStatus(
 
   const date = todayISO();
   const effectiveUnitId = await resolveEffectiveUnitId(user);
+
+  const unmetPrerequisites = await getUnmetPrerequisites(checklistTypeId, user.id, date);
+  if (unmetPrerequisites.length > 0) {
+    return {
+      error: `Termine primeiro: ${unmetPrerequisites.map((p) => p.name).join(", ")}.`,
+    };
+  }
 
   if (status === "conforme" && context.requiresShiftLog) {
     const [shiftLog] = await db

@@ -133,7 +133,7 @@ export async function createRequisicao(
       catalogItemId: item.catalogItemId,
       nome: item.nome,
       unidadeMedida: item.unidadeMedida,
-      qtdPedida: item.qtdPedida.toFixed(2),
+      qtdPedida: item.qtdPedida.toFixed(3),
     })),
   );
 
@@ -191,7 +191,7 @@ export async function updateRequisicao(
       catalogItemId: item.catalogItemId,
       nome: item.nome,
       unidadeMedida: item.unidadeMedida,
-      qtdPedida: item.qtdPedida.toFixed(2),
+      qtdPedida: item.qtdPedida.toFixed(3),
     })),
   );
 
@@ -306,7 +306,7 @@ export async function conferirRequisicao(
     }
     await db
       .update(requisicaoItens)
-      .set({ qtdConferida: qtdConferida.toFixed(2) })
+      .set({ qtdConferida: qtdConferida.toFixed(3) })
       .where(and(eq(requisicaoItens.id, item.id), eq(requisicaoItens.requisicaoId, id)));
   }
 

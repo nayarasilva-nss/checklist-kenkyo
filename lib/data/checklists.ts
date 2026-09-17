@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import {
   checklistTypes,
   checklistTypeItems,
+  checklistTypePrerequisites,
   checklistCompletions,
   users,
   units,
@@ -64,6 +65,73 @@ function pickByEffectiveUnit<T extends { itemId: number; unitId: number | null }
     }
   }
   return map;
+}
+
+/**
+ * Checklists configurados como pré-requisito (em Gerenciar > Modelos de
+ * Checklist) que ainda não estão 100% respondidos por esse usuário nesse
+ * dia — ex: "Fechamento" pode exigir "Abertura" e "Meio de Turno"
+ * completos primeiro. Não distingue unidade (qualquer completion do dia
+ * conta): a cobertura de unidade é o caso raro aqui, e complicar essa
+ * checagem por unidade não valeria o ganho.
+ */
+export async function getUnmetPrerequisites(
+  checklistTypeId: number,
+  userId: number,
+  date: string = todayISO(),
+) {
+  const prereqs = await db
+    .select({
+      requiresChecklistTypeId: checklistTypePrerequisites.requiresChecklistTypeId,
+      name: checklistTypes.name,
+    })
+    .from(checklistTypePrerequisites)
+    .innerJoin(
+      checklistTypes,
+      eq(checklistTypes.id, checklistTypePrerequisites.requiresChecklistTypeId),
+    )
+    .where(eq(checklistTypePrerequisites.checklistTypeId, checklistTypeId));
+
+  if (prereqs.length === 0) return [];
+
+  const prereqTypeIds = prereqs.map((p) => p.requiresChecklistTypeId);
+  const items = await db
+    .select({ id: checklistTypeItems.id, checklistTypeId: checklistTypeItems.checklistTypeId })
+    .from(checklistTypeItems)
+    .where(inArray(checklistTypeItems.checklistTypeId, prereqTypeIds));
+
+  const itemIds = items.map((i) => i.id);
+  const completions =
+    itemIds.length > 0
+      ? await db
+          .select({ itemId: checklistCompletions.itemId, status: checklistCompletions.status })
+          .from(checklistCompletions)
+          .where(
+            and(
+              inArray(checklistCompletions.itemId, itemIds),
+              eq(checklistCompletions.userId, userId),
+              eq(checklistCompletions.date, date),
+            ),
+          )
+      : [];
+  const doneItemIds = new Set(
+    completions.filter((c) => c.status !== "pending").map((c) => c.itemId),
+  );
+
+  const itemsByType = new Map<number, number[]>();
+  for (const item of items) {
+    const list = itemsByType.get(item.checklistTypeId) ?? [];
+    list.push(item.id);
+    itemsByType.set(item.checklistTypeId, list);
+  }
+
+  return prereqs
+    .filter((p) => {
+      const typeItemIds = itemsByType.get(p.requiresChecklistTypeId) ?? [];
+      // Um checklist sem itens não bloqueia nada (nada pra completar).
+      return typeItemIds.length > 0 && typeItemIds.some((id) => !doneItemIds.has(id));
+    })
+    .map((p) => ({ id: p.requiresChecklistTypeId, name: p.name }));
 }
 
 export async function getChecklistsForUser(
@@ -127,6 +195,15 @@ export async function getChecklistsForUser(
     itemsByType.set(item.checklistTypeId, list);
   }
 
+  const prerequisitosPorTipo = new Map(
+    await Promise.all(
+      types.map(
+        async (t) =>
+          [t.id, await getUnmetPrerequisites(t.id, viewer.id, date)] as const,
+      ),
+    ),
+  );
+
   return types.map((checklistType) => ({
     id: checklistType.id,
     name: checklistType.name,
@@ -134,6 +211,7 @@ export async function getChecklistsForUser(
     assignedUserName: checklistType.assignedUserId
       ? (assignedUserNameById.get(checklistType.assignedUserId) ?? null)
       : null,
+    prerequisitosPendentes: (prerequisitosPorTipo.get(checklistType.id) ?? []).map((p) => p.name),
     items: (itemsByType.get(checklistType.id) ?? []).map((item) => {
       const completion = completionByItem.get(item.id);
       return {
@@ -196,12 +274,15 @@ export async function getChecklistForUser(
     assignedUserName = assignedUser?.name ?? null;
   }
 
+  const unmetPrerequisites = await getUnmetPrerequisites(checklistType.id, viewer.id, date);
+
   return {
     id: checklistType.id,
     name: checklistType.name,
     description: checklistType.description,
     type: checklistType.type,
     assignedUserName,
+    prerequisitosPendentes: unmetPrerequisites.map((p) => p.name),
     items: items.map((item) => {
       const completion = completionByItem.get(item.id);
       return {

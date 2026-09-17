@@ -113,7 +113,7 @@ export function FiletagemForm({
             id="recebidoKg"
             name="recebidoKg"
             type="number"
-            step="0.01"
+            step="0.001"
             min="0"
             value={values.recebidoKg}
             onChange={(e) => handleNumericChange("recebidoKg", e.target.value)}
@@ -126,7 +126,7 @@ export function FiletagemForm({
             id="fileKg"
             name="fileKg"
             type="number"
-            step="0.01"
+            step="0.001"
             min="0"
             value={values.fileKg}
             onChange={(e) => handleNumericChange("fileKg", e.target.value)}
@@ -139,7 +139,7 @@ export function FiletagemForm({
             id="pontaClaraKg"
             name="pontaClaraKg"
             type="number"
-            step="0.01"
+            step="0.001"
             min="0"
             value={values.pontaClaraKg}
             onChange={(e) => handleNumericChange("pontaClaraKg", e.target.value)}
@@ -155,7 +155,7 @@ export function FiletagemForm({
             id="pontaEscuraKg"
             name="pontaEscuraKg"
             type="number"
-            step="0.01"
+            step="0.001"
             min="0"
             value={values.pontaEscuraKg}
             onChange={(e) => handleNumericChange("pontaEscuraKg", e.target.value)}
@@ -168,7 +168,7 @@ export function FiletagemForm({
             id="pelesKg"
             name="pelesKg"
             type="number"
-            step="0.01"
+            step="0.001"
             min="0"
             value={values.pelesKg}
             onChange={(e) => handleNumericChange("pelesKg", e.target.value)}
@@ -181,7 +181,7 @@ export function FiletagemForm({
             id="raspasKg"
             name="raspasKg"
             type="number"
-            step="0.01"
+            step="0.001"
             min="0"
             value={values.raspasKg}
             onChange={(e) => handleNumericChange("raspasKg", e.target.value)}
@@ -192,7 +192,7 @@ export function FiletagemForm({
 
       {showPreview && (
         <div className="loss-preview">
-          Perda calculada: <strong>{perdaKg.toFixed(2)} kg</strong> · {perdaPercent.toFixed(1)}%
+          Perda calculada: <strong>{perdaKg.toFixed(3)} kg</strong> · {perdaPercent.toFixed(1)}%
         </div>
       )}
 

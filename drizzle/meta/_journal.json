@@ -162,6 +162,13 @@
       "when": 1789580868290,
       "tag": "0022_swift_rawhide_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789670494026,
+      "tag": "0023_bumpy_blonde_phantom",
+      "breakpoints": true
     }
   ]
 }

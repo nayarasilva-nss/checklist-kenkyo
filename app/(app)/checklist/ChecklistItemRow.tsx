@@ -71,10 +71,15 @@ export function ChecklistItemRow({
   item,
   checklistTypeId,
   checklistTypeName,
+  locked,
 }: {
   item: Item;
   checklistTypeId: number;
   checklistTypeName: string;
+  // Pré-requisitos do checklist ainda não cumpridos — os botões ficam
+  // desabilitados; o servidor recusaria de qualquer forma (ver
+  // setChecklistItemStatus), isso só evita o usuário tentar à toa.
+  locked?: boolean;
 }) {
   const [pendingStatus, setPendingStatus] = useState<Status | null>(null);
   const [justification, setJustification] = useState(item.justification ?? "");
@@ -170,7 +175,7 @@ export function ChecklistItemRow({
     submit(pendingStatus, justification, photoUrl);
   }
 
-  const busy = isPending || uploading;
+  const busy = isPending || uploading || locked;
 
   return (
     <div className={`checklist-item ${STATUS_CLASS[item.status]}`}>

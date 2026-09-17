@@ -80,17 +80,17 @@ export async function createFilletingRecord(
     date,
     responsavel,
     fishType,
-    recebidoKg: recebidoKg.toFixed(2),
-    fileKg: fileKg.toFixed(2),
-    pontaClaraKg: pontaClaraKg.toFixed(2),
-    pontaEscuraKg: pontaEscuraKg.toFixed(2),
-    pelesKg: pelesKg.toFixed(2),
-    raspasKg: raspasKg.toFixed(2),
+    recebidoKg: recebidoKg.toFixed(3),
+    fileKg: fileKg.toFixed(3),
+    pontaClaraKg: pontaClaraKg.toFixed(3),
+    pontaEscuraKg: pontaEscuraKg.toFixed(3),
+    pelesKg: pelesKg.toFixed(3),
+    raspasKg: raspasKg.toFixed(3),
   });
 
   await addHistoryEntry(
     user.id,
-    `Registro de filetagem de ${fishType} (${recebidoKg.toFixed(2)} kg recebidos)`,
+    `Registro de filetagem de ${fishType} (${recebidoKg.toFixed(3)} kg recebidos)`,
     "completed",
   );
 

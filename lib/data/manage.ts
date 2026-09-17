@@ -6,6 +6,7 @@ import {
   users,
   checklistTypes,
   checklistTypeItems,
+  checklistTypePrerequisites,
   units,
   jobFunctions,
 } from "@/lib/db/schema";
@@ -63,12 +64,26 @@ export async function getChecklistTypesWithCounts() {
     itemsByType.set(item.checklistTypeId, list);
   }
 
+  const prereqRows = await db
+    .select({
+      checklistTypeId: checklistTypePrerequisites.checklistTypeId,
+      requiresChecklistTypeId: checklistTypePrerequisites.requiresChecklistTypeId,
+    })
+    .from(checklistTypePrerequisites);
+  const prereqsByType = new Map<number, number[]>();
+  for (const row of prereqRows) {
+    const list = prereqsByType.get(row.checklistTypeId) ?? [];
+    list.push(row.requiresChecklistTypeId);
+    prereqsByType.set(row.checklistTypeId, list);
+  }
+
   return types.map((t) => {
     const typeItems = itemsByType.get(t.id) ?? [];
     return {
       ...t,
       items: typeItems,
       itemCount: typeItems.length,
+      prerequisiteIds: prereqsByType.get(t.id) ?? [],
     };
   });
 }

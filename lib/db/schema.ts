@@ -126,6 +126,29 @@ export const checklistTypeItems = pgTable("checklist_type_items", {
   requiresRequisicao: boolean("requires_requisicao").notNull().default(false),
 });
 
+// Pré-requisito configurável entre modelos de checklist — ex: "Fechamento"
+// só libera depois que "Abertura" e "Meio de Turno" estiverem 100%
+// respondidos no dia (ver getUnmetPrerequisites, aplicado em
+// setChecklistItemStatus). Configurado em Gerenciar > Modelos de Checklist.
+export const checklistTypePrerequisites = pgTable(
+  "checklist_type_prerequisites",
+  {
+    id: serial("id").primaryKey(),
+    checklistTypeId: integer("checklist_type_id")
+      .notNull()
+      .references(() => checklistTypes.id, { onDelete: "cascade" }),
+    requiresChecklistTypeId: integer("requires_checklist_type_id")
+      .notNull()
+      .references(() => checklistTypes.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    uniqueIndex("checklist_type_prereq_idx").on(
+      table.checklistTypeId,
+      table.requiresChecklistTypeId,
+    ),
+  ],
+);
+
 // Deprecated: superseded by checklistTypes/checklistTypeItems, which now
 // hold everything a "Modelo de Checklist" needs (including a fixed tipo).
 // Kept only so the one-off migrate-templates-to-checklists.ts script can
@@ -201,18 +224,18 @@ export const filletingRecords = pgTable("filleting_records", {
   date: date("date").notNull(),
   responsavel: varchar("responsavel", { length: 255 }),
   fishType: varchar("fish_type", { length: 255 }).notNull(),
-  recebidoKg: numeric("recebido_kg", { precision: 10, scale: 2 }).notNull(),
-  fileKg: numeric("file_kg", { precision: 10, scale: 2 }).notNull(),
+  recebidoKg: numeric("recebido_kg", { precision: 10, scale: 3 }).notNull(),
+  fileKg: numeric("file_kg", { precision: 10, scale: 3 }).notNull(),
   pontaClaraKg: numeric("ponta_clara_kg", {
     precision: 10,
-    scale: 2,
+    scale: 3,
   }).notNull(),
   pontaEscuraKg: numeric("ponta_escura_kg", {
     precision: 10,
-    scale: 2,
+    scale: 3,
   }).notNull(),
-  pelesKg: numeric("peles_kg", { precision: 10, scale: 2 }).notNull(),
-  raspasKg: numeric("raspas_kg", { precision: 10, scale: 2 }).notNull(),
+  pelesKg: numeric("peles_kg", { precision: 10, scale: 3 }).notNull(),
+  raspasKg: numeric("raspas_kg", { precision: 10, scale: 3 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -228,7 +251,7 @@ export const restoIngestaRecords = pgTable("resto_ingesta_records", {
   experienciasVendidas: integer("experiencias_vendidas").notNull(),
   desperdicioKg: numeric("desperdicio_kg", {
     precision: 10,
-    scale: 2,
+    scale: 3,
   }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -436,8 +459,8 @@ export const requisicaoItens = pgTable("requisicao_itens", {
   }),
   nome: varchar("nome", { length: 255 }).notNull(),
   unidadeMedida: catalogUnitMeasureEnum("unidade_medida").notNull(),
-  qtdPedida: numeric("qtd_pedida", { precision: 10, scale: 2 }).notNull(),
-  qtdConferida: numeric("qtd_conferida", { precision: 10, scale: 2 }),
+  qtdPedida: numeric("qtd_pedida", { precision: 10, scale: 3 }).notNull(),
+  qtdConferida: numeric("qtd_conferida", { precision: 10, scale: 3 }),
 });
 
 export const history = pgTable("history", {

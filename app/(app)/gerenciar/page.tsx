@@ -95,11 +95,16 @@ export default async function GerenciarPage({
                 checklistType={c}
                 jobFunctions={jobFunctions}
                 users={users}
+                allChecklistTypes={checklistTypes}
               />
             ))}
           </div>
           <div className="detail-panel" style={{ minHeight: "auto" }}>
-            <AddChecklistTypeForm jobFunctions={jobFunctions} users={users} />
+            <AddChecklistTypeForm
+              jobFunctions={jobFunctions}
+              users={users}
+              allChecklistTypes={checklistTypes}
+            />
           </div>
         </div>
       )}

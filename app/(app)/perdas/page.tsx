@@ -226,8 +226,8 @@ async function FiletagemTab({
               <span>
                 {record.fishType} · {record.unitName}
               </span>
-              <span>{record.recebidoKg.toFixed(2)} kg</span>
-              <span>{record.perdaKg.toFixed(2)} kg</span>
+              <span>{record.recebidoKg.toFixed(3)} kg</span>
+              <span>{record.perdaKg.toFixed(3)} kg</span>
               <span>{record.responsavel ?? record.userName}</span>
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span className={`badge ${lossBadge(record.perdaPercent)}`}>
@@ -311,7 +311,7 @@ async function RestoIngestaTab({
               </span>
               <span>{record.unitName}</span>
               <span>{record.experienciasVendidas}</span>
-              <span>{record.desperdicioKg.toFixed(2)} kg</span>
+              <span>{record.desperdicioKg.toFixed(3)} kg</span>
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {record.desperdicioPorPessoaKg.toFixed(3)} kg
                 {isGestor && (

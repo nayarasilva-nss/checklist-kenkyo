@@ -40,6 +40,7 @@ export default async function ChecklistDetailPage({
     if (!item.completedAt) return latest;
     return !latest || item.completedAt > latest ? item.completedAt : latest;
   }, null);
+  const bloqueado = checklist.prerequisitosPendentes.length > 0;
 
   return (
     <>
@@ -63,6 +64,22 @@ export default async function ChecklistDetailPage({
         </div>
       </div>
 
+      {bloqueado && (
+        <div
+          style={{
+            background: "var(--warning-bg)",
+            color: "var(--warning-text)",
+            borderRadius: 8,
+            padding: "10px 14px",
+            fontSize: 13.5,
+            fontWeight: 600,
+            marginBottom: 16,
+          }}
+        >
+          🔒 Termine primeiro: {checklist.prerequisitosPendentes.join(", ")}.
+        </div>
+      )}
+
       <div className="today-checklist-progress-bar" style={{ maxWidth: "none", marginBottom: 22 }}>
         <div className="today-checklist-progress-fill" style={{ width: `${pct}%` }} />
       </div>
@@ -75,6 +92,7 @@ export default async function ChecklistDetailPage({
               item={item}
               checklistTypeId={checklist.id}
               checklistTypeName={checklist.name}
+              locked={bloqueado}
             />
           ))}
         </div>

@@ -22,7 +22,7 @@ export function QuantidadeStepper({
   const step = stepFor(unidade);
 
   function round(v: number) {
-    return Math.round(v * 100) / 100;
+    return Math.round(v * 1000) / 1000;
   }
 
   return (

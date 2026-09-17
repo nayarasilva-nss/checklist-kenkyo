@@ -60,12 +60,12 @@ export async function createRestoIngestaRecord(
     userId: user.id,
     date,
     experienciasVendidas,
-    desperdicioKg: desperdicioKg.toFixed(2),
+    desperdicioKg: desperdicioKg.toFixed(3),
   });
 
   await addHistoryEntry(
     user.id,
-    `Registro de resto ingesta: ${experienciasVendidas} experiências, ${desperdicioKg.toFixed(2)} kg de desperdício`,
+    `Registro de resto ingesta: ${experienciasVendidas} experiências, ${desperdicioKg.toFixed(3)} kg de desperdício`,
     "completed",
   );
 

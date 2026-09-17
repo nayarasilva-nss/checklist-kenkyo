@@ -9,6 +9,7 @@ import {
   users,
   checklistTypes,
   checklistTypeItems,
+  checklistTypePrerequisites,
   units,
   jobFunctions,
 } from "@/lib/db/schema";
@@ -246,6 +247,13 @@ function parseItems(formData: FormData): ParsedItem[] {
     .filter((item) => item.label.length > 0);
 }
 
+function parsePrerequisiteIds(formData: FormData): number[] {
+  return formData
+    .getAll("prerequisiteIds")
+    .map((v) => Number(v))
+    .filter((n) => Number.isFinite(n) && n > 0);
+}
+
 export async function createChecklistType(
   _prevState: ActionState,
   formData: FormData,
@@ -258,6 +266,7 @@ export async function createChecklistType(
   const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
   const assignedUserId = parseOptionalId(formData, "assignedUserId");
   const items = parseItems(formData);
+  const prerequisiteIds = parsePrerequisiteIds(formData);
 
   if (!name || (type !== "daily" && type !== "weekly") || items.length === 0) {
     return { error: "Preencha o nome, o tipo e as tarefas" };
@@ -277,6 +286,15 @@ export async function createChecklistType(
     })),
   );
 
+  if (prerequisiteIds.length > 0) {
+    await db.insert(checklistTypePrerequisites).values(
+      prerequisiteIds.map((requiresChecklistTypeId) => ({
+        checklistTypeId: checklistType.id,
+        requiresChecklistTypeId,
+      })),
+    );
+  }
+
   revalidateManageViews();
 }
 
@@ -293,6 +311,7 @@ export async function updateChecklistType(
   const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
   const assignedUserId = parseOptionalId(formData, "assignedUserId");
   const items = parseItems(formData);
+  const prerequisiteIds = parsePrerequisiteIds(formData).filter((pid) => pid !== id);
 
   if (
     !id ||
@@ -307,6 +326,18 @@ export async function updateChecklistType(
     .update(checklistTypes)
     .set({ name, description, type, jobFunctionId, assignedUserId })
     .where(eq(checklistTypes.id, id));
+
+  await db
+    .delete(checklistTypePrerequisites)
+    .where(eq(checklistTypePrerequisites.checklistTypeId, id));
+  if (prerequisiteIds.length > 0) {
+    await db.insert(checklistTypePrerequisites).values(
+      prerequisiteIds.map((requiresChecklistTypeId) => ({
+        checklistTypeId: id,
+        requiresChecklistTypeId,
+      })),
+    );
+  }
 
   // Reconcile by position instead of replacing wholesale, so unchanged
   // tasks keep their id and don't lose their conformidade history.

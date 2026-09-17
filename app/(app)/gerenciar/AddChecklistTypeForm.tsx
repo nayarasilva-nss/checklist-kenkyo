@@ -9,9 +9,11 @@ type Option = { id: number; name: string };
 export function AddChecklistTypeForm({
   jobFunctions,
   users,
+  allChecklistTypes,
 }: {
   jobFunctions: Option[];
   users: Option[];
+  allChecklistTypes: Option[];
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -95,6 +97,20 @@ export function AddChecklistTypeForm({
           ))}
         </select>
       </div>
+      {allChecklistTypes.length > 0 && (
+        <div className="form-group">
+          <label>Pré-requisitos (opcional)</label>
+          <p className="items-count" style={{ marginBottom: 8 }}>
+            Esse checklist só libera depois que os selecionados abaixo estiverem 100% respondidos no dia.
+          </p>
+          {allChecklistTypes.map((c) => (
+            <div className="item-editor-row item-editor-checkbox" key={c.id}>
+              <input type="checkbox" name="prerequisiteIds" value={c.id} id={`newChecklistPrereq-${c.id}`} />
+              <label htmlFor={`newChecklistPrereq-${c.id}`}>{c.name}</label>
+            </div>
+          ))}
+        </div>
+      )}
       <ChecklistItemsEditor name="itemsJson" initialItems={[]} />
       {error && <p className="login-error">{error}</p>}
       <div className="inline-form-buttons">
