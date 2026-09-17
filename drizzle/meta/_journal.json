@@ -176,6 +176,13 @@
       "when": 1789671605458,
       "tag": "0024_colorful_captain_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789672992860,
+      "tag": "0025_ambitious_stranger",
+      "breakpoints": true
     }
   ]
 }

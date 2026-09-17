@@ -3,9 +3,8 @@
 import { useState, useTransition } from "react";
 import {
   cancelSolicitacao,
-  approveSolicitacao,
-  reproveSolicitacao,
   deleteSolicitacao,
+  decideSolicitacaoItem,
   setItemComprado,
   setItemChegou,
 } from "@/lib/actions/solicitacoes";
@@ -15,10 +14,16 @@ type SolicitacaoItem = {
   id: number;
   nome: string;
   quantidade: number;
+  status: string;
+  aprovadoPorId: number | null;
+  aprovadoEm: Date | null;
+  motivoReprovacao: string | null;
   comprado: boolean;
   dataPrevistaEntrega: string | null;
   chegou: boolean;
 };
+
+type Resumo = { label: string; variant: "warning" | "success" | "danger" | "neutral" | "info" };
 
 type Solicitacao = {
   id: number;
@@ -30,25 +35,29 @@ type Solicitacao = {
   urgente: boolean;
   observacao: string;
   status: string;
-  aprovadoPorId: number | null;
-  aprovadoEm: Date | null;
-  motivoReprovacao: string | null;
   createdAt: Date;
   itens: SolicitacaoItem[];
+  resumo: Resumo;
 };
 
-const STATUS_BADGE: Record<string, string> = {
-  aberta: "badge-warning",
-  aprovada: "badge-success",
-  reprovada: "badge-danger",
-  cancelada: "badge-neutral",
+const RESUMO_BADGE: Record<Resumo["variant"], string> = {
+  warning: "badge-warning",
+  success: "badge-success",
+  danger: "badge-danger",
+  neutral: "badge-neutral",
+  info: "badge-info",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  aberta: "Aguardando aprovação",
-  aprovada: "Aprovada",
-  reprovada: "Reprovada",
-  cancelada: "Cancelada",
+const ITEM_STATUS_BADGE: Record<string, string> = {
+  pendente: "badge-warning",
+  aprovado: "badge-success",
+  reprovado: "badge-danger",
+};
+
+const ITEM_STATUS_LABEL: Record<string, string> = {
+  pendente: "Aguardando aprovação",
+  aprovado: "Aprovado",
+  reprovado: "Reprovado",
 };
 
 function formatDate(d: string | Date) {
@@ -62,35 +71,43 @@ function formatDate(d: string | Date) {
 function ItemRow({
   item,
   solicitacaoId,
-  solicitacaoStatus,
   canApprove,
   canTrackChegada,
 }: {
   item: SolicitacaoItem;
   solicitacaoId: number;
-  solicitacaoStatus: string;
   canApprove: boolean;
   canTrackChegada: boolean;
 }) {
   const [dataPrevista, setDataPrevista] = useState(item.dataPrevistaEntrega ?? "");
+  const [motivo, setMotivo] = useState("");
+  const [reprovando, setReprovando] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>();
+
+  function decidir(decisao: "aprovado" | "reprovado") {
+    setError(undefined);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("itemId", String(item.id));
+      fd.set("decisao", decisao);
+      if (decisao === "reprovado") fd.set("motivo", motivo);
+      const result = await decideSolicitacaoItem(undefined, fd);
+      if (result?.error) setError(result.error);
+      else setReprovando(false);
+    });
+  }
 
   function toggleComprado(comprado: boolean) {
     setError(undefined);
     startTransition(async () => {
       const fd = new FormData();
       fd.set("itemId", String(item.id));
-      fd.set("solicitacaoId", String(solicitacaoId));
       fd.set("comprado", comprado ? "on" : "off");
       if (dataPrevista) fd.set("dataPrevistaEntrega", dataPrevista);
       const result = await setItemComprado(undefined, fd);
       if (result?.error) setError(result.error);
     });
-  }
-
-  function saveDataPrevista() {
-    toggleComprado(item.comprado);
   }
 
   function toggleChegou(chegou: boolean) {
@@ -111,24 +128,61 @@ function ItemRow({
           Quantidade: {item.quantidade}
           {item.comprado && item.dataPrevistaEntrega && ` · Previsão: ${formatDate(item.dataPrevistaEntrega)}`}
         </p>
+        {item.status === "reprovado" && item.motivoReprovacao && (
+          <p>Motivo: {item.motivoReprovacao}</p>
+        )}
         {error && <p className="login-error">{error}</p>}
       </div>
       <div className="list-item-actions" style={{ flexWrap: "wrap", gap: 8 }}>
-        {item.chegou ? (
-          <span className="badge badge-success">Chegou</span>
-        ) : item.comprado ? (
-          <span className="badge badge-info">Comprado</span>
+        {item.status === "aprovado" ? (
+          item.chegou ? (
+            <span className="badge badge-success">Chegou</span>
+          ) : item.comprado ? (
+            <span className="badge badge-info">Comprado</span>
+          ) : (
+            <span className="badge badge-success">Aprovado</span>
+          )
         ) : (
-          <span className="badge badge-neutral">Pendente</span>
+          <span className={`badge ${ITEM_STATUS_BADGE[item.status] ?? "badge-neutral"}`}>
+            {ITEM_STATUS_LABEL[item.status] ?? item.status}
+          </span>
         )}
 
-        {canApprove && solicitacaoStatus === "aprovada" && !item.chegou && (
+        {canApprove && item.status === "pendente" && !reprovando && (
+          <>
+            <button type="button" className="btn-small" disabled={isPending} onClick={() => decidir("aprovado")}>
+              Aprovar
+            </button>
+            <button type="button" className="btn-small btn-delete" disabled={isPending} onClick={() => setReprovando(true)}>
+              Reprovar
+            </button>
+          </>
+        )}
+
+        {canApprove && item.status === "pendente" && reprovando && (
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <input
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Motivo (opcional)"
+              style={{ fontSize: 12.5, padding: "4px 6px" }}
+            />
+            <button type="button" className="btn-cancel" disabled={isPending} onClick={() => setReprovando(false)}>
+              Cancelar
+            </button>
+            <button type="button" className="btn-destructive" disabled={isPending} onClick={() => decidir("reprovado")}>
+              Confirmar
+            </button>
+          </div>
+        )}
+
+        {canApprove && item.status === "aprovado" && !item.chegou && (
           <>
             <input
               type="date"
               value={dataPrevista}
               onChange={(e) => setDataPrevista(e.target.value)}
-              onBlur={saveDataPrevista}
+              onBlur={() => toggleComprado(item.comprado)}
               disabled={isPending}
               style={{ fontSize: 12.5, padding: "4px 6px" }}
               aria-label="Data prevista de entrega"
@@ -144,7 +198,7 @@ function ItemRow({
           </>
         )}
 
-        {canTrackChegada && item.comprado && !item.chegou && (
+        {canTrackChegada && item.status === "aprovado" && item.comprado && !item.chegou && (
           <button type="button" className="btn-small" disabled={isPending} onClick={() => toggleChegou(true)}>
             Chegou
           </button>
@@ -156,52 +210,6 @@ function ItemRow({
         )}
       </div>
     </div>
-  );
-}
-
-function ReprovarForm({ id, onDone }: { id: number; onDone: () => void }) {
-  const [motivo, setMotivo] = useState("");
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | undefined>();
-  const [open, setOpen] = useState(false);
-
-  if (!open) {
-    return (
-      <button type="button" className="btn-destructive" onClick={() => setOpen(true)}>
-        Reprovar
-      </button>
-    );
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(undefined);
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("id", String(id));
-      fd.set("motivo", motivo);
-      const result = await reproveSolicitacao(fd);
-      if (result?.error) setError(result.error);
-      else onDone();
-    });
-  }
-
-  return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-      <input
-        value={motivo}
-        onChange={(e) => setMotivo(e.target.value)}
-        placeholder="Motivo (opcional)"
-        style={{ fontSize: 12.5, padding: "6px 8px", flex: 1, minWidth: 160 }}
-      />
-      {error && <p className="login-error">{error}</p>}
-      <button type="button" className="btn-cancel" onClick={() => setOpen(false)}>
-        Cancelar
-      </button>
-      <button type="submit" className="btn-destructive" disabled={isPending}>
-        Confirmar reprovação
-      </button>
-    </form>
   );
 }
 
@@ -220,8 +228,7 @@ export function SolicitacoesBoard({
 }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [actionError, setActionError] = useState<string | undefined>();
+  const [isDeleting, startDelete] = useTransition();
 
   const selected = records.find((r) => r.id === selectedId) ?? null;
 
@@ -230,29 +237,21 @@ export function SolicitacoesBoard({
     setSelectedId((current) => (current === id ? null : id));
   }
 
-  function handleApprove(id: number) {
-    setActionError(undefined);
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("id", String(id));
-      const result = await approveSolicitacao(fd);
-      if (result?.error) setActionError(result.error);
-    });
-  }
-
   function handleDelete(id: number) {
     if (!confirm("Excluir esta solicitação definitivamente? Não pode ser desfeito.")) return;
-    startTransition(async () => {
-      await deleteSolicitacao(
-        (() => {
-          const fd = new FormData();
-          fd.set("id", String(id));
-          return fd;
-        })(),
-      );
+    startDelete(async () => {
+      const fd = new FormData();
+      fd.set("id", String(id));
+      await deleteSolicitacao(fd);
       setSelectedId(null);
     });
   }
+
+  const podeCancel =
+    selected &&
+    selected.requesterId === currentUserId &&
+    selected.status === "aberta" &&
+    selected.itens.every((i) => i.status === "pendente");
 
   return (
     <>
@@ -266,10 +265,7 @@ export function SolicitacoesBoard({
       </div>
 
       <div className="data-table">
-        <div
-          className="data-table-head"
-          style={{ gridTemplateColumns: "100px 1fr 1fr 140px" }}
-        >
+        <div className="data-table-head" style={{ gridTemplateColumns: "100px 1fr 1fr 220px" }}>
           <span>Data</span>
           <span>Solicitante</span>
           <span>Unidade</span>
@@ -282,7 +278,7 @@ export function SolicitacoesBoard({
             <div
               key={r.id}
               className={`data-table-row${selectedId === r.id ? " selected" : ""}`}
-              style={{ gridTemplateColumns: "100px 1fr 1fr 140px" }}
+              style={{ gridTemplateColumns: "100px 1fr 1fr 220px" }}
               onClick={() => openDetail(r.id)}
             >
               <span className="data-table-date">{formatDate(r.date)}</span>
@@ -290,9 +286,7 @@ export function SolicitacoesBoard({
               <span>{r.unitName}</span>
               <span>
                 {r.urgente && <span className="badge badge-danger">URGENTE</span>}{" "}
-                <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-neutral"}`}>
-                  {STATUS_LABEL[r.status] ?? r.status}
-                </span>
+                <span className={`badge ${RESUMO_BADGE[r.resumo.variant]}`}>{r.resumo.label}</span>
               </span>
             </div>
           ))
@@ -304,9 +298,7 @@ export function SolicitacoesBoard({
           <div className="modal-panel modal-panel-wide" onClick={(e) => e.stopPropagation()}>
             <div className="detail-panel-header">
               <div>
-                <span className={`badge ${STATUS_BADGE[selected.status] ?? "badge-neutral"}`}>
-                  {STATUS_LABEL[selected.status] ?? selected.status}
-                </span>
+                <span className={`badge ${RESUMO_BADGE[selected.resumo.variant]}`}>{selected.resumo.label}</span>
                 <div className="detail-panel-title" style={{ marginTop: 8 }}>
                   Solicitação · {selected.unitName}
                 </div>
@@ -333,45 +325,19 @@ export function SolicitacoesBoard({
               </div>
             )}
 
-            {selected.status === "reprovada" && selected.motivoReprovacao && (
-              <div className="detail-panel-fields">
-                <div>
-                  <div className="detail-panel-field-label">Motivo da reprovação</div>
-                  <div className="detail-panel-field-value">{selected.motivoReprovacao}</div>
-                </div>
-              </div>
-            )}
-
             <div>
               {selected.itens.map((item) => (
                 <ItemRow
                   key={item.id}
                   item={item}
                   solicitacaoId={selected.id}
-                  solicitacaoStatus={selected.status}
                   canApprove={canApprove}
                   canTrackChegada={canApprove || selected.requesterId === currentUserId}
                 />
               ))}
             </div>
 
-            {actionError && <p className="login-error">{actionError}</p>}
-
-            {canApprove && selected.status === "aberta" && (
-              <div className="detail-panel-footer">
-                <button
-                  type="button"
-                  className="btn-save"
-                  disabled={isPending}
-                  onClick={() => handleApprove(selected.id)}
-                >
-                  Aprovar
-                </button>
-                <ReprovarForm id={selected.id} onDone={() => setActionError(undefined)} />
-              </div>
-            )}
-
-            {selected.requesterId === currentUserId && selected.status === "aberta" && (
+            {podeCancel && (
               <div className="detail-panel-footer">
                 <form
                   action={cancelSolicitacao}
@@ -393,7 +359,7 @@ export function SolicitacoesBoard({
                 <button
                   type="button"
                   className="btn-destructive"
-                  disabled={isPending}
+                  disabled={isDeleting}
                   onClick={() => handleDelete(selected.id)}
                 >
                   Excluir solicitação

@@ -52,15 +52,21 @@ export const catalogUnitMeasureEnum = pgEnum("catalog_unit_measure", [
   "cx",
   "pct",
 ]);
-// "aberta": pendente de aprovação do gestor. "aprovada"/"reprovada":
-// decisão do gestor. Compra/entrega são rastreadas por item (ver
-// solicitacaoItens), não aqui — itens do mesmo pedido podem chegar em
-// momentos diferentes.
+// A aprovação é por item (ver solicitacaoItemStatusEnum), não aqui — um
+// pedido pode ter alguns itens aprovados e outros reprovados. Esse
+// status só marca se o pedido inteiro ainda está ativo ou foi retirado
+// por quem pediu; o "resumo" (aguardando aprovação, aprovação parcial,
+// comprada, etc.) é calculado a partir dos itens — ver
+// resumoSolicitacao em lib/data/solicitacoes.ts.
 export const solicitacaoStatusEnum = pgEnum("solicitacao_status", [
   "aberta",
-  "aprovada",
-  "reprovada",
   "cancelada",
+]);
+
+export const solicitacaoItemStatusEnum = pgEnum("solicitacao_item_status", [
+  "pendente",
+  "aprovado",
+  "reprovado",
 ]);
 
 export const units = pgTable(
@@ -489,11 +495,6 @@ export const solicitacoes = pgTable("solicitacoes", {
   urgente: boolean("urgente").notNull().default(false),
   observacao: text("observacao").notNull().default(""),
   status: solicitacaoStatusEnum("status").notNull().default("aberta"),
-  aprovadoPorId: integer("aprovado_por_id").references(() => users.id, {
-    onDelete: "set null",
-  }),
-  aprovadoEm: timestamp("aprovado_em"),
-  motivoReprovacao: text("motivo_reprovacao"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -504,7 +505,15 @@ export const solicitacaoItens = pgTable("solicitacao_itens", {
     .references(() => solicitacoes.id, { onDelete: "cascade" }),
   nome: varchar("nome", { length: 255 }).notNull(),
   quantidade: integer("quantidade").notNull(),
-  // Preenchidos pelo gestor depois da aprovação, item a item — itens do
+  // Aprovação é por item — o gestor pode aprovar uns e reprovar outros
+  // do mesmo pedido.
+  status: solicitacaoItemStatusEnum("status").notNull().default("pendente"),
+  aprovadoPorId: integer("aprovado_por_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  aprovadoEm: timestamp("aprovado_em"),
+  motivoReprovacao: text("motivo_reprovacao"),
+  // Preenchidos pelo gestor depois de aprovado, item a item — itens do
   // mesmo pedido podem ser comprados/entregues em momentos diferentes.
   comprado: boolean("comprado").notNull().default(false),
   dataPrevistaEntrega: date("data_prevista_entrega"),

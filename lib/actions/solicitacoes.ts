@@ -83,6 +83,9 @@ export async function createSolicitacao(
   revalidateSolicitacaoViews();
 }
 
+/** Cancela o pedido inteiro — só quem pediu, e só enquanto nada foi
+ * decidido ainda (nenhum item aprovado/reprovado). Depois que o gestor
+ * começou a decidir item a item, não dá mais pra retirar de uma vez. */
 export async function cancelSolicitacao(formData: FormData) {
   const user = await getCurrentUser();
   const id = Number(formData.get("id"));
@@ -91,57 +94,13 @@ export async function cancelSolicitacao(formData: FormData) {
   const [existing] = await db.select().from(solicitacoes).where(eq(solicitacoes.id, id)).limit(1);
   if (!existing || existing.requesterId !== user.id || existing.status !== "aberta") return;
 
+  const itens = await db
+    .select({ status: solicitacaoItens.status })
+    .from(solicitacaoItens)
+    .where(eq(solicitacaoItens.solicitacaoId, id));
+  if (itens.some((i) => i.status !== "pendente")) return;
+
   await db.update(solicitacoes).set({ status: "cancelada" }).where(eq(solicitacoes.id, id));
-  revalidateSolicitacaoViews();
-}
-
-export async function approveSolicitacao(formData: FormData): Promise<ActionState> {
-  const user = await getCurrentUser();
-  if (!canApproveSolicitacao(user)) {
-    return { error: "Só o gestor pode aprovar uma solicitação" };
-  }
-
-  const id = Number(formData.get("id"));
-  if (!id) return { error: "Solicitação inválida" };
-
-  const [existing] = await db.select().from(solicitacoes).where(eq(solicitacoes.id, id)).limit(1);
-  if (!existing || existing.status !== "aberta") {
-    return { error: "Essa solicitação já foi decidida" };
-  }
-
-  await db
-    .update(solicitacoes)
-    .set({ status: "aprovada", aprovadoPorId: user.id, aprovadoEm: new Date() })
-    .where(eq(solicitacoes.id, id));
-
-  revalidateSolicitacaoViews();
-}
-
-export async function reproveSolicitacao(formData: FormData): Promise<ActionState> {
-  const user = await getCurrentUser();
-  if (!canApproveSolicitacao(user)) {
-    return { error: "Só o gestor pode reprovar uma solicitação" };
-  }
-
-  const id = Number(formData.get("id"));
-  if (!id) return { error: "Solicitação inválida" };
-  const motivo = String(formData.get("motivo") ?? "").trim() || null;
-
-  const [existing] = await db.select().from(solicitacoes).where(eq(solicitacoes.id, id)).limit(1);
-  if (!existing || existing.status !== "aberta") {
-    return { error: "Essa solicitação já foi decidida" };
-  }
-
-  await db
-    .update(solicitacoes)
-    .set({
-      status: "reprovada",
-      aprovadoPorId: user.id,
-      aprovadoEm: new Date(),
-      motivoReprovacao: motivo,
-    })
-    .where(eq(solicitacoes.id, id));
-
   revalidateSolicitacaoViews();
 }
 
@@ -155,8 +114,48 @@ export async function deleteSolicitacao(formData: FormData) {
   revalidateSolicitacaoViews();
 }
 
+/** Aprova ou reprova um item individual — só Gestor. */
+export async function decideSolicitacaoItem(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!canApproveSolicitacao(user)) {
+    return { error: "Só o gestor pode aprovar ou reprovar um item" };
+  }
+
+  const itemId = Number(formData.get("itemId"));
+  const decisao = String(formData.get("decisao") ?? "");
+  if (!itemId || (decisao !== "aprovado" && decisao !== "reprovado")) {
+    return { error: "Requisição inválida" };
+  }
+  const motivo = String(formData.get("motivo") ?? "").trim() || null;
+
+  const [existing] = await db
+    .select({ status: solicitacaoItens.status })
+    .from(solicitacaoItens)
+    .where(eq(solicitacaoItens.id, itemId))
+    .limit(1);
+  if (!existing) return { error: "Item não encontrado" };
+  if (existing.status !== "pendente") {
+    return { error: "Esse item já foi decidido" };
+  }
+
+  await db
+    .update(solicitacaoItens)
+    .set({
+      status: decisao,
+      aprovadoPorId: user.id,
+      aprovadoEm: new Date(),
+      motivoReprovacao: decisao === "reprovado" ? motivo : null,
+    })
+    .where(eq(solicitacaoItens.id, itemId));
+
+  revalidateSolicitacaoViews();
+}
+
 /** Marca um item como comprado (ou desfaz), e a data prevista de
- * entrega — só Gestor, só depois de aprovada. */
+ * entrega — só Gestor, só depois do item aprovado. */
 export async function setItemComprado(
   _prevState: ActionState,
   formData: FormData,
@@ -167,16 +166,15 @@ export async function setItemComprado(
   }
 
   const itemId = Number(formData.get("itemId"));
-  const solicitacaoId = Number(formData.get("solicitacaoId"));
-  if (!itemId || !solicitacaoId) return { error: "Item inválido" };
+  if (!itemId) return { error: "Item inválido" };
 
   const [existing] = await db
-    .select({ status: solicitacoes.status })
-    .from(solicitacoes)
-    .where(eq(solicitacoes.id, solicitacaoId))
+    .select({ status: solicitacaoItens.status })
+    .from(solicitacaoItens)
+    .where(eq(solicitacaoItens.id, itemId))
     .limit(1);
-  if (!existing || existing.status !== "aprovada") {
-    return { error: "A solicitação precisa estar aprovada antes de registrar a compra" };
+  if (!existing || existing.status !== "aprovado") {
+    return { error: "O item precisa estar aprovado antes de registrar a compra" };
   }
 
   const comprado = formData.get("comprado") === "on";
