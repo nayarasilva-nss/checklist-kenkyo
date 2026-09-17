@@ -1,7 +1,25 @@
 "use client";
 
+import { useState } from "react";
+
 function stepFor(unidade: string) {
   return unidade === "kg" || unidade === "L" ? 0.5 : 1;
+}
+
+// pt-BR usa vírgula como separador decimal, mas <input type="number">
+// só aceita ponto — no teclado numérico do celular, a tecla de vírgula
+// simplesmente não digita nada nesse tipo de campo. Um <input type="text">
+// com inputMode="decimal" ainda traz o teclado numérico, só que aceitando
+// os dois separadores.
+function toDisplay(v: number) {
+  return String(v).replace(".", ",");
+}
+
+function parseDecimal(raw: string): number | null {
+  if (!/^\d*[.,]?\d*$/.test(raw)) return null;
+  if (raw === "" || raw === "," || raw === ".") return 0;
+  const num = Number(raw.replace(",", "."));
+  return Number.isFinite(num) ? num : null;
 }
 
 /** −/input/+ stepper so adding a quantity on mobile doesn't require
@@ -20,9 +38,29 @@ export function QuantidadeStepper({
   name?: string;
 }) {
   const step = stepFor(unidade);
+  const [text, setText] = useState(toDisplay(value));
+  const [prevValue, setPrevValue] = useState(value);
+
+  // Mantém o campo em sincronia quando o valor muda por fora (os botões
+  // −/+, ou o pai resetando o formulário) sem sobrescrever o que a
+  // pessoa está digitando no meio de um "0,1" → "0,10". Ajuste durante o
+  // render em vez de um efeito — https://react.dev/learn/you-might-not-need-an-effect
+  if (value !== prevValue && parseDecimal(text) !== value) {
+    setPrevValue(value);
+    setText(toDisplay(value));
+  } else if (value !== prevValue) {
+    setPrevValue(value);
+  }
 
   function round(v: number) {
     return Math.round(v * 1000) / 1000;
+  }
+
+  function handleTextChange(raw: string) {
+    const parsed = parseDecimal(raw);
+    if (parsed === null) return;
+    setText(raw);
+    onChange(Math.max(0, parsed));
   }
 
   return (
@@ -47,12 +85,12 @@ export function QuantidadeStepper({
         −
       </button>
       <input
-        type="number"
+        type="text"
+        inputMode="decimal"
         name={name}
-        min={0}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+        value={text}
+        onChange={(e) => handleTextChange(e.target.value)}
+        onBlur={() => setText(toDisplay(value))}
         style={{ width: 52, textAlign: "center", fontSize: 16, flexShrink: 0 }}
       />
       <button
