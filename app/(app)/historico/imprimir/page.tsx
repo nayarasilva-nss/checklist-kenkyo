@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { isGestorProfile } from "@/lib/auth/profile";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -154,10 +153,11 @@ export default async function ImprimirChecklistPage({
       </div>
 
       <div className="print-head">
-        <Image src="/kenkyo-logo.png" alt="Kenkyo" width={52} height={52} />
+        {/* eslint-disable-next-line @next/next/no-img-element -- logo pode vir de URL externa configurada por empresa */}
+        <img src={user.organizationLogoUrl ?? "/kenkyo-logo.png"} alt={user.organizationName ?? "Kenkyo"} width={52} height={52} />
         <div>
           <h1>{data.checklistType.name}</h1>
-          <div className="sub">Grupo Kenkyo · {data.unitName ?? "—"}</div>
+          <div className="sub">{user.organizationName ?? "Grupo Kenkyo"} · {data.unitName ?? "—"}</div>
           <span className="print-badge">
             {done}/{total} concluídos
           </span>
@@ -199,7 +199,7 @@ export default async function ImprimirChecklistPage({
       </table>
 
       <div className="print-footer">
-        Documento gerado pelo sistema Kenkyo em{" "}
+        Documento gerado pelo sistema {user.organizationName ?? "Kenkyo"} em{" "}
         {new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
       </div>
     </div>

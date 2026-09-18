@@ -87,6 +87,10 @@ export const organizations = pgTable(
     // "pending": recém-criada via /signup, aguardando aprovação manual no
     // /plataforma. "active": pode usar o sistema normalmente.
     status: varchar("status", { length: 20 }).default("active").notNull(),
+    // Marca por empresa: quando nulos, a UI cai pro visual padrão da
+    // Kenkyo (vermelho + logo genérica) em vez de quebrar.
+    logoUrl: text("logo_url"),
+    primaryColor: varchar("primary_color", { length: 7 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("organizations_slug_idx").on(table.slug)],

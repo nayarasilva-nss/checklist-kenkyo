@@ -31,8 +31,11 @@ export const getCurrentUser = cache(async () => {
       jobFunctionId: users.jobFunctionId,
       jobFunctionName: jobFunctions.name,
       organizationId: users.organizationId,
+      organizationName: organizations.name,
       organizationSlug: organizations.slug,
       organizationStatus: organizations.status,
+      organizationLogoUrl: organizations.logoUrl,
+      organizationPrimaryColor: organizations.primaryColor,
     })
     .from(users)
     .leftJoin(jobFunctions, eq(users.jobFunctionId, jobFunctions.id))

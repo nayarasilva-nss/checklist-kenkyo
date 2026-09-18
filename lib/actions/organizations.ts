@@ -8,14 +8,17 @@ import { db } from "@/lib/db";
 import { organizations, users } from "@/lib/db/schema";
 import { createSession } from "@/lib/auth/session";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { isGestorProfile } from "@/lib/auth/profile";
 import {
   isPlatformOperator,
   getOrganizationById,
   setOrganizationStatus,
+  updateOrganizationBrand as updateOrganizationBrandData,
   type OrganizationStatus,
 } from "@/lib/data/organizations";
 
 export type SignupState = { error?: string } | undefined;
+export type BrandState = { error?: string } | undefined;
 
 function slugify(name: string) {
   return (
@@ -108,4 +111,38 @@ export async function updateOrganizationStatus(organizationId: number, status: O
 
   await setOrganizationStatus(organizationId, status);
   revalidatePath("/plataforma");
+}
+
+/** Cada gestor edita a marca só da própria empresa (nunca passa um id
+ * — sempre a do usuário logado). */
+export async function updateOrganizationBrand(
+  _prevState: BrandState,
+  formData: FormData,
+): Promise<BrandState> {
+  const viewer = await getCurrentUser();
+  if (!isGestorProfile(viewer.profile) || !viewer.organizationId) {
+    return { error: "Sem permissão" };
+  }
+
+  const name = String(formData.get("name") ?? "").trim();
+  const logoUrl = String(formData.get("logoUrl") ?? "").trim();
+  const primaryColor = String(formData.get("primaryColor") ?? "").trim();
+
+  if (!name) {
+    return { error: "O nome da empresa não pode ficar em branco" };
+  }
+  if (primaryColor && !/^#[0-9a-fA-F]{6}$/.test(primaryColor)) {
+    return { error: "Cor inválida — use o seletor de cor" };
+  }
+  if (logoUrl && !/^(https?:\/\/|\/)/.test(logoUrl)) {
+    return { error: "URL da logo precisa começar com http:// ou https://" };
+  }
+
+  await updateOrganizationBrandData(viewer.organizationId, {
+    name,
+    logoUrl: logoUrl || null,
+    primaryColor: primaryColor || null,
+  });
+  revalidatePath("/gerenciar");
+  revalidatePath("/hoje");
 }

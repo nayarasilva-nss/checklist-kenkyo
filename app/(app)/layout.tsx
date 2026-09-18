@@ -11,6 +11,7 @@ import { isPlatformOperator } from "@/lib/data/organizations";
 import { getUnits, getJobFunctions } from "@/lib/data/units";
 import { logout } from "@/lib/auth/actions";
 import { isGestorProfile } from "@/lib/auth/profile";
+import { resolveBrandColors } from "@/lib/branding";
 import { AppNav } from "./AppNav";
 import { CoveringUnitBanner } from "./CoveringUnitBanner";
 import { GestorFuncaoBanner } from "./GestorFuncaoBanner";
@@ -62,13 +63,26 @@ export default async function AppLayout({
   // de fato preencher, mesmo padrão de "Perdas" sempre aparecer no menu.
   const showFormularios = orgFormDefinitions.length > 0;
   const showPlataforma = isPlatformOperator(user);
+  const brand = resolveBrandColors(user.organizationPrimaryColor);
 
   return (
     <div className="app-shell">
+      <style>{`:root{
+        --kenkyo-red: ${brand.red};
+        --kenkyo-red-deep: ${brand.redDeep};
+        --kenkyo-red-light: ${brand.redLight};
+        --kenkyo-gradient: ${brand.gradient};
+        --kenkyo-glow: ${brand.glow};
+        --kenkyo-tint: ${brand.tint};
+        --kenkyo-tint-soft: ${brand.tintSoft};
+        --kenkyo-on-tint: ${brand.onTint};
+      }`}</style>
       <AppNav
         userName={user.name}
         profile={user.profile}
         jobFunctionName={user.jobFunctionName}
+        orgName={user.organizationName ?? "Kenkyo"}
+        orgLogoUrl={user.organizationLogoUrl ?? "/kenkyo-logo.png"}
         canCreateAnomaly={user.profile !== "rh"}
         canSubmitFilleting={canSubmitFilleting(user)}
         canSubmitRestoIngesta={canSubmitRestoIngesta(user)}

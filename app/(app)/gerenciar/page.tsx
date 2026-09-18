@@ -23,6 +23,8 @@ import { CatalogItemRow } from "./CatalogItemRow";
 import { AddFormDefinitionForm } from "./AddFormDefinitionForm";
 import { FormDefinitionRow } from "./FormDefinitionRow";
 import { getFormDefinitions } from "@/lib/data/form-definitions";
+import { getOrganizationById } from "@/lib/data/organizations";
+import { BrandForm } from "./BrandForm";
 
 const TABS = [
   { key: "usuarios", label: "Usuários" },
@@ -31,6 +33,7 @@ const TABS = [
   { key: "unidades", label: "Unidades" },
   { key: "funcoes", label: "Funções" },
   { key: "catalogo", label: "Catálogo" },
+  { key: "marca", label: "Marca" },
 ] as const;
 
 export default async function GerenciarPage({
@@ -43,7 +46,7 @@ export default async function GerenciarPage({
   const { tab: rawTab } = await searchParams;
   const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "usuarios";
 
-  const [users, checklistTypes, units, jobFunctions, catalogCategories, catalogItems, formDefinitions] =
+  const [users, checklistTypes, units, jobFunctions, catalogCategories, catalogItems, formDefinitions, organization] =
     await Promise.all([
       getUsers(),
       getChecklistTypesWithCounts(),
@@ -52,6 +55,7 @@ export default async function GerenciarPage({
       getCatalogCategories(),
       getCatalogItems(),
       gestor.organizationId ? getFormDefinitions(gestor.organizationId) : Promise.resolve([]),
+      gestor.organizationId ? getOrganizationById(gestor.organizationId) : Promise.resolve(null),
     ]);
 
   return (
@@ -200,6 +204,18 @@ export default async function GerenciarPage({
           </div>
           <div className="detail-panel" style={{ minHeight: "auto" }}>
             <AddCatalogItemForm categories={catalogCategories} />
+          </div>
+        </div>
+      )}
+
+      {tab === "marca" && organization && (
+        <div className="board-layout">
+          <div className="detail-panel" style={{ minHeight: "auto" }}>
+            <p className="items-count" style={{ marginBottom: 14 }}>
+              Nome, logo e cor usados no menu, nos documentos gerados (PDFs de checklist e
+              requisição) e no visual do sistema pra quem faz login na sua empresa.
+            </p>
+            <BrandForm organization={organization} />
           </div>
         </div>
       )}

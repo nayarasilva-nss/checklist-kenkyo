@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/auth/actions";
@@ -131,6 +130,8 @@ export function AppNav({
   userName,
   profile,
   jobFunctionName,
+  orgName,
+  orgLogoUrl,
   canCreateAnomaly,
   canSubmitFilleting,
   canSubmitRestoIngesta,
@@ -144,6 +145,8 @@ export function AppNav({
   userName: string;
   profile: string;
   jobFunctionName: string | null;
+  orgName: string;
+  orgLogoUrl: string;
   canCreateAnomaly: boolean;
   canSubmitFilleting: boolean;
   canSubmitRestoIngesta: boolean;
@@ -211,8 +214,9 @@ export function AppNav({
     <>
       <aside className="app-nav">
         <Link href="/hoje" className="app-nav-brand">
-          <Image src="/kenkyo-logo.png" alt="Kenkyo" width={28} height={28} />
-          <span>Kenkyo</span>
+          {/* eslint-disable-next-line @next/next/no-img-element -- logo pode vir de URL externa configurada por empresa */}
+          <img src={orgLogoUrl} alt={orgName} width={28} height={28} />
+          <span>{orgName}</span>
         </Link>
 
         <nav className="app-nav-groups">

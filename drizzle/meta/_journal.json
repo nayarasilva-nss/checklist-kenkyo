@@ -211,6 +211,13 @@
       "when": 1789746486549,
       "tag": "0029_promote-master-user",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1789746732200,
+      "tag": "0030_elite_sentinel",
+      "breakpoints": true
     }
   ]
 }

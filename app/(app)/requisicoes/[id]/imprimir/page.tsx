@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
@@ -197,10 +196,11 @@ export default async function ImprimirRequisicaoPage({
       </div>
 
       <div className="print-head">
-        <Image src="/kenkyo-logo.png" alt="Kenkyo" width={52} height={52} />
+        {/* eslint-disable-next-line @next/next/no-img-element -- logo pode vir de URL externa configurada por empresa */}
+        <img src={user.organizationLogoUrl ?? "/kenkyo-logo.png"} alt={user.organizationName ?? "Kenkyo"} width={52} height={52} />
         <div>
           <h1>{TIPO_LABEL[requisicao.tipo] ?? "Requisição"}</h1>
-          <div className="sub">Grupo Kenkyo · {requisicao.unitName}</div>
+          <div className="sub">{user.organizationName ?? "Grupo Kenkyo"} · {requisicao.unitName}</div>
           <span className="print-badge">{STATUS_LABEL[requisicao.status] ?? requisicao.status}</span>
           {requisicao.urgente && <span className="print-badge urgente">Urgente</span>}
         </div>
@@ -265,7 +265,7 @@ export default async function ImprimirRequisicaoPage({
       </div>
 
       <div className="print-footer">
-        Documento gerado pelo sistema Kenkyo em {formatDateTime(new Date())}
+        Documento gerado pelo sistema {user.organizationName ?? "Kenkyo"} em {formatDateTime(new Date())}
       </div>
     </div>
   );
