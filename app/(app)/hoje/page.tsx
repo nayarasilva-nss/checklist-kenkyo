@@ -15,6 +15,7 @@ import { resolvePendencia } from "@/lib/actions/shift-logs";
 import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { tiposPermitidos } from "@/lib/auth/requisicoes";
+import { canCreateSolicitacao } from "@/lib/auth/solicitacoes";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { greeting, todayISO, todayShortLabel } from "@/lib/date-utils";
 import { UnitFilter } from "../UnitFilter";
@@ -54,6 +55,7 @@ export default async function HojePage({
   const canWriteShiftLog = user.profile === "gerente" || user.profile === "lider";
   const canCreateAnomaly = !isRh;
   const canRequestRequisicao = tiposPermitidos(user).length > 0;
+  const canRequestSolicitacao = canCreateSolicitacao(user);
 
   const { unit: rawUnit, date: rawDate } = await searchParams;
   const painelDate = rawDate || checklistTodayISO();
@@ -234,7 +236,8 @@ export default async function HojePage({
           {(canCreateAnomaly ||
             canSubmitRestoIngesta(user) ||
             canSubmitFilleting(user) ||
-            canRequestRequisicao) && (
+            canRequestRequisicao ||
+            canRequestSolicitacao) && (
             <div className="today-card">
               <div className="today-card-title" style={{ marginBottom: 8 }}>
                 Registrar agora
@@ -248,6 +251,12 @@ export default async function HojePage({
               {canRequestRequisicao && (
                 <Link href="/requisicoes" className="quick-action-row">
                   Requisição
+                  <span className="quick-action-plus">+</span>
+                </Link>
+              )}
+              {canRequestSolicitacao && (
+                <Link href="/solicitacoes" className="quick-action-row">
+                  Solicitação
                   <span className="quick-action-plus">+</span>
                 </Link>
               )}
