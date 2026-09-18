@@ -1,7 +1,17 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
-import { isPlatformOperator, getAllOrganizationsWithStats } from "@/lib/data/organizations";
-import { ApproveButton } from "./ApproveButton";
+import {
+  isPlatformOperator,
+  getAllOrganizationsWithStats,
+  type OrganizationStatus,
+} from "@/lib/data/organizations";
+import { OrganizationStatusActions } from "./OrganizationStatusActions";
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Pendente",
+  active: "Ativa",
+  suspended: "Suspensa",
+};
 
 export default async function PlataformaPage() {
   const user = await getCurrentUser();
@@ -41,12 +51,19 @@ export default async function PlataformaPage() {
             >
               <span>{org.name}</span>
               <span>{org.slug}</span>
-              <span>{org.status === "pending" ? "Pendente" : "Ativa"}</span>
+              <span>{STATUS_LABELS[org.status] ?? org.status}</span>
               <span>{org.userCount}</span>
               <span className="data-table-date">
                 {new Date(org.createdAt).toLocaleDateString("pt-BR")}
               </span>
-              <span>{org.status === "pending" && <ApproveButton organizationId={org.id} />}</span>
+              <span>
+                {org.slug !== "kenkyo" && (
+                  <OrganizationStatusActions
+                    organizationId={org.id}
+                    status={org.status as OrganizationStatus}
+                  />
+                )}
+              </span>
             </div>
           ))
         )}

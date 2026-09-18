@@ -8,7 +8,12 @@ import { db } from "@/lib/db";
 import { organizations, users } from "@/lib/db/schema";
 import { createSession } from "@/lib/auth/session";
 import { getCurrentUser } from "@/lib/auth/dal";
-import { isPlatformOperator, setOrganizationStatus } from "@/lib/data/organizations";
+import {
+  isPlatformOperator,
+  getOrganizationById,
+  setOrganizationStatus,
+  type OrganizationStatus,
+} from "@/lib/data/organizations";
 
 export type SignupState = { error?: string } | undefined;
 
@@ -84,11 +89,23 @@ export async function signupOrganization(
   redirect("/hoje");
 }
 
-export async function approveOrganization(organizationId: number) {
+/** Aprova, recusa ou suspende uma empresa. A empresa-base da própria
+ * plataforma (slug "kenkyo") nunca pode ser alterada por aqui — travaria
+ * o único jeito de voltar a mexer no /plataforma. */
+export async function updateOrganizationStatus(organizationId: number, status: OrganizationStatus) {
   const viewer = await getCurrentUser();
   if (!isPlatformOperator(viewer)) {
     throw new Error("Sem permissão");
   }
-  await setOrganizationStatus(organizationId, "active");
+
+  const org = await getOrganizationById(organizationId);
+  if (!org) {
+    throw new Error("Empresa não encontrada");
+  }
+  if (org.slug === "kenkyo") {
+    throw new Error("Não é possível alterar o status da empresa da plataforma");
+  }
+
+  await setOrganizationStatus(organizationId, status);
   revalidatePath("/plataforma");
 }

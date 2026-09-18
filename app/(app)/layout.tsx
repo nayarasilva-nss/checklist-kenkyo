@@ -21,15 +21,16 @@ export default async function AppLayout({
 }) {
   const user = await getCurrentUser();
 
-  if (user.organizationStatus === "pending") {
+  if (user.organizationStatus === "pending" || user.organizationStatus === "suspended") {
+    const isPending = user.organizationStatus === "pending";
     return (
       <div className="login-container">
         <div className="login-card">
-          <h1>Conta em análise</h1>
+          <h1>{isPending ? "Conta em análise" : "Conta desativada"}</h1>
           <p>
-            Recebemos o cadastro da sua empresa e ele está sendo revisado pela nossa equipe.
-            Assim que for aprovado, você já poderá usar o sistema normalmente com este mesmo
-            login.
+            {isPending
+              ? "Recebemos o cadastro da sua empresa e ele está sendo revisado pela nossa equipe. Assim que for aprovado, você já poderá usar o sistema normalmente com este mesmo login."
+              : "O acesso da sua empresa foi desativado. Se você acha que isso é um engano, entre em contato com quem administra sua conta na Kenkyo."}
           </p>
           <form action={logout}>
             <button className="btn-login" type="submit">

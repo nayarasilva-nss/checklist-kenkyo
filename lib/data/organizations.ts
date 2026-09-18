@@ -3,6 +3,8 @@ import { count, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organizations, users } from "@/lib/db/schema";
 
+export type OrganizationStatus = "pending" | "active" | "suspended";
+
 /**
  * Não existe um perfil "operador da plataforma" ainda — enquanto isso,
  * quem opera a Kenkyo (a própria empresa-base) é tratado como tal.
@@ -18,7 +20,12 @@ export async function getOrganizationBySlug(slug: string) {
   return row ?? null;
 }
 
-export async function setOrganizationStatus(organizationId: number, status: "active" | "pending") {
+export async function getOrganizationById(organizationId: number) {
+  const [row] = await db.select().from(organizations).where(eq(organizations.id, organizationId)).limit(1);
+  return row ?? null;
+}
+
+export async function setOrganizationStatus(organizationId: number, status: OrganizationStatus) {
   await db.update(organizations).set({ status }).where(eq(organizations.id, organizationId));
 }
 
