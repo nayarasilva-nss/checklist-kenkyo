@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { LoginForm } from "./LoginForm";
 
 export default function LoginPage() {
@@ -16,6 +17,10 @@ export default function LoginPage() {
         <h1>Kenkyo</h1>
         <p>Sistema de Checklists</p>
         <LoginForm />
+        <p style={{ marginTop: 16, fontSize: 13, textAlign: "center" }}>
+          Sua empresa ainda não usa o sistema?{" "}
+          <Link href="/signup">Criar empresa</Link>
+        </p>
       </div>
     </div>
   );

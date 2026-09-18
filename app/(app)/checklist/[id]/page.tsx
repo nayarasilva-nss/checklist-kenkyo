@@ -92,6 +92,7 @@ export default async function ChecklistDetailPage({
               item={item}
               checklistTypeId={checklist.id}
               checklistTypeName={checklist.name}
+              organizationId={user.organizationId ?? 0}
               locked={bloqueado}
             />
           ))}

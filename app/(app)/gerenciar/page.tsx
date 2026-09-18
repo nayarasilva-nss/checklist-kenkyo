@@ -20,10 +20,14 @@ import { AddCategoryForm } from "./AddCategoryForm";
 import { CategoryRow } from "./CategoryRow";
 import { AddCatalogItemForm } from "./AddCatalogItemForm";
 import { CatalogItemRow } from "./CatalogItemRow";
+import { AddFormDefinitionForm } from "./AddFormDefinitionForm";
+import { FormDefinitionRow } from "./FormDefinitionRow";
+import { getFormDefinitions } from "@/lib/data/form-definitions";
 
 const TABS = [
   { key: "usuarios", label: "Usuários" },
   { key: "modelos", label: "Modelos de checklist" },
+  { key: "formularios", label: "Formulários" },
   { key: "unidades", label: "Unidades" },
   { key: "funcoes", label: "Funções" },
   { key: "catalogo", label: "Catálogo" },
@@ -34,12 +38,12 @@ export default async function GerenciarPage({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  await requireGestor();
+  const gestor = await requireGestor();
 
   const { tab: rawTab } = await searchParams;
   const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "usuarios";
 
-  const [users, checklistTypes, units, jobFunctions, catalogCategories, catalogItems] =
+  const [users, checklistTypes, units, jobFunctions, catalogCategories, catalogItems, formDefinitions] =
     await Promise.all([
       getUsers(),
       getChecklistTypesWithCounts(),
@@ -47,6 +51,7 @@ export default async function GerenciarPage({
       getJobFunctions(),
       getCatalogCategories(),
       getCatalogItems(),
+      gestor.organizationId ? getFormDefinitions(gestor.organizationId) : Promise.resolve([]),
     ]);
 
   return (
@@ -105,6 +110,25 @@ export default async function GerenciarPage({
               users={users}
               allChecklistTypes={checklistTypes}
             />
+          </div>
+        </div>
+      )}
+
+      {tab === "formularios" && (
+        <div className="board-layout">
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 14 }}>
+              Formulários personalizados · {formDefinitions.length}
+            </div>
+            <p className="items-count" style={{ marginBottom: 14 }}>
+              Pra registros operacionais que não têm uma tela dedicada — aparecem em &quot;Formulários&quot; pra quem tiver permissão.
+            </p>
+            {formDefinitions.map((def) => (
+              <FormDefinitionRow key={def.id} definition={def} jobFunctions={jobFunctions} />
+            ))}
+          </div>
+          <div className="detail-panel" style={{ minHeight: "auto" }}>
+            <AddFormDefinitionForm jobFunctions={jobFunctions} />
           </div>
         </div>
       )}

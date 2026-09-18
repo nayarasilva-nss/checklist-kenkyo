@@ -5,7 +5,7 @@ import { upload } from "@vercel/blob/client";
 import { createDocument } from "@/lib/actions/documents";
 import { FICHA_TECNICA_CATEGORY_ORDER } from "@/lib/domain/ficha-tecnica-categorias";
 
-export function DocumentUploadForm() {
+export function DocumentUploadForm({ organizationId }: { organizationId: number }) {
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState("ficha_tecnica");
   const [uploading, setUploading] = useState(false);
@@ -25,7 +25,7 @@ export function DocumentUploadForm() {
     setError(undefined);
     let fileUrl: string;
     try {
-      const blob = await upload(`documentos/${Date.now()}-${file.name}`, file, {
+      const blob = await upload(`org-${organizationId}/documentos/${Date.now()}-${file.name}`, file, {
         access: "public",
         handleUploadUrl: "/api/upload",
       });

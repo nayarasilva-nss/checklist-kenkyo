@@ -16,7 +16,13 @@ const PROFILE_LABELS: Record<string, string> = {
   rh: "RH",
 };
 
-function buildGroups(profile: string, showRequisicoes: boolean, showSolicitacoes: boolean): NavGroup[] {
+function buildGroups(
+  profile: string,
+  showRequisicoes: boolean,
+  showSolicitacoes: boolean,
+  showFormularios: boolean,
+  showPlataforma: boolean,
+): NavGroup[] {
   if (profile === "rh") {
     return [
       {
@@ -46,6 +52,7 @@ function buildGroups(profile: string, showRequisicoes: boolean, showSolicitacoes
       label: "INDICADORES",
       items: [
         { href: "/perdas", label: "Perdas" },
+        ...(showFormularios ? [{ href: "/formularios", label: "Formulários" }] : []),
         { href: "/relatorio", label: "Relatórios" },
         { href: "/historico", label: "Histórico" },
       ],
@@ -59,7 +66,10 @@ function buildGroups(profile: string, showRequisicoes: boolean, showSolicitacoes
   if (profile === "gestor") {
     groups.push({
       label: "SISTEMA",
-      items: [{ href: "/gerenciar", label: "Gerenciar" }],
+      items: [
+        { href: "/gerenciar", label: "Gerenciar" },
+        ...(showPlataforma ? [{ href: "/plataforma", label: "Plataforma" }] : []),
+      ],
     });
   }
 
@@ -126,6 +136,8 @@ export function AppNav({
   showRequisicoes,
   canCreateRequisicao,
   showSolicitacoes,
+  showFormularios,
+  showPlataforma,
 }: {
   userName: string;
   profile: string;
@@ -137,9 +149,11 @@ export function AppNav({
   showRequisicoes: boolean;
   canCreateRequisicao: boolean;
   showSolicitacoes: boolean;
+  showFormularios: boolean;
+  showPlataforma: boolean;
 }) {
   const pathname = usePathname();
-  const groups = buildGroups(profile, showRequisicoes, showSolicitacoes);
+  const groups = buildGroups(profile, showRequisicoes, showSolicitacoes, showFormularios, showPlataforma);
   const scope =
     profile === "gestor" || profile === "rh"
       ? "Todas as unidades"
@@ -182,6 +196,9 @@ export function AppNav({
       : []),
     ...(showSolicitacoes
       ? [{ href: "/solicitacoes", title: "Solicitações", description: "Itens avulsos, com aprovação" }]
+      : []),
+    ...(showFormularios
+      ? [{ href: "/formularios", title: "Formulários", description: "Registros personalizados" }]
       : []),
     ...(profile === "gestor"
       ? [{ href: "/gerenciar", title: "Gerenciar", description: "Usuários, unidades e modelos" }]

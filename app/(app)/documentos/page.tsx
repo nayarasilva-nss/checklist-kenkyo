@@ -16,7 +16,7 @@ export default async function DocumentosPage() {
 
       {isGestor && (
         <div className="today-card" style={{ marginBottom: 20 }}>
-          <DocumentUploadForm />
+          <DocumentUploadForm organizationId={user.organizationId ?? 0} />
         </div>
       )}
 

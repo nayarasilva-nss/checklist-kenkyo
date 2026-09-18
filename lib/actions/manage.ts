@@ -37,7 +37,7 @@ export async function createUser(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
 
   const name = String(formData.get("name") ?? "").trim();
   const username = String(formData.get("username") ?? "")
@@ -68,6 +68,9 @@ export async function createUser(
 
   const passwordHash = await bcrypt.hash(password, 10);
   await db.insert(users).values({
+    // Novo usuário sempre entra na mesma empresa de quem criou — não dá
+    // pra um gestor criar usuário em outra empresa por aqui.
+    organizationId: gestor.organizationId,
     name,
     username,
     passwordHash,

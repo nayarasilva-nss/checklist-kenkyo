@@ -9,6 +9,7 @@ import {
   pgEnum,
   boolean,
   numeric,
+  jsonb,
   uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
@@ -69,6 +70,25 @@ export const solicitacaoItemStatusEnum = pgEnum("solicitacao_item_status", [
   "reprovado",
 ]);
 
+// Início do multi-empresa (ver plano de escalabilidade): por enquanto só
+// esta tabela e users.organization_id existem — o resto do app
+// (unidades, checklists, requisições etc.) ainda não está isolado por
+// empresa. Isso é intencional: o passo grande de colocar organization_id
+// em toda tabela existente fica pra depois; por ora, só o que é novo
+// (motor de formulários, upload de arquivo) já nasce multi-empresa.
+export const organizations = pgTable(
+  "organizations",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    // Usado como prefixo de storage (ex: "org-acme/evidencias/...") e em
+    // URLs futuras — só letras minúsculas, números e hífen.
+    slug: varchar("slug", { length: 100 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("organizations_slug_idx").on(table.slug)],
+);
+
 export const units = pgTable(
   "units",
   {
@@ -93,6 +113,11 @@ export const users = pgTable(
   "users",
   {
     id: serial("id").primaryKey(),
+    // Nullable só durante a migração de backfill — todo usuário novo
+    // sempre tem uma empresa. Ver comentário acima de `organizations`.
+    organizationId: integer("organization_id").references(() => organizations.id, {
+      onDelete: "cascade",
+    }),
     name: varchar("name", { length: 255 }).notNull(),
     username: varchar("username", { length: 255 }).notNull(),
     passwordHash: text("password_hash").notNull(),
@@ -520,6 +545,63 @@ export const solicitacaoItens = pgTable("solicitacao_itens", {
   // Marcado por quem solicitou (ou pelo gestor) quando o item chega —
   // é o que fecha o acompanhamento do pedido.
   chegou: boolean("chegou").notNull().default(false),
+});
+
+// Motor de formulários genérico (plano de escalabilidade, passo 2) —
+// pra um cliente configurar o próprio registro operacional (ex:
+// "temperatura de câmara fria") sem precisar de código novo, do jeito
+// que filetagem/resto-ingesta/quebra de utensílios/pedidos com erro
+// tiveram que ser feitos hoje. Esses quatro continuam como módulos
+// dedicados por enquanto — não foram migrados pra cá ainda.
+export const formFieldTypeEnum = pgEnum("form_field_type", [
+  "number",
+  "text",
+  "date",
+  "boolean",
+  "select",
+]);
+
+export const formDefinitions = pgTable("form_definitions", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull().default(""),
+  // Array de { key, label, type, required, decimals?, unit?, options?
+  // } — o "fields" inteiro é a definição do formulário, editável em
+  // Gerenciar sem deploy novo. Ver lib/data/form-definitions.ts pro
+  // shape exato e a validação.
+  fields: jsonb("fields").notNull().default([]),
+  // Nomes de função (job_functions.name) que podem preencher — nome,
+  // não id, porque comparar por nome é o mesmo padrão já usado nos
+  // outros módulos (canSubmitFilleting etc.) e job_functions é uma
+  // tabela editável, não um enum fixo.
+  allowedJobFunctionNames: jsonb("allowed_job_function_names").notNull().default([]),
+  allowGestor: boolean("allow_gestor").notNull().default(true),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const formSubmissions = pgTable("form_submissions", {
+  id: serial("id").primaryKey(),
+  formDefinitionId: integer("form_definition_id")
+    .notNull()
+    .references(() => formDefinitions.id, { onDelete: "cascade" }),
+  // Duplicado do form_definitions pra não precisar de join em toda
+  // leitura escopada por empresa.
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  unitId: integer("unit_id").references(() => units.id, { onDelete: "set null" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  // { [fieldKey]: valor } — valida contra form_definitions.fields na
+  // escrita (lib/actions/form-definitions.ts), não no banco.
+  values: jsonb("values").notNull().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const history = pgTable("history", {

@@ -71,11 +71,15 @@ export function ChecklistItemRow({
   item,
   checklistTypeId,
   checklistTypeName,
+  organizationId,
   locked,
 }: {
   item: Item;
   checklistTypeId: number;
   checklistTypeName: string;
+  // Isola o arquivo no Blob por empresa — ver app/api/upload/route.ts,
+  // que valida esse prefixo contra a empresa do usuário autenticado.
+  organizationId: number;
   // Pré-requisitos do checklist ainda não cumpridos — os botões ficam
   // desabilitados; o servidor recusaria de qualquer forma (ver
   // setChecklistItemStatus), isso só evita o usuário tentar à toa.
@@ -148,7 +152,7 @@ export function ChecklistItemRow({
           return;
         }
         const blob = await upload(
-          `evidencias/${checklistTypeId}-${item.id}-${Date.now()}-${compressed.name}`,
+          `org-${organizationId}/evidencias/${checklistTypeId}-${item.id}-${Date.now()}-${compressed.name}`,
           compressed,
           { access: "public", handleUploadUrl: "/api/upload" },
         );
