@@ -1,5 +1,6 @@
 "use server";
 
+import { isGestorProfile } from "@/lib/auth/profile";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
@@ -9,7 +10,7 @@ import { jobFunctions } from "@/lib/db/schema";
 
 export async function updateGestorFuncao(formData: FormData) {
   const user = await getCurrentUser();
-  if (user.profile !== "gestor") return;
+  if (!isGestorProfile(user.profile)) return;
 
   const jobFunctionId = Number(formData.get("jobFunctionId"));
 

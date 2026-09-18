@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { todayISO } from "@/lib/date-utils";
@@ -33,7 +34,7 @@ export function canCoverOtherUnits(viewer: {
 }) {
   return (
     viewer.profile === "gerente" ||
-    viewer.profile === "gestor" ||
+    isGestorProfile(viewer.profile) ||
     (viewer.jobFunctionName?.startsWith("Chefe") ?? false)
   );
 }

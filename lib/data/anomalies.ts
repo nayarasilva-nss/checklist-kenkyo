@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { and, arrayContains, desc, eq, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { anomalies, units, users } from "@/lib/db/schema";
@@ -25,7 +26,7 @@ export function resolveAnomalyScope(
   viewer: AnomalyViewer,
   requestedUnitId: number | null,
 ): AnomalyScope {
-  if (viewer.profile === "gestor" || viewer.profile === "rh") {
+  if (isGestorProfile(viewer.profile) || viewer.profile === "rh") {
     return { mode: "unit", unitId: requestedUnitId };
   }
   if (viewer.profile === "gerente" || viewer.jobFunctionName === "Chefe") {

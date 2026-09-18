@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getDayReport, getPeriodReport } from "@/lib/data/reports";
 import { todayISO } from "@/lib/data/checklists";
@@ -21,7 +22,7 @@ export default async function RelatorioPage({
   searchParams: Promise<{ date?: string; unit?: string; funcao?: string; periodo?: string }>;
 }) {
   const user = await getCurrentUser();
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const { date: rawDate, unit: rawUnit, funcao: rawFuncao, periodo: rawPeriodo } =
     await searchParams;
   const date = rawDate || todayISO();

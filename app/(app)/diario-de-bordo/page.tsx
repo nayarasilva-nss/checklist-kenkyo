@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/auth/dal";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { getGestorFuncao } from "@/lib/auth/gestor-funcao";
 import {
   getShiftLogsByScope,
@@ -24,7 +25,7 @@ export default async function DiarioDeBordoPage({
   searchParams: Promise<{ unit?: string }>;
 }) {
   const user = await getCurrentUser();
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const isRh = user.profile === "rh";
   const canViewAllUnits = isGestor || isRh;
   const { unit: rawUnit } = await searchParams;

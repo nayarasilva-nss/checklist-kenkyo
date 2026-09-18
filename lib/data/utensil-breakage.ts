@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { utensilBreakageRecords, units, users } from "@/lib/db/schema";
@@ -9,7 +10,7 @@ export type UtensilBreakageViewer = {
 };
 
 export function canSubmitUtensilBreakage(viewer: UtensilBreakageViewer) {
-  return viewer.profile === "gestor" || viewer.jobFunctionName === "Líder de Bar";
+  return isGestorProfile(viewer.profile) || viewer.jobFunctionName === "Líder de Bar";
 }
 
 export async function getUtensilBreakageRecords(unitId: number | null) {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
@@ -17,7 +18,7 @@ export default async function FormulariosPage({
   const user = await getCurrentUser();
   if (!user.organizationId) redirect("/hoje");
 
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const { form: rawForm, unit: rawUnit } = await searchParams;
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const unitId = resolveUnitScope(user, requestedUnitId);

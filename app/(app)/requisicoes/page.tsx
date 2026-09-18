@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/auth/requisicoes";
@@ -79,7 +80,7 @@ export default async function RequisicoesPage({
       criarTiposPermitidos={criarTiposPermitidos}
       linkCandidatesByUnit={linkCandidatesByUnit}
       fixedUnitId={effectiveUnitId}
-      isGestor={user.profile === "gestor"}
+      isGestor={isGestorProfile(user.profile)}
     />
   );
 }

@@ -10,6 +10,7 @@ import { getFormDefinitions } from "@/lib/data/form-definitions";
 import { isPlatformOperator } from "@/lib/data/organizations";
 import { getUnits, getJobFunctions } from "@/lib/data/units";
 import { logout } from "@/lib/auth/actions";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { AppNav } from "./AppNav";
 import { CoveringUnitBanner } from "./CoveringUnitBanner";
 import { GestorFuncaoBanner } from "./GestorFuncaoBanner";
@@ -43,7 +44,7 @@ export default async function AppLayout({
   }
 
   const showCoveringUnitBanner = canCoverOtherUnits(user);
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const showRequisicoes = resolveRequisicaoScope(user) !== null;
   const canCreateRequisicao = tiposPermitidos(user).length > 0;
   const showSolicitacoes = canCreateSolicitacao(user);

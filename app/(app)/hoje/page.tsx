@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { resolveEffectiveJobFunctionId } from "@/lib/auth/gestor-funcao";
@@ -49,7 +50,7 @@ export default async function HojePage({
     effectiveUnitId,
   };
 
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const isRh = user.profile === "rh";
   const canWriteShiftLog = user.profile === "gerente" || user.profile === "lider";
   const canCreateAnomaly = !isRh;

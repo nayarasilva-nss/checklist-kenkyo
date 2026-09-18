@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { and, asc, desc, eq, gte, inArray, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, units, users } from "@/lib/db/schema";
@@ -40,7 +41,7 @@ export type RequisicaoScope =
  * cria requisições da unidade coberta, não da unidade de origem.
  */
 export function resolveRequisicaoScope(viewer: RequisicaoViewer): RequisicaoScope | null {
-  if (viewer.profile === "gestor") {
+  if (isGestorProfile(viewer.profile)) {
     return { mode: "all" };
   }
   if (canConferirInterna(viewer)) {

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { isGestorProfile } from "@/lib/auth/profile";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
@@ -33,7 +34,7 @@ export default async function ImprimirChecklistPage({
 
   // Mesma regra do Histórico: gestor vê tudo, o resto só a própria unidade.
   const allowedUnitId = resolveUnitScope(user, unitId);
-  if (user.profile !== "gestor" && allowedUnitId !== unitId) {
+  if (!isGestorProfile(user.profile) && allowedUnitId !== unitId) {
     redirect("/historico");
   }
 

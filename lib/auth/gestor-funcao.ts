@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { todayISO } from "@/lib/date-utils";
@@ -69,7 +70,7 @@ export async function resolveEffectiveJobFunctionId(viewer: {
   profile: string;
   jobFunctionId: number | null;
 }): Promise<number | null> {
-  if (viewer.profile !== "gestor") return viewer.jobFunctionId;
+  if (!isGestorProfile(viewer.profile)) return viewer.jobFunctionId;
   const picked = await getGestorFuncao();
   return picked ? picked.jobFunctionId : null;
 }

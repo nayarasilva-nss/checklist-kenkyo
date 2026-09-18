@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users, jobFunctions, organizations } from "@/lib/db/schema";
-import { decrypt, getSessionCookie, type Profile } from "./session";
+import { decrypt, getSessionCookie } from "./session";
+import { isGestorProfile, type Profile } from "./profile";
 
 export const verifySession = cache(async () => {
   const token = await getSessionCookie();
@@ -49,7 +50,7 @@ export const getCurrentUser = cache(async () => {
 
 export async function requireGestor() {
   const user = await getCurrentUser();
-  if (user.profile !== "gestor") {
+  if (!isGestorProfile(user.profile)) {
     redirect("/hoje");
   }
   return user;

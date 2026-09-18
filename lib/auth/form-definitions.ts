@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 
 type Viewer = { profile: string; jobFunctionName: string | null };
 type FormDef = { allowedJobFunctionNames: string[]; allowGestor: boolean };
@@ -8,6 +9,6 @@ type FormDef = { allowedJobFunctionNames: string[]; allowGestor: boolean };
  * ingesta/etc.). Gestor sempre pode criar/editar a definição em si; se
  * também pode *preencher*, é o campo allowGestor que decide. */
 export function canSubmitFormDefinition(viewer: Viewer, def: FormDef) {
-  if (viewer.profile === "gestor") return def.allowGestor;
+  if (isGestorProfile(viewer.profile)) return def.allowGestor;
   return viewer.jobFunctionName !== null && def.allowedJobFunctionNames.includes(viewer.jobFunctionName);
 }

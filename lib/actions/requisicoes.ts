@@ -1,5 +1,6 @@
 "use server";
 
+import { isGestorProfile } from "@/lib/auth/profile";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
@@ -226,7 +227,7 @@ export async function deleteRequisicao(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (user.profile !== "gestor") {
+  if (!isGestorProfile(user.profile)) {
     return { error: "Só o gestor pode excluir uma requisição" };
   }
 
@@ -247,7 +248,7 @@ export async function updateRequisicaoTipo(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (user.profile !== "gestor") {
+  if (!isGestorProfile(user.profile)) {
     return { error: "Só o gestor pode mudar o tipo de uma requisição" };
   }
 

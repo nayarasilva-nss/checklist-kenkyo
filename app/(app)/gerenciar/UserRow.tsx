@@ -9,6 +9,7 @@ const PROFILE_LABELS: Record<string, string> = {
   gerente: "Gerente",
   lider: "Líder",
   rh: "RH",
+  master: "Master",
 };
 
 type Option = { id: number; name: string };
@@ -51,18 +52,22 @@ export function UserRow({
           </p>
         </div>
         <div className="list-item-actions">
-          <button
-            className="btn-small"
-            type="button"
-            onClick={() => setEditing(true)}
-          >
-            Editar
-          </button>
-          <DeleteButton
-            action={deleteUser}
-            id={user.id}
-            confirmText={`Deletar o usuário "${user.name}"?`}
-          />
+          {user.profile !== "master" && (
+            <>
+              <button
+                className="btn-small"
+                type="button"
+                onClick={() => setEditing(true)}
+              >
+                Editar
+              </button>
+              <DeleteButton
+                action={deleteUser}
+                id={user.id}
+                confirmText={`Deletar o usuário "${user.name}"?`}
+              />
+            </>
+          )}
         </div>
       </div>
     );

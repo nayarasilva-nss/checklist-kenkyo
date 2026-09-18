@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -42,7 +43,7 @@ function checklistVisibleToViewer(
   // ones — viewer.jobFunctionId must already be their *effective* one
   // (resolveEffectiveJobFunctionId), which is null until they pick a
   // função for the day (they're not operating any checklist that day).
-  if (viewer.profile === "gestor" && viewer.jobFunctionId === null) {
+  if (isGestorProfile(viewer.profile) && viewer.jobFunctionId === null) {
     return false;
   }
   return visibleToViewer(checklistType.jobFunctionId, viewer);

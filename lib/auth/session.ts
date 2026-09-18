@@ -1,6 +1,10 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import type { Profile } from "./profile";
+
+export type { Profile } from "./profile";
+export { isGestorProfile } from "./profile";
 
 const SESSION_COOKIE = "session";
 
@@ -9,8 +13,6 @@ if (!secretKey) {
   throw new Error("AUTH_SECRET is not set");
 }
 const encodedKey = new TextEncoder().encode(secretKey);
-
-export type Profile = "gestor" | "gerente" | "lider" | "rh";
 
 export type SessionPayload = {
   userId: number;

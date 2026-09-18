@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { deliveryErrorRecords, units, users } from "@/lib/db/schema";
@@ -9,7 +10,7 @@ export type DeliveryErrorViewer = {
 };
 
 export function canSubmitDeliveryError(viewer: DeliveryErrorViewer) {
-  return viewer.profile === "gestor" || viewer.jobFunctionName === "Líder de Delivery";
+  return isGestorProfile(viewer.profile) || viewer.jobFunctionName === "Líder de Delivery";
 }
 
 export async function getDeliveryErrorRecords(unitId: number | null) {

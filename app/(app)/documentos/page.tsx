@@ -1,11 +1,12 @@
 import { getCurrentUser } from "@/lib/auth/dal";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { getDocuments } from "@/lib/data/documents";
 import { DocumentosBoard } from "./DocumentosBoard";
 import { DocumentUploadForm } from "./DocumentUploadForm";
 
 export default async function DocumentosPage() {
   const user = await getCurrentUser();
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const allDocuments = await getDocuments();
 
   return (

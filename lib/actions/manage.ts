@@ -107,6 +107,11 @@ export async function updateUser(
     return { error: "Preencha o nome e o usuário" };
   }
 
+  const [target] = await db.select({ profile: users.profile }).from(users).where(eq(users.id, id)).limit(1);
+  if (target?.profile === "master") {
+    return { error: "Não é possível editar esse usuário por aqui" };
+  }
+
   const existing = await db
     .select({ id: users.id })
     .from(users)
@@ -137,6 +142,10 @@ export async function deleteUser(formData: FormData) {
   await requireGestor();
   const id = Number(formData.get("id"));
   if (!id) return;
+
+  const [target] = await db.select({ profile: users.profile }).from(users).where(eq(users.id, id)).limit(1);
+  if (target?.profile === "master") return;
+
   await db.delete(users).where(eq(users.id, id));
   revalidateManageViews();
 }

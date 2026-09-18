@@ -5,14 +5,10 @@ import { organizations, users } from "@/lib/db/schema";
 
 export type OrganizationStatus = "pending" | "active" | "suspended";
 
-/**
- * Não existe um perfil "operador da plataforma" ainda — enquanto isso,
- * quem opera a Kenkyo (a própria empresa-base) é tratado como tal.
- * Provisório: quando o produto tiver clientes de verdade, isso vira um
- * profile próprio em vez de checar o slug da empresa.
- */
-export function isPlatformOperator(viewer: { profile: string; organizationSlug: string | null }) {
-  return viewer.profile === "gestor" && viewer.organizationSlug === "kenkyo";
+/** Quem administra outras empresas no /plataforma — perfil "master",
+ * independente de qual empresa a conta pertence. */
+export function isPlatformOperator(viewer: { profile: string }) {
+  return viewer.profile === "master";
 }
 
 export async function getOrganizationBySlug(slug: string) {

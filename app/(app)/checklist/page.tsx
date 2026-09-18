@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { resolveEffectiveJobFunctionId } from "@/lib/auth/gestor-funcao";
@@ -15,7 +16,7 @@ export default async function ChecklistPage({
   const type = rawType === "weekly" ? "weekly" : "daily";
 
   const user = await getCurrentUser();
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const viewer = {
     id: user.id,
     profile: user.profile,

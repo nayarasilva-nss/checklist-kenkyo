@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isGestorProfile } from "@/lib/auth/profile";
 import type { NextRequest } from "next/server";
 import { decrypt } from "@/lib/auth/session";
 
@@ -25,7 +26,7 @@ export default async function proxy(request: NextRequest) {
   if (
     gestorOnlyRoutes.some((route) => path.startsWith(route)) &&
     session &&
-    session.profile !== "gestor"
+    !isGestorProfile(session.profile)
   ) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }

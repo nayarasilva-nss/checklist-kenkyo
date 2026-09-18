@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/auth/dal";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import {
   getAnomaliesByScope,
@@ -19,7 +20,7 @@ export default async function AnomaliasPage({
   }>;
 }) {
   const user = await getCurrentUser();
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const isRh = user.profile === "rh";
   const canViewAllUnits = isGestor || isRh;
   const { unit: rawUnit, tipo, setor, dias } = await searchParams;

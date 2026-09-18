@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 
 export type RequisicaoTipo = "interna" | "externa";
 
@@ -16,7 +17,7 @@ export function canRequestInterna(viewer: Viewer) {
 }
 
 export function canRequestExterna(viewer: Viewer) {
-  return viewer.profile === "gerente" || viewer.profile === "gestor";
+  return viewer.profile === "gerente" || isGestorProfile(viewer.profile);
 }
 
 export function tiposPermitidos(viewer: Viewer): RequisicaoTipo[] {
@@ -30,7 +31,7 @@ export function tiposPermitidos(viewer: Viewer): RequisicaoTipo[] {
 export function canConferirInterna(viewer: Viewer) {
   return (
     viewer.profile === "gerente" ||
-    viewer.profile === "gestor" ||
+    isGestorProfile(viewer.profile) ||
     viewer.jobFunctionName === "Líder de Delivery" ||
     viewer.jobFunctionName === "Líder de Estoque/Produção"
   );
@@ -38,7 +39,7 @@ export function canConferirInterna(viewer: Viewer) {
 
 /** Confere externa: Líder de Estoque/Produção ou qualquer Gestor. */
 export function canConferirExterna(viewer: Viewer) {
-  return viewer.jobFunctionName === "Líder de Estoque/Produção" || viewer.profile === "gestor";
+  return viewer.jobFunctionName === "Líder de Estoque/Produção" || isGestorProfile(viewer.profile);
 }
 
 export function canConferirRequisicao(viewer: Viewer, tipo: RequisicaoTipo) {

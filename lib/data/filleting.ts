@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { filletingRecords, units, users } from "@/lib/db/schema";
@@ -10,7 +11,7 @@ export type FilletingViewer = {
 };
 
 export function canSubmitFilleting(viewer: FilletingViewer) {
-  return viewer.profile === "gestor" || viewer.jobFunctionName === "Chefe";
+  return isGestorProfile(viewer.profile) || viewer.jobFunctionName === "Chefe";
 }
 
 export async function getFilletingRecords(unitId: number | null) {

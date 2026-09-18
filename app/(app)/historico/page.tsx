@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/auth/dal";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { getHistoryEntries } from "@/lib/data/history-list";
 import {
   getChecklistHistoryItems,
@@ -16,7 +17,7 @@ export default async function HistoricoPage({
   searchParams: Promise<{ unit?: string }>;
 }) {
   const user = await getCurrentUser();
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const { unit: rawUnit } = await searchParams;
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const unitId = resolveUnitScope(user, requestedUnitId);

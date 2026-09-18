@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { restoIngestaRecords, units, users } from "@/lib/db/schema";
@@ -8,7 +9,7 @@ export type RestoIngestaViewer = {
 };
 
 export function canSubmitRestoIngesta(viewer: RestoIngestaViewer) {
-  return viewer.profile === "gestor" || viewer.profile === "gerente";
+  return isGestorProfile(viewer.profile) || viewer.profile === "gerente";
 }
 
 export async function getRestoIngestaRecords(unitId: number | null) {

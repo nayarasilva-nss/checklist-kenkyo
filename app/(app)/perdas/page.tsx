@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import {
@@ -54,7 +55,7 @@ export default async function PerdasPage({
   searchParams: Promise<{ tab?: string; unit?: string }>;
 }) {
   const user = await getCurrentUser();
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const { tab: rawTab, unit: rawUnit } = await searchParams;
   const tab =
     rawTab === "resto" || rawTab === "utensilios" || rawTab === "delivery"
@@ -157,7 +158,7 @@ async function FiletagemTab({
   unitId: number | null;
   unitPickerOptions: { id: number; name: string }[];
 }) {
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const [records, summary] = await Promise.all([
     getFilletingRecords(unitId),
     getFilletingMonthlySummary(unitId),
@@ -258,7 +259,7 @@ async function RestoIngestaTab({
   unitId: number | null;
   unitPickerOptions: { id: number; name: string }[];
 }) {
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const [records, summary] = await Promise.all([
     getRestoIngestaRecords(unitId),
     getRestoIngestaMonthlySummary(unitId),
@@ -339,7 +340,7 @@ async function UtensilBreakageTab({
   unitId: number | null;
   unitPickerOptions: { id: number; name: string }[];
 }) {
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const [records, summary] = await Promise.all([
     getUtensilBreakageRecords(unitId),
     getUtensilBreakageMonthlySummary(unitId),
@@ -424,7 +425,7 @@ async function DeliveryErrorTab({
   unitId: number | null;
   unitPickerOptions: { id: number; name: string }[];
 }) {
-  const isGestor = user.profile === "gestor";
+  const isGestor = isGestorProfile(user.profile);
   const [records, summary] = await Promise.all([
     getDeliveryErrorRecords(unitId),
     getDeliveryErrorMonthlySummary(unitId),

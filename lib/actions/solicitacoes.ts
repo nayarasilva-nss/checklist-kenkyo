@@ -1,5 +1,6 @@
 "use server";
 
+import { isGestorProfile } from "@/lib/auth/profile";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
@@ -107,7 +108,7 @@ export async function cancelSolicitacao(formData: FormData) {
 /** Exclusão definitiva — só Gestor, diferente de cancelar. */
 export async function deleteSolicitacao(formData: FormData) {
   const user = await getCurrentUser();
-  if (user.profile !== "gestor") return;
+  if (!isGestorProfile(user.profile)) return;
   const id = Number(formData.get("id"));
   if (!id) return;
   await db.delete(solicitacoes).where(eq(solicitacoes.id, id));
@@ -202,7 +203,7 @@ export async function setItemChegou(formData: FormData) {
     .where(eq(solicitacoes.id, solicitacaoId))
     .limit(1);
   if (!existing) return;
-  if (existing.requesterId !== user.id && user.profile !== "gestor") return;
+  if (existing.requesterId !== user.id && !isGestorProfile(user.profile)) return;
 
   const chegou = formData.get("chegou") === "on";
   await db.update(solicitacaoItens).set({ chegou }).where(eq(solicitacaoItens.id, itemId));

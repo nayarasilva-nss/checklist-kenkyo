@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/auth/actions";
+import { isGestorProfile } from "@/lib/auth/profile";
 
 type NavItem = { href: string; label: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -14,6 +15,7 @@ const PROFILE_LABELS: Record<string, string> = {
   gerente: "Gerente",
   lider: "Líder",
   rh: "RH",
+  master: "Master",
 };
 
 function buildGroups(
@@ -63,7 +65,7 @@ function buildGroups(
     },
   ];
 
-  if (profile === "gestor") {
+  if (isGestorProfile(profile)) {
     groups.push({
       label: "SISTEMA",
       items: [
@@ -155,7 +157,7 @@ export function AppNav({
   const pathname = usePathname();
   const groups = buildGroups(profile, showRequisicoes, showSolicitacoes, showFormularios, showPlataforma);
   const scope =
-    profile === "gestor" || profile === "rh"
+    isGestorProfile(profile) || profile === "rh"
       ? "Todas as unidades"
       : (jobFunctionName ?? "Sem função definida");
 
@@ -200,7 +202,7 @@ export function AppNav({
     ...(showFormularios
       ? [{ href: "/formularios", title: "Formulários", description: "Registros personalizados" }]
       : []),
-    ...(profile === "gestor"
+    ...(isGestorProfile(profile)
       ? [{ href: "/gerenciar", title: "Gerenciar", description: "Usuários, unidades e modelos" }]
       : []),
   ];

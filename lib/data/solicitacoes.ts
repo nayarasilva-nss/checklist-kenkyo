@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { solicitacoes, solicitacaoItens, units, users } from "@/lib/db/schema";
@@ -17,7 +18,7 @@ export type SolicitacaoScope = { mode: "all" } | { mode: "own"; userId: number }
  * solicitação passa pelo Gestor de qualquer forma.
  */
 export function resolveSolicitacaoScope(viewer: SolicitacaoViewer): SolicitacaoScope | null {
-  if (viewer.profile === "gestor") return { mode: "all" };
+  if (isGestorProfile(viewer.profile)) return { mode: "all" };
   if (viewer.profile === "gerente") return { mode: "own", userId: viewer.id };
   return null;
 }

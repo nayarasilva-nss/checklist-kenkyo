@@ -1,4 +1,5 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { decrypt, getSessionCookie } from "@/lib/auth/session";
@@ -43,7 +44,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         const rest = pathname.slice(orgPrefix.length);
 
         if (rest.startsWith("documentos/")) {
-          if (session.profile !== "gestor") {
+          if (!isGestorProfile(session.profile)) {
             throw new Error("Apenas o Gestor pode enviar documentos");
           }
           return {

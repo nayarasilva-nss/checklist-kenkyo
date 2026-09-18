@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { shiftLogPendencias, shiftLogs, units, users } from "@/lib/db/schema";
@@ -25,7 +26,7 @@ export function resolveShiftLogScope(
   viewer: ShiftLogViewer,
   requestedUnitId: number | null,
 ): ShiftLogScope {
-  if (viewer.profile === "gestor" || viewer.profile === "rh") {
+  if (isGestorProfile(viewer.profile) || viewer.profile === "rh") {
     return { mode: "unit", unitId: requestedUnitId };
   }
   return { mode: "own", userId: viewer.id };

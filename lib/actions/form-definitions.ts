@@ -1,5 +1,6 @@
 "use server";
 
+import { isGestorProfile } from "@/lib/auth/profile";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
@@ -66,7 +67,7 @@ export async function createFormDefinition(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (user.profile !== "gestor") {
+  if (!isGestorProfile(user.profile)) {
     return { error: "Só o gestor pode criar um formulário personalizado" };
   }
   if (!user.organizationId) {
@@ -101,7 +102,7 @@ export async function updateFormDefinition(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await getCurrentUser();
-  if (user.profile !== "gestor" || !user.organizationId) {
+  if (!isGestorProfile(user.profile) || !user.organizationId) {
     return { error: "Só o gestor pode editar um formulário personalizado" };
   }
 
@@ -131,7 +132,7 @@ export async function updateFormDefinition(
 
 export async function deleteFormDefinition(formData: FormData) {
   const user = await getCurrentUser();
-  if (user.profile !== "gestor" || !user.organizationId) return;
+  if (!isGestorProfile(user.profile) || !user.organizationId) return;
   const id = Number(formData.get("id"));
   if (!id) return;
   await db
@@ -207,7 +208,7 @@ export async function createFormSubmission(
 
 export async function deleteFormSubmission(formData: FormData) {
   const user = await getCurrentUser();
-  if (user.profile !== "gestor" || !user.organizationId) return;
+  if (!isGestorProfile(user.profile) || !user.organizationId) return;
   const id = Number(formData.get("id"));
   if (!id) return;
   await db

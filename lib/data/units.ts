@@ -1,4 +1,5 @@
 import "server-only";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { asc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { units, jobFunctions } from "@/lib/db/schema";
@@ -21,6 +22,6 @@ export function resolveUnitScope(
   viewer: { profile: string; unitId: number | null },
   requestedUnitId: number | null,
 ): number | null {
-  if (viewer.profile === "gestor" || viewer.profile === "rh") return requestedUnitId;
+  if (isGestorProfile(viewer.profile) || viewer.profile === "rh") return requestedUnitId;
   return viewer.unitId ?? -1;
 }
