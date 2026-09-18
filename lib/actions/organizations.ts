@@ -3,9 +3,12 @@
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { organizations, users } from "@/lib/db/schema";
 import { createSession } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/dal";
+import { isPlatformOperator, setOrganizationStatus } from "@/lib/data/organizations";
 
 export type SignupState = { error?: string } | undefined;
 
@@ -62,7 +65,7 @@ export async function signupOrganization(
 
   const [org] = await db
     .insert(organizations)
-    .values({ name: companyName, slug })
+    .values({ name: companyName, slug, status: "pending" })
     .returning({ id: organizations.id });
 
   const passwordHash = await bcrypt.hash(password, 10);
@@ -79,4 +82,13 @@ export async function signupOrganization(
 
   await createSession({ userId: user.id, profile: "gestor" });
   redirect("/hoje");
+}
+
+export async function approveOrganization(organizationId: number) {
+  const viewer = await getCurrentUser();
+  if (!isPlatformOperator(viewer)) {
+    throw new Error("Sem permissão");
+  }
+  await setOrganizationStatus(organizationId, "active");
+  revalidatePath("/plataforma");
 }

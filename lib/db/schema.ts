@@ -84,6 +84,9 @@ export const organizations = pgTable(
     // Usado como prefixo de storage (ex: "org-acme/evidencias/...") e em
     // URLs futuras — só letras minúsculas, números e hífen.
     slug: varchar("slug", { length: 100 }).notNull(),
+    // "pending": recém-criada via /signup, aguardando aprovação manual no
+    // /plataforma. "active": pode usar o sistema normalmente.
+    status: varchar("status", { length: 20 }).default("active").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("organizations_slug_idx").on(table.slug)],

@@ -9,6 +9,7 @@ import { canCreateSolicitacao } from "@/lib/auth/solicitacoes";
 import { getFormDefinitions } from "@/lib/data/form-definitions";
 import { isPlatformOperator } from "@/lib/data/organizations";
 import { getUnits, getJobFunctions } from "@/lib/data/units";
+import { logout } from "@/lib/auth/actions";
 import { AppNav } from "./AppNav";
 import { CoveringUnitBanner } from "./CoveringUnitBanner";
 import { GestorFuncaoBanner } from "./GestorFuncaoBanner";
@@ -19,6 +20,27 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+
+  if (user.organizationStatus === "pending") {
+    return (
+      <div className="login-container">
+        <div className="login-card">
+          <h1>Conta em análise</h1>
+          <p>
+            Recebemos o cadastro da sua empresa e ele está sendo revisado pela nossa equipe.
+            Assim que for aprovado, você já poderá usar o sistema normalmente com este mesmo
+            login.
+          </p>
+          <form action={logout}>
+            <button className="btn-login" type="submit">
+              Sair
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   const showCoveringUnitBanner = canCoverOtherUnits(user);
   const isGestor = user.profile === "gestor";
   const showRequisicoes = resolveRequisicaoScope(user) !== null;

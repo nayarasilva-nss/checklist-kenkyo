@@ -18,6 +18,10 @@ export async function getOrganizationBySlug(slug: string) {
   return row ?? null;
 }
 
+export async function setOrganizationStatus(organizationId: number, status: "active" | "pending") {
+  await db.update(organizations).set({ status }).where(eq(organizations.id, organizationId));
+}
+
 export async function getAllOrganizationsWithStats() {
   const orgs = await db.select().from(organizations).orderBy(organizations.createdAt);
   const userCounts = await db
