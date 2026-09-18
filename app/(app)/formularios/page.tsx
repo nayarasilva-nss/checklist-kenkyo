@@ -50,9 +50,9 @@ export default async function FormulariosPage({
 
   const [submissions, unitsForPicker] = await Promise.all([
     getFormSubmissions(activeDef.id, user.organizationId, unitId),
-    needsUnitPicker ? getUnits() : Promise.resolve([]),
+    needsUnitPicker ? getUnits(user.organizationId!) : Promise.resolve([]),
   ]);
-  const unitsForFilter = isGestor ? await getUnits() : [];
+  const unitsForFilter = isGestor ? await getUnits(user.organizationId!) : [];
 
   return (
     <>

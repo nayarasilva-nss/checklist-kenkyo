@@ -38,7 +38,7 @@ export default async function ImprimirRequisicaoPage({
   const id = Number(rawId);
   if (!id) notFound();
 
-  const requisicao = await getRequisicaoWithItens(id);
+  const requisicao = await getRequisicaoWithItens(id, user.organizationId!);
   if (!requisicao) notFound();
 
   // Mesma regra de quem enxerga a requisição na lista (ver

@@ -1,6 +1,6 @@
 import "server-only";
 import { isGestorProfile } from "@/lib/auth/profile";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { filletingRecords, units, users } from "@/lib/db/schema";
 
@@ -14,7 +14,7 @@ export function canSubmitFilleting(viewer: FilletingViewer) {
   return isGestorProfile(viewer.profile) || viewer.jobFunctionName === "Chefe";
 }
 
-export async function getFilletingRecords(unitId: number | null) {
+export async function getFilletingRecords(unitId: number | null, organizationId: number) {
   const rows = await db
     .select({
       id: filletingRecords.id,
@@ -33,7 +33,12 @@ export async function getFilletingRecords(unitId: number | null) {
     .from(filletingRecords)
     .innerJoin(units, eq(units.id, filletingRecords.unitId))
     .innerJoin(users, eq(users.id, filletingRecords.userId))
-    .where(unitId !== null ? eq(filletingRecords.unitId, unitId) : undefined)
+    .where(
+      and(
+        eq(filletingRecords.organizationId, organizationId),
+        unitId !== null ? eq(filletingRecords.unitId, unitId) : undefined,
+      ),
+    )
     .orderBy(desc(filletingRecords.date), desc(filletingRecords.id))
     .limit(200);
 
@@ -62,7 +67,11 @@ export async function getFilletingRecords(unitId: number | null) {
   });
 }
 
-export async function getFilletingMonthlySummary(unitId: number | null, date?: string) {
+export async function getFilletingMonthlySummary(
+  unitId: number | null,
+  organizationId: number,
+  date?: string,
+) {
   const unitFilter = unitId !== null ? sql`and unit_id = ${unitId}` : sql``;
   const monthOf = date ? sql`${date}::date` : sql`current_date`;
   const result = await db.execute<{ avg_loss: string | null }>(sql`
@@ -72,6 +81,7 @@ export async function getFilletingMonthlySummary(unitId: number | null, date?: s
     )::text as avg_loss
     from filleting_records
     where date_trunc('month', date) = date_trunc('month', ${monthOf})
+    and organization_id = ${organizationId}
     ${unitFilter}
   `);
   const raw = result.rows[0]?.avg_loss;

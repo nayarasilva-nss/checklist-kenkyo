@@ -1,6 +1,6 @@
 import "server-only";
 import { isGestorProfile } from "@/lib/auth/profile";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { deliveryErrorRecords, units, users } from "@/lib/db/schema";
 
@@ -13,7 +13,7 @@ export function canSubmitDeliveryError(viewer: DeliveryErrorViewer) {
   return isGestorProfile(viewer.profile) || viewer.jobFunctionName === "Líder de Delivery";
 }
 
-export async function getDeliveryErrorRecords(unitId: number | null) {
+export async function getDeliveryErrorRecords(unitId: number | null, organizationId: number) {
   const rows = await db
     .select({
       id: deliveryErrorRecords.id,
@@ -27,7 +27,12 @@ export async function getDeliveryErrorRecords(unitId: number | null) {
     .from(deliveryErrorRecords)
     .innerJoin(units, eq(units.id, deliveryErrorRecords.unitId))
     .innerJoin(users, eq(users.id, deliveryErrorRecords.userId))
-    .where(unitId !== null ? eq(deliveryErrorRecords.unitId, unitId) : undefined)
+    .where(
+      and(
+        eq(deliveryErrorRecords.organizationId, organizationId),
+        unitId !== null ? eq(deliveryErrorRecords.unitId, unitId) : undefined,
+      ),
+    )
     .orderBy(desc(deliveryErrorRecords.date), desc(deliveryErrorRecords.id))
     .limit(200);
 
@@ -37,13 +42,18 @@ export async function getDeliveryErrorRecords(unitId: number | null) {
   }));
 }
 
-export async function getDeliveryErrorMonthlySummary(unitId: number | null, date?: string) {
+export async function getDeliveryErrorMonthlySummary(
+  unitId: number | null,
+  organizationId: number,
+  date?: string,
+) {
   const unitFilter = unitId !== null ? sql`and unit_id = ${unitId}` : sql``;
   const monthOf = date ? sql`${date}::date` : sql`current_date`;
   const result = await db.execute<{ error_rate: string | null }>(sql`
     select (sum(pedidos_com_erro)::float / nullif(sum(total_pedidos), 0) * 100)::text as error_rate
     from delivery_error_records
     where date_trunc('month', date) = date_trunc('month', ${monthOf})
+    and organization_id = ${organizationId}
     ${unitFilter}
   `);
   const raw = result.rows[0]?.error_rate;

@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
 
   const scope = resolveShiftLogScope(user, requestedUnitId);
-  const records = await getShiftLogsByScope(scope);
+  const records = await getShiftLogsByScope(scope, user.organizationId!);
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Diário de Bordo");

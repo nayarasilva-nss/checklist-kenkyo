@@ -48,12 +48,12 @@ export default async function GerenciarPage({
 
   const [users, checklistTypes, units, jobFunctions, catalogCategories, catalogItems, formDefinitions, organization] =
     await Promise.all([
-      getUsers(),
-      getChecklistTypesWithCounts(),
-      getUnits(),
-      getJobFunctions(),
-      getCatalogCategories(),
-      getCatalogItems(),
+      getUsers(gestor.organizationId!),
+      getChecklistTypesWithCounts(gestor.organizationId!),
+      getUnits(gestor.organizationId!),
+      getJobFunctions(gestor.organizationId!),
+      getCatalogCategories(gestor.organizationId!),
+      getCatalogItems(gestor.organizationId!),
       gestor.organizationId ? getFormDefinitions(gestor.organizationId) : Promise.resolve([]),
       gestor.organizationId ? getOrganizationById(gestor.organizationId) : Promise.resolve(null),
     ]);

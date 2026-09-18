@@ -1,7 +1,7 @@
 "use server";
 
 import { isGestorProfile } from "@/lib/auth/profile";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
@@ -99,9 +99,13 @@ export async function createSolicitacao(
 export async function cancelSolicitacao(formData: FormData) {
   const user = await getCurrentUser();
   const id = Number(formData.get("id"));
-  if (!id) return;
+  if (!id || !user.organizationId) return;
 
-  const [existing] = await db.select().from(solicitacoes).where(eq(solicitacoes.id, id)).limit(1);
+  const [existing] = await db
+    .select()
+    .from(solicitacoes)
+    .where(and(eq(solicitacoes.id, id), eq(solicitacoes.organizationId, user.organizationId)))
+    .limit(1);
   if (!existing || existing.requesterId !== user.id || existing.status !== "aberta") return;
 
   const itens = await db
@@ -117,10 +121,12 @@ export async function cancelSolicitacao(formData: FormData) {
 /** Exclusão definitiva — só Gestor, diferente de cancelar. */
 export async function deleteSolicitacao(formData: FormData) {
   const user = await getCurrentUser();
-  if (!isGestorProfile(user.profile)) return;
+  if (!isGestorProfile(user.profile) || !user.organizationId) return;
   const id = Number(formData.get("id"));
   if (!id) return;
-  await db.delete(solicitacoes).where(eq(solicitacoes.id, id));
+  await db
+    .delete(solicitacoes)
+    .where(and(eq(solicitacoes.id, id), eq(solicitacoes.organizationId, user.organizationId)));
   revalidateSolicitacaoViews();
 }
 
@@ -206,10 +212,11 @@ export async function setItemChegou(formData: FormData) {
   const solicitacaoId = Number(formData.get("solicitacaoId"));
   if (!itemId || !solicitacaoId) return;
 
+  if (!user.organizationId) return;
   const [existing] = await db
     .select({ requesterId: solicitacoes.requesterId })
     .from(solicitacoes)
-    .where(eq(solicitacoes.id, solicitacaoId))
+    .where(and(eq(solicitacoes.id, solicitacaoId), eq(solicitacoes.organizationId, user.organizationId)))
     .limit(1);
   if (!existing) return;
   if (existing.requesterId !== user.id && !isGestorProfile(user.profile)) return;

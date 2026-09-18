@@ -1,9 +1,9 @@
 import "server-only";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { documents } from "@/lib/db/schema";
 
-export async function getDocuments() {
+export async function getDocuments(organizationId: number) {
   return db
     .select({
       id: documents.id,
@@ -14,5 +14,6 @@ export async function getDocuments() {
       createdAt: documents.createdAt,
     })
     .from(documents)
+    .where(eq(documents.organizationId, organizationId))
     .orderBy(desc(documents.createdAt));
 }

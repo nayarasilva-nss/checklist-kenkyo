@@ -51,9 +51,9 @@ export default async function AppLayout({
   const showSolicitacoes = canCreateSolicitacao(user);
   const [covering, units, atuando, jobFunctions, orgFormDefinitions] = await Promise.all([
     showCoveringUnitBanner ? getCoveringUnit() : Promise.resolve(null),
-    showCoveringUnitBanner ? getUnits() : Promise.resolve([]),
+    showCoveringUnitBanner ? getUnits(user.organizationId!) : Promise.resolve([]),
     isGestor ? getGestorFuncao() : Promise.resolve(null),
-    isGestor ? getJobFunctions() : Promise.resolve([]),
+    isGestor ? getJobFunctions(user.organizationId!) : Promise.resolve([]),
     user.organizationId
       ? getFormDefinitions(user.organizationId, { onlyActive: true })
       : Promise.resolve([]),

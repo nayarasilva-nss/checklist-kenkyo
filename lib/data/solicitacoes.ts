@@ -1,6 +1,6 @@
 import "server-only";
 import { isGestorProfile } from "@/lib/auth/profile";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { solicitacoes, solicitacaoItens, units, users } from "@/lib/db/schema";
 
@@ -90,11 +90,15 @@ export function resumoSolicitacao(
   return { label: `${prefixo} · Aguardando compra`, variant: "info" };
 }
 
-export async function getSolicitacoesByScope(scope: SolicitacaoScope) {
+export async function getSolicitacoesByScope(scope: SolicitacaoScope, organizationId: number) {
   const records =
     scope.mode === "own"
-      ? await baseQuery().where(eq(solicitacoes.requesterId, scope.userId)).orderBy(desc(solicitacoes.createdAt))
-      : await baseQuery().orderBy(desc(solicitacoes.createdAt));
+      ? await baseQuery()
+          .where(and(eq(solicitacoes.requesterId, scope.userId), eq(solicitacoes.organizationId, organizationId)))
+          .orderBy(desc(solicitacoes.createdAt))
+      : await baseQuery()
+          .where(eq(solicitacoes.organizationId, organizationId))
+          .orderBy(desc(solicitacoes.createdAt));
 
   if (records.length === 0) return [];
 
@@ -118,8 +122,10 @@ export async function getSolicitacoesByScope(scope: SolicitacaoScope) {
   });
 }
 
-export async function getSolicitacaoWithItens(id: number) {
-  const [solicitacao] = await baseQuery().where(eq(solicitacoes.id, id)).limit(1);
+export async function getSolicitacaoWithItens(id: number, organizationId: number) {
+  const [solicitacao] = await baseQuery()
+    .where(and(eq(solicitacoes.id, id), eq(solicitacoes.organizationId, organizationId)))
+    .limit(1);
   if (!solicitacao) return null;
 
   const itens = await db

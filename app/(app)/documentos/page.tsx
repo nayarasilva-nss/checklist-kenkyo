@@ -7,7 +7,7 @@ import { DocumentUploadForm } from "./DocumentUploadForm";
 export default async function DocumentosPage() {
   const user = await getCurrentUser();
   const isGestor = isGestorProfile(user.profile);
-  const allDocuments = await getDocuments();
+  const allDocuments = await getDocuments(user.organizationId!);
 
   return (
     <>

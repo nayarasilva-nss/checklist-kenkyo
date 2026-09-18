@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
@@ -54,13 +54,13 @@ export async function updateDocument(
   _prevState: DocumentFormState,
   formData: FormData,
 ): Promise<DocumentFormState> {
-  await requireGestor();
+  const gestor = await requireGestor();
 
   const id = Number(formData.get("id"));
   const title = String(formData.get("title") ?? "").trim();
   const category = String(formData.get("category") ?? "");
 
-  if (!id) return { error: "Documento inválido" };
+  if (!id || !gestor.organizationId) return { error: "Documento inválido" };
   if (!title) return { error: "Informe um título" };
   if (!CATEGORIES.includes(category as Category)) {
     return { error: "Categoria inválida" };
@@ -73,15 +73,17 @@ export async function updateDocument(
       category: category as Category,
       subcategory: readSubcategory(formData, category),
     })
-    .where(eq(documents.id, id));
+    .where(and(eq(documents.id, id), eq(documents.organizationId, gestor.organizationId)));
 
   revalidatePath("/documentos");
 }
 
 export async function deleteDocument(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(documents).where(eq(documents.id, id));
+  if (!id || !gestor.organizationId) return;
+  await db
+    .delete(documents)
+    .where(and(eq(documents.id, id), eq(documents.organizationId, gestor.organizationId)));
   revalidatePath("/documentos");
 }

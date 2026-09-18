@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 export async function getDayReport(
   date: string,
   unitId: number | null,
+  organizationId: number,
   jobFunctionId: number | null = null,
 ) {
   // Filter by each completion's own effective unit (its stored unit_id,
@@ -34,7 +35,7 @@ export async function getDayReport(
     select u.name as name, count(*)::text as count
     from completed_sessions cs
     join users u on u.id = cs.user_id
-    where true ${unitFilter} ${funcFilter}
+    where u.organization_id = ${organizationId} ${unitFilter} ${funcFilter}
     group by u.name
     order by count(*) desc
   `);
@@ -47,6 +48,7 @@ export async function getPeriodReport(
   fromDate: string,
   toDate: string,
   unitId: number | null,
+  organizationId: number,
   jobFunctionId: number | null = null,
 ) {
   const unitFilter = unitId ? sql`and cs.effective_unit_id = ${unitId}` : sql``;
@@ -69,7 +71,7 @@ export async function getPeriodReport(
     select u.name as name, count(*)::text as count
     from completed_sessions cs
     join users u on u.id = cs.user_id
-    where true ${unitFilter} ${funcFilter}
+    where u.organization_id = ${organizationId} ${unitFilter} ${funcFilter}
     group by u.name
     order by count(*) desc
   `);

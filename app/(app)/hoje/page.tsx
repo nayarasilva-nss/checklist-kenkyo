@@ -45,6 +45,7 @@ export default async function HojePage({
   const viewer = {
     id: user.id,
     profile: user.profile,
+    organizationId: user.organizationId!,
     jobFunctionId: await resolveEffectiveJobFunctionId(user),
     unitId: user.unitId,
     effectiveUnitId,
@@ -63,7 +64,7 @@ export default async function HojePage({
   const painelUnitId = resolveUnitScope(user, requestedUnitId);
 
   const [units, checklists] = await Promise.all([
-    user.unitId || isGestor || isRh ? getUnits() : Promise.resolve([]),
+    user.unitId || isGestor || isRh ? getUnits(user.organizationId!) : Promise.resolve([]),
     isRh ? Promise.resolve([]) : getChecklistsForUser("daily", viewer),
   ]);
   const unitName = units.find((u) => u.id === user.unitId)?.name ?? null;
@@ -71,11 +72,11 @@ export default async function HojePage({
   const [pendencias, painelStats, ranking, filletingSummary, restoIngestaSummary, missingChecklist] =
     await Promise.all([
       user.unitId ? getOpenPendenciasForUnit(user.unitId) : Promise.resolve([]),
-      getDashboardStats(painelUnitId, painelDate),
-      getRanking(painelUnitId, painelDate),
-      getFilletingMonthlySummary(painelUnitId, painelDate),
-      getRestoIngestaMonthlySummary(painelUnitId, painelDate),
-      getUsersWithoutChecklistToday(painelUnitId, painelDate),
+      getDashboardStats(painelUnitId, user.organizationId!, painelDate),
+      getRanking(painelUnitId, user.organizationId!, painelDate),
+      getFilletingMonthlySummary(painelUnitId, user.organizationId!, painelDate),
+      getRestoIngestaMonthlySummary(painelUnitId, user.organizationId!, painelDate),
+      getUsersWithoutChecklistToday(painelUnitId, user.organizationId!, painelDate),
     ]);
   const painelDateLabel = new Date(`${painelDate}T00:00:00`).toLocaleDateString("pt-BR");
 

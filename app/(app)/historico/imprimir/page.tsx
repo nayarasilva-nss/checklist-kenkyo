@@ -37,7 +37,7 @@ export default async function ImprimirChecklistPage({
     redirect("/historico");
   }
 
-  const data = await getChecklistExportData(checklistTypeId, userId, date, unitId);
+  const data = await getChecklistExportData(checklistTypeId, userId, date, unitId, user.organizationId!);
   if (!data) notFound();
 
   const total = data.items.length;

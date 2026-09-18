@@ -15,7 +15,7 @@ const assignedUsers = alias(users, "assigned_users");
 
 export { getUnits, getJobFunctions } from "./units";
 
-export async function getUsers() {
+export async function getUsers(organizationId: number) {
   return db
     .select({
       id: users.id,
@@ -30,10 +30,11 @@ export async function getUsers() {
     .from(users)
     .leftJoin(units, eq(units.id, users.unitId))
     .leftJoin(jobFunctions, eq(jobFunctions.id, users.jobFunctionId))
+    .where(eq(users.organizationId, organizationId))
     .orderBy(asc(users.id));
 }
 
-export async function getChecklistTypesWithCounts() {
+export async function getChecklistTypesWithCounts(organizationId: number) {
   const types = await db
     .select({
       id: checklistTypes.id,
@@ -48,6 +49,7 @@ export async function getChecklistTypesWithCounts() {
     .from(checklistTypes)
     .leftJoin(jobFunctions, eq(jobFunctions.id, checklistTypes.jobFunctionId))
     .leftJoin(assignedUsers, eq(assignedUsers.id, checklistTypes.assignedUserId))
+    .where(eq(checklistTypes.organizationId, organizationId))
     .orderBy(asc(checklistTypes.id));
   const items = await db
     .select()

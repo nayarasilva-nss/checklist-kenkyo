@@ -86,13 +86,18 @@ async function fetchRelatedInfo(relatedIds: number[]) {
   return new Map(rows.map((r) => [r.id, { createdAt: r.createdAt, requesterName: r.requesterName }]));
 }
 
-export async function getRequisicoesByScope(scope: RequisicaoScope, tipo?: string | null) {
+export async function getRequisicoesByScope(
+  scope: RequisicaoScope,
+  organizationId: number,
+  tipo?: string | null,
+) {
   const conditions = [
+    eq(requisicoes.organizationId, organizationId),
     scope.mode === "unit"
       ? eq(requisicoes.unitId, scope.unitId)
       : scope.mode === "own"
         ? eq(requisicoes.requesterId, scope.userId)
-        : undefined, // "all": todas as unidades, sem filtro de solicitante
+        : undefined, // "all": todas as unidades da empresa, sem filtro de solicitante
     tipo === "interna" || tipo === "externa" ? eq(requisicoes.tipo, tipo) : undefined,
   ].filter((c) => c !== undefined);
 
@@ -160,8 +165,10 @@ function canEditToday(r: { status: string; createdAt: Date }) {
   return r.status === "aberta" && checklistDayForInstant(r.createdAt) === checklistDayISO();
 }
 
-export async function getRequisicaoWithItens(id: number) {
-  const [requisicao] = await baseQuery().where(eq(requisicoes.id, id)).limit(1);
+export async function getRequisicaoWithItens(id: number, organizationId: number) {
+  const [requisicao] = await baseQuery()
+    .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, organizationId)))
+    .limit(1);
   if (!requisicao) return null;
 
   const itens = await db

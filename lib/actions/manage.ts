@@ -86,7 +86,8 @@ export async function updateUser(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const id = Number(formData.get("id"));
   const name = String(formData.get("name") ?? "").trim();
@@ -107,8 +108,13 @@ export async function updateUser(
     return { error: "Preencha o nome e o usuário" };
   }
 
-  const [target] = await db.select({ profile: users.profile }).from(users).where(eq(users.id, id)).limit(1);
-  if (target?.profile === "master") {
+  const [target] = await db
+    .select({ profile: users.profile })
+    .from(users)
+    .where(and(eq(users.id, id), eq(users.organizationId, gestor.organizationId)))
+    .limit(1);
+  if (!target) return { error: "Usuário não encontrado" };
+  if (target.profile === "master") {
     return { error: "Não é possível editar esse usuário por aqui" };
   }
 
@@ -133,20 +139,24 @@ export async function updateUser(
       jobFunctionId,
       ...(passwordHash ? { passwordHash } : {}),
     })
-    .where(eq(users.id, id));
+    .where(and(eq(users.id, id), eq(users.organizationId, gestor.organizationId)));
 
   revalidateManageViews();
 }
 
 export async function deleteUser(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
+  if (!id || !gestor.organizationId) return;
 
-  const [target] = await db.select({ profile: users.profile }).from(users).where(eq(users.id, id)).limit(1);
-  if (target?.profile === "master") return;
+  const [target] = await db
+    .select({ profile: users.profile })
+    .from(users)
+    .where(and(eq(users.id, id), eq(users.organizationId, gestor.organizationId)))
+    .limit(1);
+  if (!target || target.profile === "master") return;
 
-  await db.delete(users).where(eq(users.id, id));
+  await db.delete(users).where(and(eq(users.id, id), eq(users.organizationId, gestor.organizationId)));
   revalidateManageViews();
 }
 
@@ -176,10 +186,10 @@ export async function createUnit(
 }
 
 export async function deleteUnit(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(units).where(eq(units.id, id));
+  if (!id || !gestor.organizationId) return;
+  await db.delete(units).where(and(eq(units.id, id), eq(units.organizationId, gestor.organizationId)));
   revalidateManageViews();
 }
 
@@ -212,7 +222,8 @@ export async function updateJobFunction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const id = Number(formData.get("id"));
   const name = String(formData.get("name") ?? "").trim();
@@ -223,21 +234,32 @@ export async function updateJobFunction(
   const existing = await db
     .select({ id: jobFunctions.id })
     .from(jobFunctions)
-    .where(and(eq(jobFunctions.name, name), ne(jobFunctions.id, id)))
+    .where(
+      and(
+        eq(jobFunctions.name, name),
+        eq(jobFunctions.organizationId, gestor.organizationId),
+        ne(jobFunctions.id, id),
+      ),
+    )
     .limit(1);
   if (existing.length > 0) {
     return { error: "Já existe uma função com esse nome" };
   }
 
-  await db.update(jobFunctions).set({ name }).where(eq(jobFunctions.id, id));
+  await db
+    .update(jobFunctions)
+    .set({ name })
+    .where(and(eq(jobFunctions.id, id), eq(jobFunctions.organizationId, gestor.organizationId)));
   revalidateManageViews();
 }
 
 export async function deleteJobFunction(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(jobFunctions).where(eq(jobFunctions.id, id));
+  if (!id || !gestor.organizationId) return;
+  await db
+    .delete(jobFunctions)
+    .where(and(eq(jobFunctions.id, id), eq(jobFunctions.organizationId, gestor.organizationId)));
   revalidateManageViews();
 }
 
@@ -317,7 +339,8 @@ export async function updateChecklistType(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const id = Number(formData.get("id"));
   const name = String(formData.get("name") ?? "").trim();
@@ -340,7 +363,7 @@ export async function updateChecklistType(
   await db
     .update(checklistTypes)
     .set({ name, description, type, jobFunctionId, assignedUserId })
-    .where(eq(checklistTypes.id, id));
+    .where(and(eq(checklistTypes.id, id), eq(checklistTypes.organizationId, gestor.organizationId)));
 
   await db
     .delete(checklistTypePrerequisites)
@@ -396,9 +419,11 @@ export async function updateChecklistType(
 }
 
 export async function deleteChecklistType(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(checklistTypes).where(eq(checklistTypes.id, id));
+  if (!id || !gestor.organizationId) return;
+  await db
+    .delete(checklistTypes)
+    .where(and(eq(checklistTypes.id, id), eq(checklistTypes.organizationId, gestor.organizationId)));
   revalidateManageViews();
 }

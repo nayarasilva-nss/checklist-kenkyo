@@ -69,7 +69,7 @@ export default async function PerdasPage({
   // escolhe a unidade dentro do formulário ao registrar.
   const needsUnitPicker = isGestor && !effectiveUnitId;
 
-  const units = isGestor ? await getUnits() : [];
+  const units = isGestor ? await getUnits(user.organizationId!) : [];
 
   return (
     <>
@@ -154,14 +154,14 @@ async function FiletagemTab({
   unitId,
   unitPickerOptions,
 }: {
-  user: { profile: string; unitId: number | null; jobFunctionName: string | null; name: string };
+  user: { profile: string; unitId: number | null; jobFunctionName: string | null; name: string; organizationId: number | null };
   unitId: number | null;
   unitPickerOptions: { id: number; name: string }[];
 }) {
   const isGestor = isGestorProfile(user.profile);
   const [records, summary] = await Promise.all([
-    getFilletingRecords(unitId),
-    getFilletingMonthlySummary(unitId),
+    getFilletingRecords(unitId, user.organizationId!),
+    getFilletingMonthlySummary(unitId, user.organizationId!),
   ]);
 
   const now = new Date();
@@ -255,14 +255,14 @@ async function RestoIngestaTab({
   unitId,
   unitPickerOptions,
 }: {
-  user: { profile: string };
+  user: { profile: string; organizationId: number | null };
   unitId: number | null;
   unitPickerOptions: { id: number; name: string }[];
 }) {
   const isGestor = isGestorProfile(user.profile);
   const [records, summary] = await Promise.all([
-    getRestoIngestaRecords(unitId),
-    getRestoIngestaMonthlySummary(unitId),
+    getRestoIngestaRecords(unitId, user.organizationId!),
+    getRestoIngestaMonthlySummary(unitId, user.organizationId!),
   ]);
 
   return (
@@ -336,14 +336,14 @@ async function UtensilBreakageTab({
   unitId,
   unitPickerOptions,
 }: {
-  user: { profile: string; jobFunctionName: string | null };
+  user: { profile: string; jobFunctionName: string | null; organizationId: number | null };
   unitId: number | null;
   unitPickerOptions: { id: number; name: string }[];
 }) {
   const isGestor = isGestorProfile(user.profile);
   const [records, summary] = await Promise.all([
-    getUtensilBreakageRecords(unitId),
-    getUtensilBreakageMonthlySummary(unitId),
+    getUtensilBreakageRecords(unitId, user.organizationId!),
+    getUtensilBreakageMonthlySummary(unitId, user.organizationId!),
   ]);
 
   return (
@@ -421,14 +421,14 @@ async function DeliveryErrorTab({
   unitId,
   unitPickerOptions,
 }: {
-  user: { profile: string; jobFunctionName: string | null };
+  user: { profile: string; jobFunctionName: string | null; organizationId: number | null };
   unitId: number | null;
   unitPickerOptions: { id: number; name: string }[];
 }) {
   const isGestor = isGestorProfile(user.profile);
   const [records, summary] = await Promise.all([
-    getDeliveryErrorRecords(unitId),
-    getDeliveryErrorMonthlySummary(unitId),
+    getDeliveryErrorRecords(unitId, user.organizationId!),
+    getDeliveryErrorMonthlySummary(unitId, user.organizationId!),
   ]);
 
   return (

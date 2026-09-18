@@ -38,10 +38,10 @@ export default async function RelatorioPage({
       : `${date.slice(0, 7)}-01`;
 
   const [dayReport, periodReport, units, jobFunctions] = await Promise.all([
-    getDayReport(date, unitId, jobFunctionId),
-    getPeriodReport(fromDate, date, unitId, jobFunctionId),
-    isGestor ? getUnits() : Promise.resolve([]),
-    getJobFunctions(),
+    getDayReport(date, unitId, user.organizationId!, jobFunctionId),
+    getPeriodReport(fromDate, date, unitId, user.organizationId!, jobFunctionId),
+    isGestor ? getUnits(user.organizationId!) : Promise.resolve([]),
+    getJobFunctions(user.organizationId!),
   ]);
 
   const periodParams = new URLSearchParams();

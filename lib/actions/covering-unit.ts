@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { canCoverOtherUnits, setCoveringUnit, clearCoveringUnit } from "@/lib/auth/covering-unit";
@@ -20,7 +20,12 @@ export async function updateCoveringUnit(formData: FormData) {
     return;
   }
 
-  const [unit] = await db.select().from(units).where(eq(units.id, unitId)).limit(1);
+  if (!user.organizationId) return;
+  const [unit] = await db
+    .select()
+    .from(units)
+    .where(and(eq(units.id, unitId), eq(units.organizationId, user.organizationId)))
+    .limit(1);
   if (!unit) return;
 
   await setCoveringUnit(unit.id, unit.name);

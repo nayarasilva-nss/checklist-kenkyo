@@ -57,7 +57,8 @@ export async function updateCategory(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const id = Number(formData.get("id"));
   const name = String(formData.get("name") ?? "").trim();
@@ -68,7 +69,7 @@ export async function updateCategory(
   const [current] = await db
     .select({ organizationId: catalogCategories.organizationId })
     .from(catalogCategories)
-    .where(eq(catalogCategories.id, id))
+    .where(and(eq(catalogCategories.id, id), eq(catalogCategories.organizationId, gestor.organizationId)))
     .limit(1);
   if (!current) return { error: "Categoria não encontrada" };
 
@@ -78,7 +79,7 @@ export async function updateCategory(
     .where(
       and(
         eq(catalogCategories.name, name),
-        eq(catalogCategories.organizationId, current.organizationId),
+        eq(catalogCategories.organizationId, gestor.organizationId),
         ne(catalogCategories.id, id),
       ),
     )
@@ -89,15 +90,20 @@ export async function updateCategory(
 
   const orderDays = parseOrderDays(formData);
 
-  await db.update(catalogCategories).set({ name, orderDays }).where(eq(catalogCategories.id, id));
+  await db
+    .update(catalogCategories)
+    .set({ name, orderDays })
+    .where(and(eq(catalogCategories.id, id), eq(catalogCategories.organizationId, gestor.organizationId)));
   revalidateCatalogViews();
 }
 
 export async function deleteCategory(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(catalogCategories).where(eq(catalogCategories.id, id));
+  if (!id || !gestor.organizationId) return;
+  await db
+    .delete(catalogCategories)
+    .where(and(eq(catalogCategories.id, id), eq(catalogCategories.organizationId, gestor.organizationId)));
   revalidateCatalogViews();
 }
 
@@ -137,7 +143,8 @@ export async function updateCatalogItem(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const id = Number(formData.get("id"));
   const name = String(formData.get("name") ?? "").trim();
@@ -151,7 +158,7 @@ export async function updateCatalogItem(
   const [current] = await db
     .select({ organizationId: catalogItems.organizationId })
     .from(catalogItems)
-    .where(eq(catalogItems.id, id))
+    .where(and(eq(catalogItems.id, id), eq(catalogItems.organizationId, gestor.organizationId)))
     .limit(1);
   if (!current) return { error: "Produto não encontrado" };
 
@@ -161,7 +168,7 @@ export async function updateCatalogItem(
     .where(
       and(
         eq(catalogItems.name, name),
-        eq(catalogItems.organizationId, current.organizationId),
+        eq(catalogItems.organizationId, gestor.organizationId),
         ne(catalogItems.id, id),
       ),
     )
@@ -173,14 +180,16 @@ export async function updateCatalogItem(
   await db
     .update(catalogItems)
     .set({ name, unitMeasure, categoryId })
-    .where(eq(catalogItems.id, id));
+    .where(and(eq(catalogItems.id, id), eq(catalogItems.organizationId, gestor.organizationId)));
   revalidateCatalogViews();
 }
 
 export async function deleteCatalogItem(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(catalogItems).where(eq(catalogItems.id, id));
+  if (!id || !gestor.organizationId) return;
+  await db
+    .delete(catalogItems)
+    .where(and(eq(catalogItems.id, id), eq(catalogItems.organizationId, gestor.organizationId)));
   revalidateCatalogViews();
 }

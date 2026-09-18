@@ -34,8 +34,8 @@ export default async function DiarioDeBordoPage({
   const scope = resolveShiftLogScope(user, requestedUnitId);
 
   const [records, units, gestorAtuando] = await Promise.all([
-    getShiftLogsByScope(scope),
-    canViewAllUnits ? getUnits() : Promise.resolve([]),
+    getShiftLogsByScope(scope, user.organizationId!),
+    canViewAllUnits ? getUnits(user.organizationId!) : Promise.resolve([]),
     isGestor ? getGestorFuncao() : Promise.resolve(null),
   ]);
 

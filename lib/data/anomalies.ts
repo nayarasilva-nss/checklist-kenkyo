@@ -68,9 +68,11 @@ export type AnomalyFilters = {
 
 export async function getAnomaliesByScope(
   scope: AnomalyScope,
+  organizationId: number,
   filters: AnomalyFilters = {},
 ) {
   const conditions = [
+    eq(anomalies.organizationId, organizationId),
     scope.mode === "unit"
       ? scope.unitId !== null
         ? eq(anomalies.unitId, scope.unitId)

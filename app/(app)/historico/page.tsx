@@ -23,9 +23,9 @@ export default async function HistoricoPage({
   const unitId = resolveUnitScope(user, requestedUnitId);
 
   const [entries, checklistSummary, units] = await Promise.all([
-    getHistoryEntries(unitId),
-    getChecklistHistorySummary(unitId),
-    isGestor ? getUnits() : Promise.resolve([]),
+    getHistoryEntries(unitId, user.organizationId!),
+    getChecklistHistorySummary(unitId, user.organizationId!),
+    isGestor ? getUnits(user.organizationId!) : Promise.resolve([]),
   ]);
 
   const itemsByCombo = await getChecklistHistoryItems(

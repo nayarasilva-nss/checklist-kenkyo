@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
@@ -68,9 +68,11 @@ export async function createUtensilBreakageRecord(
 }
 
 export async function deleteUtensilBreakageRecord(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(utensilBreakageRecords).where(eq(utensilBreakageRecords.id, id));
+  if (!id || !gestor.organizationId) return;
+  await db
+    .delete(utensilBreakageRecords)
+    .where(and(eq(utensilBreakageRecords.id, id), eq(utensilBreakageRecords.organizationId, gestor.organizationId)));
   revalidatePath("/perdas");
 }

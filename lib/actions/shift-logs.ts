@@ -140,10 +140,12 @@ export async function createShiftLog(
 }
 
 export async function deleteShiftLog(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(shiftLogs).where(eq(shiftLogs.id, id));
+  if (!id || !gestor.organizationId) return;
+  await db
+    .delete(shiftLogs)
+    .where(and(eq(shiftLogs.id, id), eq(shiftLogs.organizationId, gestor.organizationId)));
   revalidatePath("/diario-de-bordo");
 }
 

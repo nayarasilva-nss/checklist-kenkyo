@@ -35,8 +35,8 @@ export default async function AnomaliasPage({
   const needsUnitPicker = !isRh && !effectiveUnitId;
 
   const [records, units] = await Promise.all([
-    getAnomaliesByScope(scope, { tipo, setor, sinceDate }),
-    canViewAllUnits || needsUnitPicker ? getUnits() : Promise.resolve([]),
+    getAnomaliesByScope(scope, user.organizationId!, { tipo, setor, sinceDate }),
+    canViewAllUnits || needsUnitPicker ? getUnits(user.organizationId!) : Promise.resolve([]),
   ]);
 
   return (

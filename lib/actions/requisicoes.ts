@@ -105,13 +105,15 @@ export async function createRequisicao(
   // no dia de checklist atual: o pedido normalmente foi enviado no dia
   // anterior e só é separado no seguinte (mesma janela de
   // getRequisicoesForLink).
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
+
   const rawRelatedId = Number(formData.get("relatedRequisicaoId"));
   let relatedRequisicaoId: number | null = null;
   if (rawRelatedId) {
     const [related] = await db
       .select({ id: requisicoes.id, tipo: requisicoes.tipo, unitId: requisicoes.unitId, createdAt: requisicoes.createdAt })
       .from(requisicoes)
-      .where(eq(requisicoes.id, rawRelatedId))
+      .where(and(eq(requisicoes.id, rawRelatedId), eq(requisicoes.organizationId, user.organizationId)))
       .limit(1);
     if (
       related &&
@@ -122,8 +124,6 @@ export async function createRequisicao(
       relatedRequisicaoId = related.id;
     }
   }
-
-  if (!user.organizationId) return { error: "Conta sem empresa associada" };
 
   const [requisicao] = await db
     .insert(requisicoes)
@@ -174,9 +174,13 @@ export async function updateRequisicao(
 ): Promise<ActionState> {
   const user = await getCurrentUser();
   const id = Number(formData.get("id"));
-  if (!id) return { error: "Requisição inválida" };
+  if (!id || !user.organizationId) return { error: "Requisição inválida" };
 
-  const [existing] = await db.select().from(requisicoes).where(eq(requisicoes.id, id)).limit(1);
+  const [existing] = await db
+    .select()
+    .from(requisicoes)
+    .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)))
+    .limit(1);
   if (!existing) return { error: "Requisição não encontrada" };
   if (!podeEditar(existing, user.id)) {
     return { error: "Essa requisição não pode mais ser editada — o dia já virou ou ela já foi conferida/cancelada." };
@@ -212,9 +216,13 @@ export async function updateRequisicao(
 export async function cancelRequisicao(formData: FormData) {
   const user = await getCurrentUser();
   const id = Number(formData.get("id"));
-  if (!id) return;
+  if (!id || !user.organizationId) return;
 
-  const [existing] = await db.select().from(requisicoes).where(eq(requisicoes.id, id)).limit(1);
+  const [existing] = await db
+    .select()
+    .from(requisicoes)
+    .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)))
+    .limit(1);
   if (!existing || existing.requesterId !== user.id || existing.status !== "aberta") return;
 
   await db
@@ -242,9 +250,11 @@ export async function deleteRequisicao(
   }
 
   const id = Number(formData.get("id"));
-  if (!id) return { error: "Requisição inválida" };
+  if (!id || !user.organizationId) return { error: "Requisição inválida" };
 
-  await db.delete(requisicoes).where(eq(requisicoes.id, id));
+  await db
+    .delete(requisicoes)
+    .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)));
 
   revalidateRequisicaoViews();
 }
@@ -264,12 +274,15 @@ export async function updateRequisicaoTipo(
 
   const id = Number(formData.get("id"));
   const tipo = String(formData.get("tipo") ?? "");
-  if (!id) return { error: "Requisição inválida" };
+  if (!id || !user.organizationId) return { error: "Requisição inválida" };
   if (tipo !== "interna" && tipo !== "externa") {
     return { error: "Selecione o tipo de requisição" };
   }
 
-  await db.update(requisicoes).set({ tipo }).where(eq(requisicoes.id, id));
+  await db
+    .update(requisicoes)
+    .set({ tipo })
+    .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)));
 
   revalidateRequisicaoViews();
 }
@@ -281,7 +294,12 @@ export async function conferirRequisicao(
   const user = await getCurrentUser();
 
   const id = Number(formData.get("id"));
-  const [existing] = await db.select().from(requisicoes).where(eq(requisicoes.id, id)).limit(1);
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
+  const [existing] = await db
+    .select()
+    .from(requisicoes)
+    .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)))
+    .limit(1);
   if (!existing) return { error: "Requisição não encontrada" };
   if (!canConferirRequisicao(user, existing.tipo as RequisicaoTipo)) {
     return { error: "Você não tem permissão para conferir essa requisição" };

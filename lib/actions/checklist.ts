@@ -27,7 +27,7 @@ function revalidateChecklistViews() {
   revalidatePath("/relatorio");
 }
 
-async function getItemContext(itemId: number, checklistTypeId: number) {
+async function getItemContext(itemId: number, checklistTypeId: number, organizationId: number) {
   const [row] = await db
     .select({
       requiresPhoto: checklistTypeItems.requiresPhoto,
@@ -42,6 +42,7 @@ async function getItemContext(itemId: number, checklistTypeId: number) {
       and(
         eq(checklistTypeItems.id, itemId),
         eq(checklistTypeItems.checklistTypeId, checklistTypeId),
+        eq(checklistTypes.organizationId, organizationId),
       ),
     )
     .limit(1);
@@ -69,7 +70,8 @@ export async function setChecklistItemStatus(
     return { error: "Justificativa é obrigatória" };
   }
 
-  const context = await getItemContext(itemId, checklistTypeId);
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
+  const context = await getItemContext(itemId, checklistTypeId, user.organizationId);
   if (!context) return { error: "Item não encontrado" };
 
   if (context.requiresPhoto && !photoUrl) {

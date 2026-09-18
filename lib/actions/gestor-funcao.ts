@@ -1,7 +1,7 @@
 "use server";
 
 import { isGestorProfile } from "@/lib/auth/profile";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { setGestorFuncao, clearGestorFuncao } from "@/lib/auth/gestor-funcao";
@@ -20,10 +20,11 @@ export async function updateGestorFuncao(formData: FormData) {
     return;
   }
 
+  if (!user.organizationId) return;
   const [jobFunction] = await db
     .select()
     .from(jobFunctions)
-    .where(eq(jobFunctions.id, jobFunctionId))
+    .where(and(eq(jobFunctions.id, jobFunctionId), eq(jobFunctions.organizationId, user.organizationId)))
     .limit(1);
   if (!jobFunction) return;
 

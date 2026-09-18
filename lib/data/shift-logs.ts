@@ -58,14 +58,17 @@ function baseQuery() {
     .innerJoin(users, eq(users.id, shiftLogs.userId));
 }
 
-export async function getShiftLogsByScope(scope: ShiftLogScope) {
+export async function getShiftLogsByScope(scope: ShiftLogScope, organizationId: number) {
   const records = await baseQuery()
     .where(
-      scope.mode === "unit"
-        ? scope.unitId !== null
-          ? eq(shiftLogs.unitId, scope.unitId)
-          : undefined
-        : eq(shiftLogs.userId, scope.userId),
+      and(
+        eq(shiftLogs.organizationId, organizationId),
+        scope.mode === "unit"
+          ? scope.unitId !== null
+            ? eq(shiftLogs.unitId, scope.unitId)
+            : undefined
+          : eq(shiftLogs.userId, scope.userId),
+      ),
     )
     .orderBy(desc(shiftLogs.date), desc(shiftLogs.id))
     .limit(200);

@@ -8,11 +8,15 @@ import { checklistCompletions, checklistTypes, units, users } from "@/lib/db/sch
 // what the Checklist page considers "today".
 import { checklistDayISO as todayISO } from "@/lib/date-utils";
 
-export async function getDashboardStats(unitId: number | null, date: string = todayISO()) {
+export async function getDashboardStats(
+  unitId: number | null,
+  organizationId: number,
+  date: string = todayISO(),
+) {
   const today = date;
 
   const totalResult = await db.execute<{ count: string }>(
-    sql`select count(*)::text as count from checklist_types`,
+    sql`select count(*)::text as count from checklist_types where organization_id = ${organizationId}`,
   );
   const totalChecklists = Number(totalResult.rows[0]?.count ?? 0);
 
@@ -31,6 +35,7 @@ export async function getDashboardStats(unitId: number | null, date: string = to
     from (
       select cti.checklist_type_id
       from checklist_type_items cti
+      join checklist_types ctd on ctd.id = cti.checklist_type_id and ctd.organization_id = ${organizationId}
       left join (
         select cc.*, coalesce(cc.unit_id, u.unit_id) as effective_unit_id
         from checklist_completions cc
@@ -59,7 +64,8 @@ export async function getDashboardStats(unitId: number | null, date: string = to
       count(*) filter (where cc.status in ('conforme', 'nao-conforme'))::text as total
     from checklist_completions cc
     join users u on u.id = cc.user_id
-    where date_trunc('month', cc.date::timestamp) = date_trunc('month', ${today}::timestamp)
+    where u.organization_id = ${organizationId}
+    and date_trunc('month', cc.date::timestamp) = date_trunc('month', ${today}::timestamp)
     ${complianceUnitFilter}
   `);
   const conforme = Number(complianceResult.rows[0]?.conforme ?? 0);
@@ -75,7 +81,11 @@ export async function getDashboardStats(unitId: number | null, date: string = to
   };
 }
 
-export async function getRanking(unitId: number | null, date: string = todayISO()) {
+export async function getRanking(
+  unitId: number | null,
+  organizationId: number,
+  date: string = todayISO(),
+) {
   // Grouped by (user, effective unit) rather than just user: a gerente/
   // chefe covering another unit that week needs their tally split between
   // their home unit and the covered one, not blended into one row that'd
@@ -96,7 +106,8 @@ export async function getRanking(unitId: number | null, date: string = todayISO(
         coalesce(cc.unit_id, u.unit_id) as effective_unit_id
       from checklist_completions cc
       join users u on u.id = cc.user_id
-      where date_trunc('week', cc.date::timestamp) = date_trunc('week', ${date}::timestamp)
+      where u.organization_id = ${organizationId}
+      and date_trunc('week', cc.date::timestamp) = date_trunc('week', ${date}::timestamp)
     ),
     completed_sessions as (
       select user_id, checklist_type_id, date, effective_unit_id
@@ -166,6 +177,7 @@ export type MissingChecklistUser = {
  */
 export async function getUsersWithoutChecklistToday(
   unitId: number | null,
+  organizationId: number,
   date: string = todayISO(),
 ): Promise<MissingChecklistUser[]> {
   const today = date;
@@ -181,8 +193,16 @@ export async function getUsersWithoutChecklistToday(
     .leftJoin(units, eq(units.id, users.unitId))
     .where(
       unitId
-        ? and(inArray(users.profile, ["gerente", "lider"]), eq(users.unitId, unitId))
-        : and(inArray(users.profile, ["gerente", "lider"]), sql`${users.unitId} is not null`),
+        ? and(
+            inArray(users.profile, ["gerente", "lider"]),
+            eq(users.unitId, unitId),
+            eq(users.organizationId, organizationId),
+          )
+        : and(
+            inArray(users.profile, ["gerente", "lider"]),
+            sql`${users.unitId} is not null`,
+            eq(users.organizationId, organizationId),
+          ),
     );
 
   if (candidates.length === 0) return [];
@@ -193,7 +213,7 @@ export async function getUsersWithoutChecklistToday(
       assignedUserId: checklistTypes.assignedUserId,
     })
     .from(checklistTypes)
-    .where(eq(checklistTypes.type, "daily"));
+    .where(and(eq(checklistTypes.type, "daily"), eq(checklistTypes.organizationId, organizationId)));
 
   const candidateIds = candidates.map((c) => c.id);
   const completedRows = await db

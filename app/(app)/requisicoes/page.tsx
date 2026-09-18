@@ -41,10 +41,10 @@ export default async function RequisicoesPage({
   const needsUnitPicker = canCreate && !effectiveUnitId;
 
   const [records, categorias, catalogItems, units] = await Promise.all([
-    getRequisicoesByScope(scope, activeTipo),
-    canCreate ? getCatalogCategories() : Promise.resolve([]),
-    canCreate ? getCatalogItems() : Promise.resolve([]),
-    needsUnitPicker ? getUnits() : Promise.resolve([]),
+    getRequisicoesByScope(scope, user.organizationId!, activeTipo),
+    canCreate ? getCatalogCategories(user.organizationId!) : Promise.resolve([]),
+    canCreate ? getCatalogItems(user.organizationId!) : Promise.resolve([]),
+    needsUnitPicker ? getUnits(user.organizationId!) : Promise.resolve([]),
   ]);
 
   // Candidatas a "requisição original" pro seletor de excedente, por

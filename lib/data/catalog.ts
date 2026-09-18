@@ -3,11 +3,15 @@ import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { catalogCategories, catalogItems } from "@/lib/db/schema";
 
-export async function getCatalogCategories() {
-  return db.select().from(catalogCategories).orderBy(asc(catalogCategories.name));
+export async function getCatalogCategories(organizationId: number) {
+  return db
+    .select()
+    .from(catalogCategories)
+    .where(eq(catalogCategories.organizationId, organizationId))
+    .orderBy(asc(catalogCategories.name));
 }
 
-export async function getCatalogItems() {
+export async function getCatalogItems(organizationId: number) {
   return db
     .select({
       id: catalogItems.id,
@@ -18,5 +22,6 @@ export async function getCatalogItems() {
     })
     .from(catalogItems)
     .leftJoin(catalogCategories, eq(catalogCategories.id, catalogItems.categoryId))
+    .where(eq(catalogItems.organizationId, organizationId))
     .orderBy(asc(catalogItems.name));
 }

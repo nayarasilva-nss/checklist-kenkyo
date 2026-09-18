@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
 
   const scope = resolveAnomalyScope(user, requestedUnitId);
-  const records = await getAnomaliesByScope(scope);
+  const records = await getAnomaliesByScope(scope, user.organizationId!);
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Anomalias");

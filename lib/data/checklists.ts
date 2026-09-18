@@ -24,6 +24,7 @@ export type CompletionStatus = (typeof completionStatusEnum.enumValues)[number];
 export type Viewer = {
   profile: string;
   jobFunctionId: number | null;
+  organizationId: number;
 };
 
 // A jobFunctionId of null on the checklist itself means "visible to
@@ -143,7 +144,7 @@ export async function getChecklistsForUser(
   const allTypes = await db
     .select()
     .from(checklistTypes)
-    .where(eq(checklistTypes.type, type))
+    .where(and(eq(checklistTypes.type, type), eq(checklistTypes.organizationId, viewer.organizationId)))
     .orderBy(asc(checklistTypes.id));
 
   const types = allTypes.filter((t) => checklistVisibleToViewer(t, viewer));
@@ -237,7 +238,9 @@ export async function getChecklistForUser(
   const [checklistType] = await db
     .select()
     .from(checklistTypes)
-    .where(eq(checklistTypes.id, checklistTypeId))
+    .where(
+      and(eq(checklistTypes.id, checklistTypeId), eq(checklistTypes.organizationId, viewer.organizationId)),
+    )
     .limit(1);
 
   if (!checklistType) return null;
@@ -313,11 +316,12 @@ export async function getChecklistExportData(
   userId: number,
   date: string,
   unitId: number | null,
+  organizationId: number,
 ) {
   const [checklistType] = await db
     .select()
     .from(checklistTypes)
-    .where(eq(checklistTypes.id, checklistTypeId))
+    .where(and(eq(checklistTypes.id, checklistTypeId), eq(checklistTypes.organizationId, organizationId)))
     .limit(1);
 
   if (!checklistType) return null;

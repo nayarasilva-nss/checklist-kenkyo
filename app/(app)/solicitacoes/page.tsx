@@ -21,8 +21,8 @@ export default async function SolicitacoesPage() {
   const needsUnitPicker = canCreate && !effectiveUnitId;
 
   const [records, units] = await Promise.all([
-    getSolicitacoesByScope(scope),
-    needsUnitPicker ? getUnits() : Promise.resolve([]),
+    getSolicitacoesByScope(scope, user.organizationId!),
+    needsUnitPicker ? getUnits(user.organizationId!) : Promise.resolve([]),
   ]);
 
   return (

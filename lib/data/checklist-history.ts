@@ -23,7 +23,11 @@ export type ChecklistHistoryItem = {
   photoUrl: string | null;
 };
 
-export async function getChecklistHistorySummary(unitId: number | null, limit = 100) {
+export async function getChecklistHistorySummary(
+  unitId: number | null,
+  organizationId: number,
+  limit = 100,
+) {
   // A completion's own unit_id (when set) wins over the user's home unit —
   // covers a gerente/chefe's work while covering another unit.
   const unitFilter = unitId ? sql`and coalesce(cc.unit_id, u.unit_id) = ${unitId}` : sql``;
@@ -55,7 +59,7 @@ export async function getChecklistHistorySummary(unitId: number | null, limit = 
     join checklist_types ct on ct.id = cc.checklist_type_id
     join users u on u.id = cc.user_id
     left join units un on un.id = coalesce(cc.unit_id, u.unit_id)
-    where true ${unitFilter}
+    where ct.organization_id = ${organizationId} ${unitFilter}
     group by cc.checklist_type_id, ct.name, cc.user_id, u.name, coalesce(cc.unit_id, u.unit_id), un.name, cc.date
     order by cc.date desc, last_completed_at desc
     limit ${limit}

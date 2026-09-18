@@ -1,15 +1,23 @@
 import "server-only";
 import { isGestorProfile } from "@/lib/auth/profile";
-import { asc } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { units, jobFunctions } from "@/lib/db/schema";
 
-export async function getUnits() {
-  return db.select().from(units).orderBy(asc(units.name));
+export async function getUnits(organizationId: number) {
+  return db
+    .select()
+    .from(units)
+    .where(eq(units.organizationId, organizationId))
+    .orderBy(asc(units.name));
 }
 
-export async function getJobFunctions() {
-  return db.select().from(jobFunctions).orderBy(asc(jobFunctions.name));
+export async function getJobFunctions(organizationId: number) {
+  return db
+    .select()
+    .from(jobFunctions)
+    .where(eq(jobFunctions.organizationId, organizationId))
+    .orderBy(asc(jobFunctions.name));
 }
 
 /**

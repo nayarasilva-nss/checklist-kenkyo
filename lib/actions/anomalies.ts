@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
@@ -168,17 +168,22 @@ export async function createAnomaly(
 }
 
 export async function deleteAnomaly(formData: FormData) {
-  await requireGestor();
+  const gestor = await requireGestor();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.delete(anomalies).where(eq(anomalies.id, id));
+  if (!id || !gestor.organizationId) return;
+  await db
+    .delete(anomalies)
+    .where(and(eq(anomalies.id, id), eq(anomalies.organizationId, gestor.organizationId)));
   revalidatePath("/anomalias");
 }
 
 export async function markAnomalyTreated(formData: FormData) {
-  await getCurrentUser();
+  const user = await getCurrentUser();
   const id = Number(formData.get("id"));
-  if (!id) return;
-  await db.update(anomalies).set({ status: "tratada" }).where(eq(anomalies.id, id));
+  if (!id || !user.organizationId) return;
+  await db
+    .update(anomalies)
+    .set({ status: "tratada" })
+    .where(and(eq(anomalies.id, id), eq(anomalies.organizationId, user.organizationId)));
   revalidatePath("/anomalias");
 }

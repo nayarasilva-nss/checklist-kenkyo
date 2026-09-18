@@ -20,6 +20,7 @@ export default async function ChecklistPage({
   const viewer = {
     id: user.id,
     profile: user.profile,
+    organizationId: user.organizationId!,
     jobFunctionId: await resolveEffectiveJobFunctionId(user),
     unitId: user.unitId,
     effectiveUnitId: await resolveEffectiveUnitId(user),
