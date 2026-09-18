@@ -68,9 +68,18 @@ export async function createSolicitacao(
   if (!date) return { error: "Informe a data" };
   if (itens.length === 0) return { error: "Selecione ao menos um item" };
 
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
+
   const [solicitacao] = await db
     .insert(solicitacoes)
-    .values({ unitId: effectiveUnitId, requesterId: user.id, date, urgente, observacao })
+    .values({
+      organizationId: user.organizationId,
+      unitId: effectiveUnitId,
+      requesterId: user.id,
+      date,
+      urgente,
+      observacao,
+    })
     .returning({ id: solicitacoes.id });
 
   await db.insert(solicitacaoItens).values(

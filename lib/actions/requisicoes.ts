@@ -123,9 +123,19 @@ export async function createRequisicao(
     }
   }
 
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
+
   const [requisicao] = await db
     .insert(requisicoes)
-    .values({ tipo, unitId, requesterId: user.id, urgente, observacao, relatedRequisicaoId })
+    .values({
+      organizationId: user.organizationId,
+      tipo,
+      unitId,
+      requesterId: user.id,
+      urgente,
+      observacao,
+      relatedRequisicaoId,
+    })
     .returning({ id: requisicoes.id });
 
   await db.insert(requisicaoItens).values(

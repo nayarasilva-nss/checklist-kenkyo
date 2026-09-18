@@ -100,20 +100,26 @@ export const units = pgTable(
   "units",
   {
     id: serial("id").primaryKey(),
+    organizationId: integer("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [uniqueIndex("units_name_idx").on(table.name)],
+  (table) => [uniqueIndex("units_org_name_idx").on(table.organizationId, table.name)],
 );
 
 export const jobFunctions = pgTable(
   "job_functions",
   {
     id: serial("id").primaryKey(),
+    organizationId: integer("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [uniqueIndex("job_functions_name_idx").on(table.name)],
+  (table) => [uniqueIndex("job_functions_org_name_idx").on(table.organizationId, table.name)],
 );
 
 export const users = pgTable(
@@ -143,6 +149,9 @@ export const users = pgTable(
 
 export const checklistTypes = pgTable("checklist_types", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull().default(""),
   type: checklistTypeEnum("type").notNull(),
@@ -263,6 +272,9 @@ export const checklistCompletions = pgTable(
 
 export const filletingRecords = pgTable("filleting_records", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   unitId: integer("unit_id")
     .notNull()
     .references(() => units.id, { onDelete: "cascade" }),
@@ -289,6 +301,9 @@ export const filletingRecords = pgTable("filleting_records", {
 
 export const restoIngestaRecords = pgTable("resto_ingesta_records", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   unitId: integer("unit_id")
     .notNull()
     .references(() => units.id, { onDelete: "cascade" }),
@@ -307,6 +322,9 @@ export const restoIngestaRecords = pgTable("resto_ingesta_records", {
 // Controle do Líder de Bar (ver lib/data/utensil-breakage.ts).
 export const utensilBreakageRecords = pgTable("utensil_breakage_records", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   unitId: integer("unit_id")
     .notNull()
     .references(() => units.id, { onDelete: "cascade" }),
@@ -323,6 +341,9 @@ export const utensilBreakageRecords = pgTable("utensil_breakage_records", {
 // Controle do Líder de Delivery (ver lib/data/delivery-errors.ts).
 export const deliveryErrorRecords = pgTable("delivery_error_records", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   unitId: integer("unit_id")
     .notNull()
     .references(() => units.id, { onDelete: "cascade" }),
@@ -338,6 +359,9 @@ export const deliveryErrorRecords = pgTable("delivery_error_records", {
 
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }).notNull(),
   category: documentCategoryEnum("category").notNull(),
   subcategory: varchar("subcategory", { length: 100 }),
@@ -352,6 +376,9 @@ export const anomalies = pgTable(
   "anomalies",
   {
     id: serial("id").primaryKey(),
+    organizationId: integer("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
     unitId: integer("unit_id")
       .notNull()
       .references(() => units.id, { onDelete: "cascade" }),
@@ -392,6 +419,9 @@ export const anomalies = pgTable(
 // virar anomalia, não um segundo diário.
 export const shiftLogs = pgTable("shift_logs", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   unitId: integer("unit_id")
     .notNull()
     .references(() => units.id, { onDelete: "cascade" }),
@@ -433,6 +463,9 @@ export const catalogCategories = pgTable(
   "catalog_categories",
   {
     id: serial("id").primaryKey(),
+    organizationId: integer("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(),
     // Dias da semana (0=domingo..6=sábado) em que essa categoria costuma
     // ter pedido de fornecedor — configuração global (vale pra todas as
@@ -441,13 +474,16 @@ export const catalogCategories = pgTable(
     orderDays: integer("order_days").array().notNull().default([]),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [uniqueIndex("catalog_categories_name_idx").on(table.name)],
+  (table) => [uniqueIndex("catalog_categories_org_name_idx").on(table.organizationId, table.name)],
 );
 
 export const catalogItems = pgTable(
   "catalog_items",
   {
     id: serial("id").primaryKey(),
+    organizationId: integer("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(),
     categoryId: integer("category_id").references(() => catalogCategories.id, {
       onDelete: "set null",
@@ -455,7 +491,7 @@ export const catalogItems = pgTable(
     unitMeasure: catalogUnitMeasureEnum("unit_measure").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [uniqueIndex("catalog_items_name_idx").on(table.name)],
+  (table) => [uniqueIndex("catalog_items_org_name_idx").on(table.organizationId, table.name)],
 );
 
 // Requisição de estoque — interna (fica na unidade) ou externa (sai pra
@@ -465,6 +501,9 @@ export const catalogItems = pgTable(
 // spec-requisicao-kenkyo.md).
 export const requisicoes = pgTable("requisicoes", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   tipo: requisicaoTipoEnum("tipo").notNull(),
   unitId: integer("unit_id")
     .notNull()
@@ -517,6 +556,9 @@ export const requisicaoItens = pgTable("requisicao_itens", {
 // compra ser providenciada (ver lib/auth/solicitacoes.ts).
 export const solicitacoes = pgTable("solicitacoes", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   unitId: integer("unit_id")
     .notNull()
     .references(() => units.id, { onDelete: "cascade" }),
@@ -613,6 +655,9 @@ export const formSubmissions = pgTable("form_submissions", {
 
 export const history = pgTable("history", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),

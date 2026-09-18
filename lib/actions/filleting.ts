@@ -74,7 +74,10 @@ export async function createFilletingRecord(
     };
   }
 
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
+
   await db.insert(filletingRecords).values({
+    organizationId: user.organizationId,
     unitId: effectiveUnitId,
     userId: user.id,
     date,

@@ -55,7 +55,10 @@ export async function createRestoIngestaRecord(
     return { error: "Informe um peso de desperdício válido" };
   }
 
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
+
   await db.insert(restoIngestaRecords).values({
+    organizationId: user.organizationId,
     unitId: effectiveUnitId,
     userId: user.id,
     date,

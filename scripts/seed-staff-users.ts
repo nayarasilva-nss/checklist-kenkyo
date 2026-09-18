@@ -2,7 +2,7 @@ import { randomInt } from "crypto";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
-import { jobFunctions, units, users } from "../lib/db/schema";
+import { jobFunctions, units, users, organizations } from "../lib/db/schema";
 
 type StaffDef = {
   name: string;
@@ -42,9 +42,15 @@ function randomPassword4() {
 }
 
 async function main() {
+  const [kenkyo] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "kenkyo"));
+  if (!kenkyo) {
+    console.log("Organização Kenkyo não encontrada, pulando.");
+    process.exit(0);
+  }
+
   let [unit] = await db.select().from(units).where(eq(units.name, UNIT_NAME)).limit(1);
   if (!unit) {
-    [unit] = await db.insert(units).values({ name: UNIT_NAME }).returning();
+    [unit] = await db.insert(units).values({ name: UNIT_NAME, organizationId: kenkyo.id }).returning();
     console.log(`Unidade criada: "${UNIT_NAME}"`);
   }
 
@@ -73,6 +79,7 @@ async function main() {
     const passwordHash = await bcrypt.hash(password, 10);
 
     await db.insert(users).values({
+      organizationId: kenkyo.id,
       name: staff.name,
       username: staff.username,
       passwordHash,

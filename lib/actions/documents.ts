@@ -36,8 +36,10 @@ export async function createDocument(
     return { error: "Categoria inválida" };
   }
   if (!fileUrl) return { error: "Envie um arquivo" };
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
 
   await db.insert(documents).values({
+    organizationId: user.organizationId,
     title,
     category: category as Category,
     subcategory: readSubcategory(formData, category),

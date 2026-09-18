@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
-import { users, templates, templateItems } from "../lib/db/schema";
+import { users, templates, templateItems, organizations } from "../lib/db/schema";
 
 async function main() {
   const username = process.env.SEED_ADMIN_USERNAME?.trim().toLowerCase();
@@ -20,8 +20,14 @@ async function main() {
     .limit(1);
 
   if (existing.length === 0) {
+    const [kenkyo] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "kenkyo"));
+    if (!kenkyo) {
+      throw new Error("Organização Kenkyo não encontrada — migração 0026 deveria tê-la criado.");
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
     await db.insert(users).values({
+      organizationId: kenkyo.id,
       name: "Admin",
       username,
       passwordHash,

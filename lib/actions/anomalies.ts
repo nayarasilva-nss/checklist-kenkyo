@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
-import { anomalies } from "@/lib/db/schema";
+import { anomalies, units } from "@/lib/db/schema";
 import { ANOMALY_SETORES, ANOMALY_TYPES } from "@/lib/data/anomalies";
 import { addHistoryEntry } from "@/lib/data/history";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
@@ -53,9 +53,17 @@ export type RecordAnomalyInput = {
  * creating a duplicate if the same completion is resaved.
  */
 export async function recordAnomaly(input: RecordAnomalyInput) {
+  const [unit] = await db
+    .select({ organizationId: units.organizationId })
+    .from(units)
+    .where(eq(units.id, input.unitId))
+    .limit(1);
+  if (!unit) return;
+
   const inserted = await db
     .insert(anomalies)
     .values({
+      organizationId: unit.organizationId,
       unitId: input.unitId,
       userId: input.userId,
       date: input.date,

@@ -54,7 +54,10 @@ export async function createDeliveryErrorRecord(
     return { error: "Pedidos com erro não pode ser maior que o total de pedidos" };
   }
 
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
+
   await db.insert(deliveryErrorRecords).values({
+    organizationId: user.organizationId,
     unitId: effectiveUnitId,
     userId: user.id,
     date,

@@ -1,6 +1,6 @@
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "../lib/db";
-import { checklistTypeItems, checklistTypes, jobFunctions } from "../lib/db/schema";
+import { checklistTypeItems, checklistTypes, jobFunctions, organizations } from "../lib/db/schema";
 
 type Item = { label: string; requiresPhoto?: boolean };
 
@@ -390,6 +390,14 @@ const CHECKLISTS: ChecklistDef[] = [
 ];
 
 async function main() {
+  // Script exclusivo de seed da Kenkyo — dados que só fazem sentido pra
+  // essa empresa, não roda nada equivalente pra outras organizações.
+  const [kenkyo] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "kenkyo"));
+  if (!kenkyo) {
+    console.log("Organização Kenkyo não encontrada, pulando.");
+    return;
+  }
+
   const existingOld = await db
     .select({ id: checklistTypes.id, name: checklistTypes.name })
     .from(checklistTypes)
@@ -411,7 +419,7 @@ async function main() {
     if (!funcByName.has(name)) {
       const [created] = await db
         .insert(jobFunctions)
-        .values({ name })
+        .values({ name, organizationId: kenkyo.id })
         .returning({ id: jobFunctions.id });
       funcByName.set(name, created.id);
       console.log(`Função criada: "${name}"`);
@@ -443,6 +451,7 @@ async function main() {
     const [createdType] = await db
       .insert(checklistTypes)
       .values({
+        organizationId: kenkyo.id,
         name: def.name,
         description: def.description,
         type: def.type,

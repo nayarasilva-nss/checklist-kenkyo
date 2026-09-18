@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
-import { jobFunctions, templates, templateItems } from "../lib/db/schema";
+import { jobFunctions, templates, templateItems, organizations } from "../lib/db/schema";
 
 const JOB_FUNCTION_NAME = "Gerente";
 
@@ -51,6 +51,12 @@ const ROUTINE_TEMPLATES = [
 ];
 
 async function main() {
+  const [kenkyo] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "kenkyo"));
+  if (!kenkyo) {
+    console.log("Organização Kenkyo não encontrada, pulando.");
+    return;
+  }
+
   const existingJobFunction = await db
     .select({ id: jobFunctions.id })
     .from(jobFunctions)
@@ -61,7 +67,7 @@ async function main() {
   if (existingJobFunction.length === 0) {
     const [created] = await db
       .insert(jobFunctions)
-      .values({ name: JOB_FUNCTION_NAME })
+      .values({ name: JOB_FUNCTION_NAME, organizationId: kenkyo.id })
       .returning({ id: jobFunctions.id });
     jobFunctionId = created.id;
     console.log(`Função "${JOB_FUNCTION_NAME}" criada.`);

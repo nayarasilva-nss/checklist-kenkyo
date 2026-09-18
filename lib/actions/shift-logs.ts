@@ -98,9 +98,12 @@ export async function createShiftLog(
     };
   }
 
+  if (!user.organizationId) return { error: "Conta sem empresa associada" };
+
   const [inserted] = await db
     .insert(shiftLogs)
     .values({
+      organizationId: user.organizationId,
       unitId: effectiveUnitId,
       userId: user.id,
       date,

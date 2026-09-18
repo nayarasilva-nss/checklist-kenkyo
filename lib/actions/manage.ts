@@ -154,7 +154,8 @@ export async function createUnit(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) {
@@ -164,13 +165,13 @@ export async function createUnit(
   const existing = await db
     .select({ id: units.id })
     .from(units)
-    .where(eq(units.name, name))
+    .where(and(eq(units.name, name), eq(units.organizationId, gestor.organizationId)))
     .limit(1);
   if (existing.length > 0) {
     return { error: "Já existe uma unidade com esse nome" };
   }
 
-  await db.insert(units).values({ name });
+  await db.insert(units).values({ name, organizationId: gestor.organizationId });
   revalidateManageViews();
 }
 
@@ -186,7 +187,8 @@ export async function createJobFunction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) {
@@ -196,13 +198,13 @@ export async function createJobFunction(
   const existing = await db
     .select({ id: jobFunctions.id })
     .from(jobFunctions)
-    .where(eq(jobFunctions.name, name))
+    .where(and(eq(jobFunctions.name, name), eq(jobFunctions.organizationId, gestor.organizationId)))
     .limit(1);
   if (existing.length > 0) {
     return { error: "Já existe uma função com esse nome" };
   }
 
-  await db.insert(jobFunctions).values({ name });
+  await db.insert(jobFunctions).values({ name, organizationId: gestor.organizationId });
   revalidateManageViews();
 }
 
@@ -270,7 +272,8 @@ export async function createChecklistType(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -286,7 +289,7 @@ export async function createChecklistType(
 
   const [checklistType] = await db
     .insert(checklistTypes)
-    .values({ name, description, type, jobFunctionId, assignedUserId })
+    .values({ organizationId: gestor.organizationId, name, description, type, jobFunctionId, assignedUserId })
     .returning({ id: checklistTypes.id });
 
   await db.insert(checklistTypeItems).values(

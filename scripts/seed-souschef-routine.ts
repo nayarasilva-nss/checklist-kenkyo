@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
-import { jobFunctions, checklistTypes, checklistTypeItems } from "../lib/db/schema";
+import { jobFunctions, checklistTypes, checklistTypeItems, organizations } from "../lib/db/schema";
 
 const JOB_FUNCTION_NAME = "Chefe";
 const CHECKLIST_NAME = "Verificação do Souschef";
@@ -49,6 +49,12 @@ const ITEMS = [
 ];
 
 async function main() {
+  const [kenkyo] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "kenkyo"));
+  if (!kenkyo) {
+    console.log("Organização Kenkyo não encontrada, pulando.");
+    process.exit(0);
+  }
+
   const existingJobFunction = await db
     .select({ id: jobFunctions.id })
     .from(jobFunctions)
@@ -59,7 +65,7 @@ async function main() {
   if (existingJobFunction.length === 0) {
     const [created] = await db
       .insert(jobFunctions)
-      .values({ name: JOB_FUNCTION_NAME })
+      .values({ name: JOB_FUNCTION_NAME, organizationId: kenkyo.id })
       .returning({ id: jobFunctions.id });
     jobFunctionId = created.id;
     console.log(`Função "${JOB_FUNCTION_NAME}" criada.`);
@@ -81,6 +87,7 @@ async function main() {
   const [created] = await db
     .insert(checklistTypes)
     .values({
+      organizationId: kenkyo.id,
       name: CHECKLIST_NAME,
       description: CHECKLIST_DESCRIPTION,
       type: "daily",

@@ -25,7 +25,8 @@ export async function createCategory(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) {
@@ -35,13 +36,13 @@ export async function createCategory(
   const existing = await db
     .select({ id: catalogCategories.id })
     .from(catalogCategories)
-    .where(eq(catalogCategories.name, name))
+    .where(and(eq(catalogCategories.name, name), eq(catalogCategories.organizationId, gestor.organizationId)))
     .limit(1);
   if (existing.length > 0) {
     return { error: "Já existe uma categoria com esse nome" };
   }
 
-  await db.insert(catalogCategories).values({ name });
+  await db.insert(catalogCategories).values({ name, organizationId: gestor.organizationId });
   revalidateCatalogViews();
 }
 
@@ -64,10 +65,23 @@ export async function updateCategory(
     return { error: "Preencha o nome da categoria" };
   }
 
+  const [current] = await db
+    .select({ organizationId: catalogCategories.organizationId })
+    .from(catalogCategories)
+    .where(eq(catalogCategories.id, id))
+    .limit(1);
+  if (!current) return { error: "Categoria não encontrada" };
+
   const existing = await db
     .select({ id: catalogCategories.id })
     .from(catalogCategories)
-    .where(and(eq(catalogCategories.name, name), ne(catalogCategories.id, id)))
+    .where(
+      and(
+        eq(catalogCategories.name, name),
+        eq(catalogCategories.organizationId, current.organizationId),
+        ne(catalogCategories.id, id),
+      ),
+    )
     .limit(1);
   if (existing.length > 0) {
     return { error: "Já existe uma categoria com esse nome" };
@@ -95,7 +109,8 @@ export async function createCatalogItem(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireGestor();
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
 
   const name = String(formData.get("name") ?? "").trim();
   const unitMeasure = String(formData.get("unitMeasure") ?? "");
@@ -108,13 +123,13 @@ export async function createCatalogItem(
   const existing = await db
     .select({ id: catalogItems.id })
     .from(catalogItems)
-    .where(eq(catalogItems.name, name))
+    .where(and(eq(catalogItems.name, name), eq(catalogItems.organizationId, gestor.organizationId)))
     .limit(1);
   if (existing.length > 0) {
     return { error: "Já existe um produto com esse nome" };
   }
 
-  await db.insert(catalogItems).values({ name, unitMeasure, categoryId });
+  await db.insert(catalogItems).values({ name, unitMeasure, categoryId, organizationId: gestor.organizationId });
   revalidateCatalogViews();
 }
 
@@ -133,10 +148,23 @@ export async function updateCatalogItem(
     return { error: "Preencha o nome e a unidade de medida" };
   }
 
+  const [current] = await db
+    .select({ organizationId: catalogItems.organizationId })
+    .from(catalogItems)
+    .where(eq(catalogItems.id, id))
+    .limit(1);
+  if (!current) return { error: "Produto não encontrado" };
+
   const existing = await db
     .select({ id: catalogItems.id })
     .from(catalogItems)
-    .where(and(eq(catalogItems.name, name), ne(catalogItems.id, id)))
+    .where(
+      and(
+        eq(catalogItems.name, name),
+        eq(catalogItems.organizationId, current.organizationId),
+        ne(catalogItems.id, id),
+      ),
+    )
     .limit(1);
   if (existing.length > 0) {
     return { error: "Já existe um produto com esse nome" };

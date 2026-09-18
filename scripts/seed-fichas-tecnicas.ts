@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { put } from "@vercel/blob";
 import { db } from "../lib/db";
-import { documents, users } from "../lib/db/schema";
+import { documents, users, organizations } from "../lib/db/schema";
 import { FICHA_TECNICA_CATEGORY_ORDER } from "../lib/domain/ficha-tecnica-categorias";
 
 type Ingrediente = [nome: string, pesoBruto: string, pesoLiquido: string];
@@ -1800,13 +1800,19 @@ const CATEGORIAS: Record<string, (typeof FICHA_TECNICA_CATEGORY_ORDER)[number]> 
 };
 
 async function main() {
+  const [kenkyo] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "kenkyo"));
+  if (!kenkyo) {
+    console.log("Organização Kenkyo não encontrada, pulando.");
+    process.exit(0);
+  }
+
   const [gestor] = await db
     .select({ id: users.id })
     .from(users)
-    .where(eq(users.profile, "gestor"))
+    .where(and(eq(users.profile, "gestor"), eq(users.organizationId, kenkyo.id)))
     .limit(1);
   if (!gestor) {
-    console.error("Nenhum usuário Gestor encontrado, abortando.");
+    console.error("Nenhum usuário Gestor da Kenkyo encontrado, abortando.");
     process.exit(1);
   }
 
@@ -1833,6 +1839,7 @@ async function main() {
       { access: "public", contentType: "text/html" },
     );
     await db.insert(documents).values({
+      organizationId: kenkyo.id,
       title: receita.titulo,
       category: "ficha_tecnica",
       subcategory,

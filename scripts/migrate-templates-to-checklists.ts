@@ -5,9 +5,16 @@ import {
   checklistTypeItems,
   templates,
   templateItems,
+  organizations,
 } from "../lib/db/schema";
 
 async function main() {
+  const [kenkyo] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "kenkyo"));
+  if (!kenkyo) {
+    console.log("Organização Kenkyo não encontrada, pulando.");
+    return;
+  }
+
   const existingChecklistNames = new Set(
     (await db.select({ name: checklistTypes.name }).from(checklistTypes)).map(
       (c) => c.name,
@@ -31,6 +38,7 @@ async function main() {
     const [created] = await db
       .insert(checklistTypes)
       .values({
+        organizationId: kenkyo.id,
         name: template.name,
         description: template.description,
         type: "daily",

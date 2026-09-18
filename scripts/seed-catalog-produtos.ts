@@ -1,5 +1,6 @@
+import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
-import { catalogCategories, catalogItems } from "../lib/db/schema";
+import { catalogCategories, catalogItems, organizations } from "../lib/db/schema";
 
 // Catálogo real da operação Kenkyo, importado da planilha "Posição de
 // estoque" (Saipos). Categoria vem do "Grupo ingrediente" da planilha,
@@ -349,6 +350,12 @@ const ITEMS: { name: string; category: string; unit: "kg" | "g" | "un" | "L" | "
 ];
 
 async function main() {
+  const [kenkyo] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "kenkyo"));
+  if (!kenkyo) {
+    console.log("Organização Kenkyo não encontrada, pulando.");
+    return;
+  }
+
   const categoryNames = [...new Set(ITEMS.map((i) => i.category))];
 
   const existingCategories = await db.select().from(catalogCategories);
@@ -356,7 +363,10 @@ async function main() {
 
   for (const name of categoryNames) {
     if (categoryIdByName.has(name)) continue;
-    const [created] = await db.insert(catalogCategories).values({ name }).returning({ id: catalogCategories.id });
+    const [created] = await db
+      .insert(catalogCategories)
+      .values({ name, organizationId: kenkyo.id })
+      .returning({ id: catalogCategories.id });
     categoryIdByName.set(name, created.id);
     console.log(`Categoria criada: ${name}`);
   }
@@ -365,6 +375,7 @@ async function main() {
   const existingNames = new Set(existingItems.map((i) => i.name));
 
   const toInsert = ITEMS.filter((i) => !existingNames.has(i.name)).map((i) => ({
+    organizationId: kenkyo.id,
     name: i.name,
     categoryId: categoryIdByName.get(i.category) ?? null,
     unitMeasure: i.unit,
