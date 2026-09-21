@@ -31,6 +31,12 @@ export function computeAuditScore(answers: Answer[]) {
     g.points += a.weight * POINTS[a.status as AuditStatus];
     byGroup.set(a.groupName, g);
   }
+  const groupScores = [...byGroup.entries()].map(([name, g]) => ({
+    name,
+    percent: Math.round((g.points / g.total) * 100),
+    points: g.points,
+    total: g.total,
+  }));
   const lostByGroup = [...byGroup.entries()]
     .map(([name, g]) => ({ name, lostPercent: Math.round(((g.total - g.points) / g.total) * 100) }))
     .filter((g) => g.lostPercent > 0)
@@ -40,6 +46,7 @@ export function computeAuditScore(answers: Answer[]) {
   return {
     percent,
     lostByGroup,
+    groupScores,
     counts: { conforme: count("conforme"), parcial: count("parcial"), nao_conforme: count("nao_conforme") },
   };
 }
