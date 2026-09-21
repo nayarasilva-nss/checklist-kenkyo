@@ -665,3 +665,67 @@ export const history = pgTable("history", {
   status: historyStatusEnum("status").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Auditoria de unidade (visita técnica) — só Gestor. O modelo (grupos e
+// itens) é editável por empresa em Gerenciar; cada auditoria guarda uma
+// cópia do texto de grupo/item respondido, pra edição posterior do
+// modelo não reescrever auditorias antigas.
+export const auditAnswerStatusEnum = pgEnum("audit_answer_status", [
+  "conforme",
+  "parcial",
+  "nao_conforme",
+  "nao_aplica",
+]);
+
+export const auditGroups = pgTable("audit_groups", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  position: integer("position").notNull().default(0),
+});
+
+export const auditItems = pgTable("audit_items", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id")
+    .notNull()
+    .references(() => auditGroups.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  position: integer("position").notNull().default(0),
+});
+
+export const audits = pgTable("audits", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  unitId: integer("unit_id")
+    .notNull()
+    .references(() => units.id, { onDelete: "cascade" }),
+  auditorId: integer("auditor_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  visitDate: date("visit_date").notNull(),
+  // "rascunho" enquanto preenche; "finalizada" congela a nota.
+  status: varchar("status", { length: 20 }).notNull().default("rascunho"),
+  scorePercent: integer("score_percent"),
+  comments: text("comments").notNull().default(""),
+  actionPlan: text("action_plan").notNull().default(""),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  finalizedAt: timestamp("finalized_at"),
+});
+
+export const auditAnswers = pgTable("audit_answers", {
+  id: serial("id").primaryKey(),
+  auditId: integer("audit_id")
+    .notNull()
+    .references(() => audits.id, { onDelete: "cascade" }),
+  groupName: varchar("group_name", { length: 255 }).notNull(),
+  groupPosition: integer("group_position").notNull().default(0),
+  itemLabel: text("item_label").notNull(),
+  itemPosition: integer("item_position").notNull().default(0),
+  status: auditAnswerStatusEnum("status"),
+  note: text("note").notNull().default(""),
+  photoUrls: jsonb("photo_urls").notNull().default([]),
+});

@@ -54,6 +54,7 @@ function buildGroups(
       items: [
         { href: "/perdas", label: "Perdas" },
         ...(showFormularios ? [{ href: "/formularios", label: "Formulários" }] : []),
+        ...(isGestorProfile(profile) ? [{ href: "/auditorias", label: "Auditorias" }] : []),
         { href: "/relatorio", label: "Relatórios" },
         { href: "/historico", label: "Histórico" },
       ],
@@ -204,6 +205,9 @@ export function AppNav({
       : []),
     ...(showFormularios
       ? [{ href: "/formularios", title: "Formulários", description: "Registros personalizados" }]
+      : []),
+    ...(isGestorProfile(profile)
+      ? [{ href: "/auditorias", title: "Auditorias", description: "Visitas técnicas às unidades" }]
       : []),
     ...(isGestorProfile(profile)
       ? [{ href: "/gerenciar", title: "Gerenciar", description: "Usuários, unidades e modelos" }]

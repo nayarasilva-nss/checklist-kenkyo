@@ -25,6 +25,8 @@ import { FormDefinitionRow } from "./FormDefinitionRow";
 import { getFormDefinitions } from "@/lib/data/form-definitions";
 import { getOrganizationById } from "@/lib/data/organizations";
 import { BrandForm } from "./BrandForm";
+import { AuditTemplateEditor } from "./AuditTemplateEditor";
+import { getAuditTemplate } from "@/lib/data/audits";
 
 const TABS = [
   { key: "usuarios", label: "Usuários" },
@@ -33,6 +35,7 @@ const TABS = [
   { key: "unidades", label: "Unidades" },
   { key: "funcoes", label: "Funções" },
   { key: "catalogo", label: "Catálogo" },
+  { key: "auditoria", label: "Auditoria" },
   { key: "marca", label: "Marca" },
 ] as const;
 
@@ -46,7 +49,7 @@ export default async function GerenciarPage({
   const { tab: rawTab } = await searchParams;
   const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "usuarios";
 
-  const [users, checklistTypes, units, jobFunctions, catalogCategories, catalogItems, formDefinitions, organization] =
+  const [users, checklistTypes, units, jobFunctions, catalogCategories, catalogItems, formDefinitions, organization, auditTemplate] =
     await Promise.all([
       getUsers(gestor.organizationId!),
       getChecklistTypesWithCounts(gestor.organizationId!),
@@ -56,6 +59,7 @@ export default async function GerenciarPage({
       getCatalogItems(gestor.organizationId!),
       gestor.organizationId ? getFormDefinitions(gestor.organizationId) : Promise.resolve([]),
       gestor.organizationId ? getOrganizationById(gestor.organizationId) : Promise.resolve(null),
+      tab === "auditoria" ? getAuditTemplate(gestor.organizationId!) : Promise.resolve([]),
     ]);
 
   return (
@@ -207,6 +211,8 @@ export default async function GerenciarPage({
           </div>
         </div>
       )}
+
+      {tab === "auditoria" && <AuditTemplateEditor groups={auditTemplate} />}
 
       {tab === "marca" && organization && (
         <div className="board-layout">
