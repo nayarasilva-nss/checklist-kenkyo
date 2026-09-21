@@ -15,6 +15,10 @@ export async function getAuditTemplate(organizationId: number) {
       groupId: auditItems.groupId,
       label: auditItems.label,
       position: auditItems.position,
+      weight: auditItems.weight,
+      howToVerify: auditItems.howToVerify,
+      responsible: auditItems.responsible,
+      appliesTo: auditItems.appliesTo,
     })
     .from(auditItems)
     .innerJoin(auditGroups, eq(auditGroups.id, auditItems.groupId))

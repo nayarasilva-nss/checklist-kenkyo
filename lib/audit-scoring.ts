@@ -14,18 +14,21 @@ const POINTS: Record<AuditStatus, number> = {
   nao_aplica: 0,
 };
 
-type Answer = { groupName: string; status: AuditStatus | null };
+type Answer = { groupName: string; status: AuditStatus | null; weight: number };
+
+export const WEIGHT_LABEL: Record<number, string> = { 3: "Crítico", 2: "Maior", 1: "Menor" };
 
 export function computeAuditScore(answers: Answer[]) {
   const applicable = answers.filter((a) => a.status && a.status !== "nao_aplica");
-  const points = applicable.reduce((s, a) => s + POINTS[a.status as AuditStatus], 0);
-  const percent = applicable.length > 0 ? Math.round((points / applicable.length) * 100) : 0;
+  const totalWeight = applicable.reduce((s, a) => s + a.weight, 0);
+  const points = applicable.reduce((s, a) => s + a.weight * POINTS[a.status as AuditStatus], 0);
+  const percent = totalWeight > 0 ? Math.round((points / totalWeight) * 100) : 0;
 
   const byGroup = new Map<string, { total: number; points: number }>();
   for (const a of applicable) {
     const g = byGroup.get(a.groupName) ?? { total: 0, points: 0 };
-    g.total += 1;
-    g.points += POINTS[a.status as AuditStatus];
+    g.total += a.weight;
+    g.points += a.weight * POINTS[a.status as AuditStatus];
     byGroup.set(a.groupName, g);
   }
   const lostByGroup = [...byGroup.entries()]

@@ -4,12 +4,16 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { saveAuditAnswer, saveAuditTexts, finalizeAudit } from "@/lib/actions/audits";
-import { AUDIT_STATUS_LABEL, type AuditStatus } from "@/lib/audit-scoring";
+import { AUDIT_STATUS_LABEL, WEIGHT_LABEL, type AuditStatus } from "@/lib/audit-scoring";
 
 type Answer = {
   id: number;
   groupName: string;
   itemLabel: string;
+  weight: number;
+  howToVerify: string;
+  responsible: string;
+  appliesTo: string;
   status: AuditStatus | null;
   note: string;
   photoUrls: string[];
@@ -118,7 +122,14 @@ export function AuditForm({
           <div className="today-card-title" style={{ marginBottom: 12 }}>{g}</div>
           {answers.filter((a) => a.groupName === g).map((a) => (
             <div key={a.id} style={{ borderTop: "1px solid var(--border)", padding: "12px 0" }}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>{a.itemLabel}</div>
+              <div style={{ fontWeight: 600 }}>
+                {a.itemLabel} <span className="items-count">· {WEIGHT_LABEL[a.weight]}</span>
+              </div>
+              <p className="items-count" style={{ margin: "2px 0 8px" }}>
+                {[a.howToVerify, a.responsible && `Resp.: ${a.responsible}`, a.appliesTo !== "Todas" && `Aplicável: ${a.appliesTo}`]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {ORDER.map((s) => (
                   <button

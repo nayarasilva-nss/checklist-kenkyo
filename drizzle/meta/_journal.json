@@ -232,6 +232,13 @@
       "when": 1790018751112,
       "tag": "0032_mute_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790026160754,
+      "tag": "0033_powerful_prowler",
+      "breakpoints": true
     }
   ]
 }

@@ -32,6 +32,10 @@ export async function createAudit(formData: FormData) {
       groupPosition: gi,
       itemLabel: it.label,
       itemPosition: ii,
+      weight: it.weight,
+      howToVerify: it.howToVerify,
+      responsible: it.responsible,
+      appliesTo: it.appliesTo,
     })),
   );
   if (rows.length === 0) return;
@@ -98,6 +102,16 @@ export async function deleteAudit(formData: FormData) {
 
 // ---- Modelo (Gerenciar > Auditoria) ----
 
+function itemExtras(formData: FormData) {
+  const w = Number(formData.get("weight"));
+  return {
+    weight: w === 3 || w === 2 ? w : 1,
+    howToVerify: String(formData.get("howToVerify") ?? "").trim(),
+    responsible: String(formData.get("responsible") ?? "").trim(),
+    appliesTo: String(formData.get("appliesTo") ?? "").trim() || "Todas",
+  };
+}
+
 export async function addAuditGroup(formData: FormData) {
   const gestor = await requireGestor();
   const name = String(formData.get("name") ?? "").trim();
@@ -144,7 +158,7 @@ export async function addAuditItem(formData: FormData) {
     .limit(1);
   if (!group) return;
   const [m] = await db.select({ v: max(auditItems.position) }).from(auditItems).where(eq(auditItems.groupId, groupId));
-  await db.insert(auditItems).values({ groupId, label, position: (m?.v ?? -1) + 1 });
+  await db.insert(auditItems).values({ groupId, label, position: (m?.v ?? -1) + 1, ...itemExtras(formData) });
   revalidatePath("/gerenciar");
 }
 
@@ -163,7 +177,7 @@ export async function updateAuditItem(formData: FormData) {
   const id = Number(formData.get("id"));
   const label = String(formData.get("label") ?? "").trim();
   if (!id || !label || !gestor.organizationId || !(await ownItem(id, gestor.organizationId))) return;
-  await db.update(auditItems).set({ label }).where(eq(auditItems.id, id));
+  await db.update(auditItems).set({ label, ...itemExtras(formData) }).where(eq(auditItems.id, id));
   revalidatePath("/gerenciar");
 }
 

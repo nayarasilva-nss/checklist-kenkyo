@@ -693,6 +693,11 @@ export const auditItems = pgTable("audit_items", {
     .references(() => auditGroups.id, { onDelete: "cascade" }),
   label: text("label").notNull(),
   position: integer("position").notNull().default(0),
+  // 3 = Crítico, 2 = Maior, 1 = Menor
+  weight: integer("weight").notNull().default(1),
+  howToVerify: text("how_to_verify").notNull().default(""),
+  responsible: varchar("responsible", { length: 255 }).notNull().default(""),
+  appliesTo: varchar("applies_to", { length: 255 }).notNull().default("Todas"),
 });
 
 export const audits = pgTable("audits", {
@@ -725,6 +730,10 @@ export const auditAnswers = pgTable("audit_answers", {
   groupPosition: integer("group_position").notNull().default(0),
   itemLabel: text("item_label").notNull(),
   itemPosition: integer("item_position").notNull().default(0),
+  weight: integer("weight").notNull().default(1),
+  howToVerify: text("how_to_verify").notNull().default(""),
+  responsible: varchar("responsible", { length: 255 }).notNull().default(""),
+  appliesTo: varchar("applies_to", { length: 255 }).notNull().default("Todas"),
   status: auditAnswerStatusEnum("status"),
   note: text("note").notNull().default(""),
   photoUrls: jsonb("photo_urls").notNull().default([]),
