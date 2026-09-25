@@ -45,6 +45,29 @@ export async function getAuditTemplate(organizationId: number) {
   return groups.map((g) => ({ ...g, items: items.filter((i) => i.groupId === g.id) }));
 }
 
+/** Rascunhos em que a pessoa foi convidada como co-auditora — é o
+ * "aviso" que aparece na tela Hoje e no menu até a auditoria ser finalizada. */
+export async function getPendingCoAudits(organizationId: number, userId: number) {
+  return db
+    .select({
+      id: audits.id,
+      visitDate: audits.visitDate,
+      unitName: units.name,
+      auditorName: users.name,
+    })
+    .from(audits)
+    .innerJoin(units, eq(units.id, audits.unitId))
+    .innerJoin(users, eq(users.id, audits.auditorId))
+    .where(
+      and(
+        eq(audits.organizationId, organizationId),
+        eq(audits.coAuditorId, userId),
+        eq(audits.status, "rascunho"),
+      ),
+    )
+    .orderBy(desc(audits.visitDate), desc(audits.id));
+}
+
 export async function getAudits(organizationId: number, unitId: number | null) {
   return db
     .select({
