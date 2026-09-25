@@ -55,7 +55,7 @@ export default async function AuditoriaImprimirPage({ params }: { params: Promis
         .photos { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
         .photos img { width:31%; height:120px; object-fit:cover; border-radius:6px; border:1px solid #e3e1da; }
         .text-box { border:1px solid #e3e1da; border-radius:8px; padding:12px 14px; font-size:13px; line-height:1.55; white-space:pre-wrap; }
-        .sign { display:flex; gap:40px; justify-content:center; margin-top:56px; font-size:12px; color:#3d3b35; }
+        .sign { display:flex; flex-wrap:wrap; gap:40px 40px; justify-content:center; margin-top:56px; font-size:12px; color:#3d3b35; }
         .sign > div { width:230px; border-top:1px solid #16140f; padding-top:5px; text-align:center; }
         .print-footer { margin-top:34px; font-size:11px; color:#a19f92; text-align:center; }
         @page { size:A4; margin:16mm 14mm; }
@@ -82,7 +82,11 @@ export default async function AuditoriaImprimirPage({ params }: { params: Promis
       <div className="print-grid">
         <div><div className="label">Unidade</div>{audit.unitName}</div>
         <div><div className="label">Data da visita</div>{date}</div>
-        <div><div className="label">Auditor</div>{audit.auditorName}</div>
+        <div>
+          <div className="label">{audit.coAuditorName ? "Auditores" : "Auditor"}</div>
+          {audit.auditorName}
+          {audit.coAuditorName && <><br />{audit.coAuditorName}</>}
+        </div>
       </div>
 
       <div className="score">
@@ -164,11 +168,12 @@ export default async function AuditoriaImprimirPage({ params }: { params: Promis
         </table>
       )}
 
-      {audit.comments && (<><h2 className="sec">Comentários do auditor</h2><div className="text-box">{audit.comments}</div></>)}
+      {audit.comments && (<><h2 className="sec">{audit.coAuditorName ? "Comentários dos auditores" : "Comentários do auditor"}</h2><div className="text-box">{audit.comments}</div></>)}
       {audit.actionPlan && (<><h2 className="sec">Plano de ação</h2><div className="text-box">{audit.actionPlan}</div></>)}
 
       <div className="sign">
         <div>{audit.auditorName}<br />Auditor</div>
+        {audit.coAuditorName && <div>{audit.coAuditorName}<br />Auditor</div>}
         <div>Responsável da unidade<br />Nome e assinatura</div>
       </div>
 

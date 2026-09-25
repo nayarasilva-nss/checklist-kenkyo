@@ -25,6 +25,11 @@ export default async function AuditoriaPage({ params }: { params: Promise<{ id: 
     return (
       <>
         {header}
+        {audit.coAuditorName && (
+          <p className="items-count" style={{ marginBottom: 8 }}>
+            Em conjunto: {audit.auditorName} & {audit.coAuditorName}
+          </p>
+        )}
         <AuditForm
           auditId={audit.id}
           organizationId={gestor.organizationId!}
@@ -56,7 +61,11 @@ export default async function AuditoriaPage({ params }: { params: Promise<{ id: 
         <p style={{ fontSize: 28, fontWeight: 800, color: cls.color }}>
           {audit.scorePercent}% · {cls.label}
         </p>
-        <p className="items-count">Auditor: {audit.auditorName}</p>
+        <p className="items-count">
+          {audit.coAuditorName
+            ? `Auditores: ${audit.auditorName} & ${audit.coAuditorName}`
+            : `Auditor: ${audit.auditorName}`}
+        </p>
         <Link href={`/auditorias/${audit.id}/imprimir`} className="btn-pdf" style={{ display: "inline-block", marginTop: 12 }}>
           📥 Gerar PDF
         </Link>

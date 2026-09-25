@@ -1,11 +1,11 @@
 "use server";
 
-import { and, eq, max } from "drizzle-orm";
+import { and, eq, inArray, max } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
-import { auditAnswers, auditGroups, auditItems, audits, units } from "@/lib/db/schema";
+import { auditAnswers, auditGroups, auditItems, audits, units, users } from "@/lib/db/schema";
 import { getAuditTemplate } from "@/lib/data/audits";
 import { computeAuditScore, type AuditStatus } from "@/lib/audit-scoring";
 
@@ -25,6 +25,23 @@ export async function createAudit(formData: FormData) {
     .limit(1);
   if (!unit) return;
 
+  // Co-auditor opcional: precisa ser outro gestor da mesma empresa.
+  let coAuditorId: number | null = Number(formData.get("coAuditorId")) || null;
+  if (coAuditorId) {
+    const [partner] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(
+        and(
+          eq(users.id, coAuditorId),
+          eq(users.organizationId, orgId),
+          inArray(users.profile, ["gestor", "master"]),
+        ),
+      )
+      .limit(1);
+    if (!partner || partner.id === gestor.id) coAuditorId = null;
+  }
+
   const template = await getAuditTemplate(orgId);
   const rows = template.flatMap((g, gi) =>
     g.items.map((it, ii) => ({
@@ -42,7 +59,7 @@ export async function createAudit(formData: FormData) {
 
   const [audit] = await db
     .insert(audits)
-    .values({ organizationId: orgId, unitId, auditorId: gestor.id, visitDate })
+    .values({ organizationId: orgId, unitId, auditorId: gestor.id, coAuditorId, visitDate })
     .returning({ id: audits.id });
   await db.insert(auditAnswers).values(rows.map((r) => ({ ...r, auditId: audit.id })));
   redirect(`/auditorias/${audit.id}`);
