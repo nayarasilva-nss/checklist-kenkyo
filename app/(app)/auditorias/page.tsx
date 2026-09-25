@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireGestor } from "@/lib/auth/dal";
 import { getUnits } from "@/lib/data/units";
-import { getAudits, getAuditTemplate } from "@/lib/data/audits";
+import { getAuditPartners, getAudits, getAuditTemplate } from "@/lib/data/audits";
 import { createAudit, deleteAudit } from "@/lib/actions/audits";
 import { classifyAudit } from "@/lib/audit-scoring";
 import { todayISO } from "@/lib/date-utils";
@@ -17,10 +17,11 @@ export default async function AuditoriasPage({
   const { unit: rawUnit } = await searchParams;
   const unitFilter = rawUnit ? Number(rawUnit) : null;
 
-  const [units, list, template] = await Promise.all([
+  const [units, list, template, partners] = await Promise.all([
     getUnits(orgId),
     getAudits(orgId, unitFilter),
     getAuditTemplate(orgId),
+    getAuditPartners(orgId, gestor.id),
   ]);
   const hasTemplate = template.some((g) => g.items.length > 0);
 
@@ -57,6 +58,17 @@ export default async function AuditoriasPage({
               <label htmlFor="auditDate">Data da visita</label>
               <input id="auditDate" type="date" name="visitDate" defaultValue={todayISO()} required />
             </div>
+            {partners.length > 0 && (
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label htmlFor="auditPartner">Avaliar em conjunto com</label>
+                <select id="auditPartner" name="coAuditorId" defaultValue="">
+                  <option value="">Ninguém (só eu)</option>
+                  {partners.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <button className="btn-save" type="submit">Iniciar</button>
           </form>
         ) : (
@@ -91,7 +103,8 @@ export default async function AuditoriasPage({
                   </Link>
                 </h4>
                 <p>
-                  {a.auditorName} ·{" "}
+                  {a.auditorName}
+                  {a.coAuditorName && ` & ${a.coAuditorName}`} ·{" "}
                   {cls ? (
                     <strong style={{ color: cls.color }}>
                       {a.scorePercent}% {cls.label}

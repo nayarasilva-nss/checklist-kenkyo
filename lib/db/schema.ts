@@ -711,6 +711,8 @@ export const audits = pgTable("audits", {
   auditorId: integer("auditor_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  // Gestor convidado a avaliar em conjunto (opcional).
+  coAuditorId: integer("co_auditor_id").references(() => users.id, { onDelete: "set null" }),
   visitDate: date("visit_date").notNull(),
   // "rascunho" enquanto preenche; "finalizada" congela a nota.
   status: varchar("status", { length: 20 }).notNull().default("rascunho"),

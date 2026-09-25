@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { logout } from "@/lib/auth/actions";
 import { isGestorProfile } from "@/lib/auth/profile";
 
-type NavItem = { href: string; label: string };
+type NavItem = { href: string; label: string; badge?: number };
 type NavGroup = { label: string; items: NavItem[] };
 
 const PROFILE_LABELS: Record<string, string> = {
@@ -23,6 +23,7 @@ function buildGroups(
   showSolicitacoes: boolean,
   showFormularios: boolean,
   showPlataforma: boolean,
+  pendingAuditCount: number,
 ): NavGroup[] {
   if (profile === "rh") {
     return [
@@ -54,7 +55,7 @@ function buildGroups(
       items: [
         { href: "/perdas", label: "Perdas" },
         ...(showFormularios ? [{ href: "/formularios", label: "Formulários" }] : []),
-        ...(isGestorProfile(profile) ? [{ href: "/auditorias", label: "Auditorias" }] : []),
+        ...(isGestorProfile(profile) ? [{ href: "/auditorias", label: "Auditorias", badge: pendingAuditCount }] : []),
         { href: "/relatorio", label: "Relatórios" },
         { href: "/historico", label: "Histórico" },
       ],
@@ -142,6 +143,7 @@ export function AppNav({
   showSolicitacoes,
   showFormularios,
   showPlataforma,
+  pendingAuditCount,
 }: {
   userName: string;
   profile: string;
@@ -157,9 +159,10 @@ export function AppNav({
   showSolicitacoes: boolean;
   showFormularios: boolean;
   showPlataforma: boolean;
+  pendingAuditCount: number;
 }) {
   const pathname = usePathname();
-  const groups = buildGroups(profile, showRequisicoes, showSolicitacoes, showFormularios, showPlataforma);
+  const groups = buildGroups(profile, showRequisicoes, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
   const scope =
     isGestorProfile(profile) || profile === "rh"
       ? "Todas as unidades"
@@ -207,7 +210,16 @@ export function AppNav({
       ? [{ href: "/formularios", title: "Formulários", description: "Registros personalizados" }]
       : []),
     ...(isGestorProfile(profile)
-      ? [{ href: "/auditorias", title: "Auditorias", description: "Visitas técnicas às unidades" }]
+      ? [
+          {
+            href: "/auditorias",
+            title: pendingAuditCount > 0 ? `Auditorias (${pendingAuditCount})` : "Auditorias",
+            description:
+              pendingAuditCount > 0
+                ? `${pendingAuditCount} em conjunto com você`
+                : "Visitas técnicas às unidades",
+          },
+        ]
       : []),
     ...(isGestorProfile(profile)
       ? [{ href: "/gerenciar", title: "Gerenciar", description: "Usuários, unidades e modelos" }]
@@ -235,6 +247,15 @@ export function AppNav({
                     className={`app-nav-link${isActive(item.href) ? " active" : ""}`}
                   >
                     {item.label}
+                    {!!item.badge && (
+                      <span
+                        className="badge badge-brand"
+                        style={{ marginLeft: 8 }}
+                        aria-label={`${item.badge} pendente${item.badge > 1 ? "s" : ""}`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
