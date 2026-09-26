@@ -9,6 +9,7 @@ import { canCreateSolicitacao } from "@/lib/auth/solicitacoes";
 import { getFormDefinitions } from "@/lib/data/form-definitions";
 import { isPlatformOperator } from "@/lib/data/organizations";
 import { getUnits, getJobFunctions } from "@/lib/data/units";
+import { getPendingCoAudits } from "@/lib/data/audits";
 import { logout } from "@/lib/auth/actions";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { resolveBrandColors } from "@/lib/branding";
@@ -49,7 +50,7 @@ export default async function AppLayout({
   const showRequisicoes = resolveRequisicaoScope(user) !== null;
   const canCreateRequisicao = tiposPermitidos(user).length > 0;
   const showSolicitacoes = canCreateSolicitacao(user);
-  const [covering, units, atuando, jobFunctions, orgFormDefinitions] = await Promise.all([
+  const [covering, units, atuando, jobFunctions, orgFormDefinitions, pendingCoAudits] = await Promise.all([
     showCoveringUnitBanner ? getCoveringUnit() : Promise.resolve(null),
     showCoveringUnitBanner ? getUnits(user.organizationId!) : Promise.resolve([]),
     isGestor ? getGestorFuncao() : Promise.resolve(null),
@@ -57,6 +58,7 @@ export default async function AppLayout({
     user.organizationId
       ? getFormDefinitions(user.organizationId, { onlyActive: true })
       : Promise.resolve([]),
+    isGestor ? getPendingCoAudits(user.organizationId!, user.id) : Promise.resolve([]),
   ]);
   // Aparece no menu quando a empresa tem pelo menos um formulário
   // personalizado ativo — a própria tela filtra o que essa pessoa pode
@@ -92,6 +94,7 @@ export default async function AppLayout({
         showSolicitacoes={showSolicitacoes}
         showFormularios={showFormularios}
         showPlataforma={showPlataforma}
+        pendingAuditCount={pendingCoAudits.length}
       />
       <div className="app-main">
         {showCoveringUnitBanner && (

@@ -1,7 +1,25 @@
 import "server-only";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
 import { auditAnswers, auditGroups, auditItems, audits, units, users } from "@/lib/db/schema";
+
+const coAuditors = alias(users, "co_auditors");
+
+/** Gestores da empresa que podem ser convidados a auditar em conjunto. */
+export async function getAuditPartners(organizationId: number, excludeUserId: number) {
+  return db
+    .select({ id: users.id, name: users.name })
+    .from(users)
+    .where(
+      and(
+        eq(users.organizationId, organizationId),
+        inArray(users.profile, ["gestor", "master"]),
+        ne(users.id, excludeUserId),
+      ),
+    )
+    .orderBy(asc(users.name));
+}
 
 export async function getAuditTemplate(organizationId: number) {
   const groups = await db
@@ -27,6 +45,29 @@ export async function getAuditTemplate(organizationId: number) {
   return groups.map((g) => ({ ...g, items: items.filter((i) => i.groupId === g.id) }));
 }
 
+/** Rascunhos em que a pessoa foi convidada como co-auditora — é o
+ * "aviso" que aparece na tela Hoje e no menu até a auditoria ser finalizada. */
+export async function getPendingCoAudits(organizationId: number, userId: number) {
+  return db
+    .select({
+      id: audits.id,
+      visitDate: audits.visitDate,
+      unitName: units.name,
+      auditorName: users.name,
+    })
+    .from(audits)
+    .innerJoin(units, eq(units.id, audits.unitId))
+    .innerJoin(users, eq(users.id, audits.auditorId))
+    .where(
+      and(
+        eq(audits.organizationId, organizationId),
+        eq(audits.coAuditorId, userId),
+        eq(audits.status, "rascunho"),
+      ),
+    )
+    .orderBy(desc(audits.visitDate), desc(audits.id));
+}
+
 export async function getAudits(organizationId: number, unitId: number | null) {
   return db
     .select({
@@ -37,10 +78,12 @@ export async function getAudits(organizationId: number, unitId: number | null) {
       unitId: audits.unitId,
       unitName: units.name,
       auditorName: users.name,
+      coAuditorName: coAuditors.name,
     })
     .from(audits)
     .innerJoin(units, eq(units.id, audits.unitId))
     .innerJoin(users, eq(users.id, audits.auditorId))
+    .leftJoin(coAuditors, eq(coAuditors.id, audits.coAuditorId))
     .where(and(eq(audits.organizationId, organizationId), unitId ? eq(audits.unitId, unitId) : undefined))
     .orderBy(desc(audits.visitDate), desc(audits.id));
 }
@@ -52,6 +95,7 @@ export async function getAudit(id: number, organizationId: number) {
       unitId: audits.unitId,
       unitName: units.name,
       auditorName: users.name,
+      coAuditorName: coAuditors.name,
       visitDate: audits.visitDate,
       status: audits.status,
       scorePercent: audits.scorePercent,
@@ -61,6 +105,7 @@ export async function getAudit(id: number, organizationId: number) {
     .from(audits)
     .innerJoin(units, eq(units.id, audits.unitId))
     .innerJoin(users, eq(users.id, audits.auditorId))
+    .leftJoin(coAuditors, eq(coAuditors.id, audits.coAuditorId))
     .where(and(eq(audits.id, id), eq(audits.organizationId, organizationId)))
     .limit(1);
   if (!audit) return null;

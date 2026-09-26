@@ -12,6 +12,7 @@ import {
 import { getFilletingMonthlySummary } from "@/lib/data/filleting";
 import { getRestoIngestaMonthlySummary } from "@/lib/data/resto-ingesta";
 import { getOpenPendenciasForUnit } from "@/lib/data/shift-logs";
+import { getPendingCoAudits } from "@/lib/data/audits";
 import { resolvePendencia } from "@/lib/actions/shift-logs";
 import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
@@ -63,9 +64,10 @@ export default async function HojePage({
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const painelUnitId = resolveUnitScope(user, requestedUnitId);
 
-  const [units, checklists] = await Promise.all([
+  const [units, checklists, coAudits] = await Promise.all([
     user.unitId || isGestor || isRh ? getUnits(user.organizationId!) : Promise.resolve([]),
     isRh ? Promise.resolve([]) : getChecklistsForUser("daily", viewer),
+    isGestor ? getPendingCoAudits(user.organizationId!, user.id) : Promise.resolve([]),
   ]);
   const unitName = units.find((u) => u.id === user.unitId)?.name ?? null;
 
@@ -109,6 +111,34 @@ export default async function HojePage({
 
       <div className="hoje-layout">
         <div className="hoje-column">
+          {coAudits.length > 0 && (
+            <div className="today-card">
+              <div className="today-card-header">
+                <div>
+                  <div className="today-card-title">Auditorias em conjunto</div>
+                  <div className="today-card-subtitle">
+                    Você foi convidado a avaliar junto
+                  </div>
+                </div>
+              </div>
+              {coAudits.map((a) => (
+                <div className="list-item" key={a.id}>
+                  <div className="info">
+                    <h4>
+                      {a.unitName} · {new Date(`${a.visitDate}T00:00:00`).toLocaleDateString("pt-BR")}
+                    </h4>
+                    <p>Iniciada por {a.auditorName}</p>
+                  </div>
+                  <div className="list-item-actions">
+                    <Link href={`/auditorias/${a.id}`} className="btn-primary">
+                      Abrir
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Gestor não precisa ter checklist atribuído — só aparece pra
               ele se de fato tiver algum (por opção/necessidade), sem o
               estado vazio que faz sentido pros outros perfis. */}
