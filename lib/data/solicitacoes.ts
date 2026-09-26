@@ -12,14 +12,14 @@ export type SolicitacaoViewer = {
 export type SolicitacaoScope = { mode: "all" } | { mode: "own"; userId: number };
 
 /**
- * Gestor vê e aprova todas as solicitações, de qualquer unidade. Gerente
- * (o único perfil que pede, além do Gestor) só vê as próprias — não
- * existe uma fila "da unidade" aqui como em requisição, porque toda
- * solicitação passa pelo Gestor de qualquer forma.
+ * Gestor vê e aprova todas as solicitações, de qualquer unidade. Quem
+ * pede (Líder ou Gerente) só vê as próprias — não existe uma fila "da
+ * unidade" aqui como em requisição, porque toda solicitação passa pelo
+ * Gestor de qualquer forma.
  */
 export function resolveSolicitacaoScope(viewer: SolicitacaoViewer): SolicitacaoScope | null {
   if (isGestorProfile(viewer.profile)) return { mode: "all" };
-  if (viewer.profile === "gerente") return { mode: "own", userId: viewer.id };
+  if (viewer.profile === "gerente" || viewer.profile === "lider") return { mode: "own", userId: viewer.id };
   return null;
 }
 
