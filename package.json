@@ -24,6 +24,7 @@
     "db:seed:catalog-produtos": "dotenv -e .env.local -- tsx scripts/seed-catalog-produtos.ts"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.9.0",
     "@vercel/blob": "^2.6.1",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
