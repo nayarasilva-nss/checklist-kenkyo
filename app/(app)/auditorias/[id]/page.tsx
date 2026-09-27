@@ -66,9 +66,10 @@ export default async function AuditoriaPage({ params }: { params: Promise<{ id: 
             ? `Auditores: ${audit.auditorName} & ${audit.coAuditorName}`
             : `Auditor: ${audit.auditorName}`}
         </p>
-        <Link href={`/auditorias/${audit.id}/imprimir`} className="btn-pdf" style={{ display: "inline-block", marginTop: 12 }}>
+        {/* PDF gerado no servidor: mesmo arquivo no celular e no computador. */}
+        <a href={`/api/auditorias/${audit.id}/pdf`} className="btn-pdf" style={{ display: "inline-block", marginTop: 12 }}>
           📥 Gerar PDF
-        </Link>
+        </a>
       </div>
       <div className="today-card">
         <div className="today-card-title" style={{ marginBottom: 12 }}>Apontamentos ({issues.length})</div>
