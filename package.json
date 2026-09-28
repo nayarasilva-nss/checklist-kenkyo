@@ -21,14 +21,16 @@
     "db:seed:staff-users": "dotenv -e .env.local -- tsx scripts/seed-staff-users.ts",
     "db:add-diario-bordo-item": "dotenv -e .env.local -- tsx scripts/add-diario-bordo-item-to-fechamento.ts",
     "db:add-requisicao-insumos-item": "dotenv -e .env.local -- tsx scripts/add-requisicao-insumos-item.ts",
-    "db:seed:catalog-produtos": "dotenv -e .env.local -- tsx scripts/seed-catalog-produtos.ts"
+    "db:seed:catalog-produtos": "dotenv -e .env.local -- tsx scripts/seed-catalog-produtos.ts",
+    "postinstall": "patch-package"
   },
   "dependencies": {
-    "@react-pdf/renderer": "^4.9.0",
+    "@react-pdf/renderer": "4.9.0",
     "@vercel/blob": "^2.6.1",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "exceljs": "^4.4.0",
+    "fontkit": "2.0.4",
     "jose": "^6.2.3",
     "next": "16.2.10",
     "pg": "^8.22.0",
@@ -46,6 +48,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "patch-package": "^8.0.1",
     "tsx": "^4.23.0",
     "typescript": "^5"
   }
