@@ -10,8 +10,14 @@ export type FilletingViewer = {
   jobFunctionName: string | null;
 };
 
+// Funções (job_functions.name) que registram filetagem, além de Gestor.
+// Comparação sem diferenciar maiúsculas/espaços, porque o nome da função
+// é digitado livremente em Gerenciar.
+const FILLETING_JOB_FUNCTIONS = ["chefe", "chefe de sushibar"];
+
 export function canSubmitFilleting(viewer: FilletingViewer) {
-  return isGestorProfile(viewer.profile) || viewer.jobFunctionName === "Chefe";
+  const fn = viewer.jobFunctionName?.trim().replace(/\s+/g, " ").toLowerCase() ?? "";
+  return isGestorProfile(viewer.profile) || FILLETING_JOB_FUNCTIONS.includes(fn);
 }
 
 export async function getFilletingRecords(unitId: number | null, organizationId: number) {
