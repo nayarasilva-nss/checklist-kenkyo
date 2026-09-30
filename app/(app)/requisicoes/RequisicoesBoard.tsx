@@ -440,7 +440,7 @@ export function RequisicoesBoard({
                     in this Next.js version — clicking it silently did
                     nothing instead of opening the print page. */}
                 <a
-                  href={`/requisicoes/${selected.id}/imprimir`}
+                  href={`/api/requisicoes/${selected.id}/pdf`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-pdf"

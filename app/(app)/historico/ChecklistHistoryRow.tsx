@@ -63,7 +63,7 @@ export function ChecklistHistoryRow({
           <span className={`status-pill ${done ? "completed" : "pending"}`}>
             {completedItems}/{totalItems} {done ? "concluído" : "em andamento"}
           </span>
-          <a className="btn-small" href={`/historico/imprimir?${pdfParams.toString()}`} target="_blank" rel="noopener noreferrer">
+          <a className="btn-small" href={`/api/historico/pdf?${pdfParams.toString()}`} target="_blank" rel="noopener noreferrer">
             📥 PDF
           </a>
           <button className="btn-small" type="button" onClick={() => setExpanded((e) => !e)}>
