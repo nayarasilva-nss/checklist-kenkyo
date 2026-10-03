@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth/dal";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { getChecklistExportData } from "@/lib/data/checklists";
 import { resolveUnitScope } from "@/lib/data/units";
+import { effortScore, punctualityScore, qualityScore } from "@/lib/checklist-scoring";
 
 const STATUS_LABEL: Record<string, string> = {
   conforme: "Conforme",
@@ -53,8 +54,9 @@ export default async function DetalheRespostaPage({
   const answered = data.items.filter((i) => i.status !== "pending");
   const conformes = data.items.filter((i) => i.status === "conforme").length;
   const naoConformes = data.items.filter((i) => i.status === "nao-conforme").length;
-  const evaluated = conformes + naoConformes;
-  const quality = evaluated > 0 ? Math.round((conformes / evaluated) * 100) : null;
+  const quality = qualityScore(data.items);
+  const effort = effortScore(data.items);
+  const punctuality = punctualityScore(data.items, data.checklistType.deadlineTime);
   const fill = total > 0 ? Math.round((answered.length / total) * 100) : 0;
   const done = total > 0 && answered.length >= total;
 
@@ -93,19 +95,21 @@ export default async function DetalheRespostaPage({
 
       <div className="summary-cards">
         <div className="summary-card">
+          <div className="summary-card-label">Pontualidade</div>
+          <div className="summary-card-value">{punctuality !== null ? `${punctuality}%` : "—"}</div>
+          <div className="summary-card-meta">
+            {data.checklistType.deadlineTime ? `Limite ${data.checklistType.deadlineTime} · concluído ${hhmm(end)}` : "Sem horário-limite definido"}
+          </div>
+        </div>
+        <div className="summary-card">
+          <div className="summary-card-label">Esforço</div>
+          <div className="summary-card-value">{effort !== null ? `${effort}%` : "—"}</div>
+          <div className="summary-card-meta">Respondido com justificativa e foto quando exigidas</div>
+        </div>
+        <div className="summary-card">
           <div className="summary-card-label">Qualidade</div>
           <div className="summary-card-value">{quality !== null ? `${quality}%` : "—"}</div>
           <div className="summary-card-meta">{conformes} conformes · {naoConformes} não conformes</div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-card-label">Preenchimento</div>
-          <div className="summary-card-value">{fill}%</div>
-          <div className="summary-card-meta">{answered.length} de {total} itens</div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-card-label">Duração</div>
-          <div className="summary-card-value">{duration}</div>
-          <div className="summary-card-meta">{hhmm(start)} → {hhmm(end)}</div>
         </div>
       </div>
 

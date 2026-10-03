@@ -154,6 +154,9 @@ export const checklistTypes = pgTable("checklist_types", {
     .references(() => organizations.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull().default(""),
+  // "HH:MM" (horário de Brasília) até quando o checklist deveria estar
+  // concluído — base da nota de Pontualidade. Nulo = sem horário-limite.
+  deadlineTime: varchar("deadline_time", { length: 5 }),
   type: checklistTypeEnum("type").notNull(),
   jobFunctionId: integer("job_function_id").references(
     () => jobFunctions.id,

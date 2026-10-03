@@ -1,0 +1,1 @@
+ALTER TABLE "checklist_types" ADD COLUMN "deadline_time" varchar(5);

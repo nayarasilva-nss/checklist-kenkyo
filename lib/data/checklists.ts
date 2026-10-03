@@ -369,6 +369,7 @@ export async function getChecklistExportData(
       const completion = completionByItem.get(item.id);
       return {
         label: item.label,
+        requiresPhoto: item.requiresPhoto,
         status: (completion?.status ?? "pending") as CompletionStatus,
         justification: completion?.justification ?? null,
         photoUrl: completion?.photoUrl ?? null,

@@ -40,6 +40,7 @@ export async function getChecklistTypesWithCounts(organizationId: number) {
       id: checklistTypes.id,
       name: checklistTypes.name,
       description: checklistTypes.description,
+      deadlineTime: checklistTypes.deadlineTime,
       type: checklistTypes.type,
       jobFunctionId: checklistTypes.jobFunctionId,
       jobFunctionName: jobFunctions.name,

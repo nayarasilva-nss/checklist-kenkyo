@@ -13,6 +13,7 @@ type ChecklistType = {
   id: number;
   name: string;
   description: string;
+  deadlineTime: string | null;
   type: "daily" | "weekly";
   items: EditableItem[];
   itemCount: number;
@@ -103,6 +104,15 @@ export function ChecklistTypeRow({
           id={`editChecklistDesc-${checklistType.id}`}
           name="description"
           defaultValue={checklistType.description}
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor={`editChecklistDeadline-${checklistType.id}`}>Horário-limite (opcional)</label>
+        <input
+          id={`editChecklistDeadline-${checklistType.id}`}
+          name="deadlineTime"
+          type="time"
+          defaultValue={checklistType.deadlineTime ?? ""}
         />
       </div>
       <div className="form-group">

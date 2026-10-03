@@ -24,6 +24,11 @@ function revalidateManageViews() {
   revalidatePath("/historico");
 }
 
+function parseDeadline(formData: FormData): string | null {
+  const raw = String(formData.get("deadlineTime") ?? "").trim();
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(raw) ? raw : null;
+}
+
 function parseOptionalId(formData: FormData, key: string): number | null {
   const raw = String(formData.get(key) ?? "").trim();
   if (!raw) return null;
@@ -311,7 +316,7 @@ export async function createChecklistType(
 
   const [checklistType] = await db
     .insert(checklistTypes)
-    .values({ organizationId: gestor.organizationId, name, description, type, jobFunctionId, assignedUserId })
+    .values({ organizationId: gestor.organizationId, name, description, deadlineTime: parseDeadline(formData), type, jobFunctionId, assignedUserId })
     .returning({ id: checklistTypes.id });
 
   await db.insert(checklistTypeItems).values(
@@ -362,7 +367,7 @@ export async function updateChecklistType(
 
   await db
     .update(checklistTypes)
-    .set({ name, description, type, jobFunctionId, assignedUserId })
+    .set({ name, description, deadlineTime: parseDeadline(formData), type, jobFunctionId, assignedUserId })
     .where(and(eq(checklistTypes.id, id), eq(checklistTypes.organizationId, gestor.organizationId)));
 
   await db

@@ -63,6 +63,10 @@ export function AddChecklistTypeForm({
         />
       </div>
       <div className="form-group">
+        <label htmlFor="newChecklistDeadline">Horário-limite (opcional)</label>
+        <input id="newChecklistDeadline" name="deadlineTime" type="time" />
+      </div>
+      <div className="form-group">
         <label htmlFor="newChecklistType">Tipo</label>
         <select id="newChecklistType" name="type" defaultValue="daily">
           <option value="daily">Diário</option>
