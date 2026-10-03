@@ -1,5 +1,5 @@
 import { requireGestor } from "@/lib/auth/dal";
-import { getUnits } from "@/lib/data/units";
+import { getJobFunctions, getUnits } from "@/lib/data/units";
 import { getPainelGestor, type DayPoint } from "@/lib/data/painel";
 import { checklistDayISO, daysBeforeISO } from "@/lib/date-utils";
 
@@ -34,7 +34,7 @@ function Line({ points, pick, color }: { points: DayPoint[]; pick: (p: DayPoint)
 export default async function IndicadoresPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string; unit?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; unit?: string; funcao?: string }>;
 }) {
   const gestor = await requireGestor();
   const orgId = gestor.organizationId!;
@@ -47,8 +47,13 @@ export default async function IndicadoresPage({
   if (from > to) from = to;
   if (daysBeforeISO(to, 30) > from) from = daysBeforeISO(to, 30);
   const unitId = sp.unit ? Number(sp.unit) : null;
+  const funcaoId = sp.funcao ? Number(sp.funcao) : null;
 
-  const [units, { totals, ranking, evolution }] = await Promise.all([getUnits(orgId), getPainelGestor(orgId, from, to, unitId)]);
+  const [units, jobFunctions, { totals, ranking, evolution }] = await Promise.all([
+    getUnits(orgId),
+    getJobFunctions(orgId),
+    getPainelGestor(orgId, from, to, unitId, funcaoId),
+  ]);
   const fmt = (d: string) => new Date(`${d}T00:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
   const rate = totals.completionRate ?? 0;
   const notStartedPct = totals.scheduled ? Math.round((totals.notStarted / totals.scheduled) * 100) : 0;
@@ -77,6 +82,13 @@ export default async function IndicadoresPage({
           <select id="pu" name="unit" defaultValue={unitId ?? ""}>
             <option value="">Todas as unidades</option>
             {units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+        </div>
+        <div className="form-group" style={{ marginBottom: 0 }}>
+          <label htmlFor="pj">Função</label>
+          <select id="pj" name="funcao" defaultValue={funcaoId ?? ""}>
+            <option value="">Todas as funções</option>
+            {jobFunctions.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
         </div>
         <button className="btn-save" type="submit">Filtrar</button>

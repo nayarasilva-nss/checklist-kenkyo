@@ -46,7 +46,7 @@ function eachDay(from: string, to: string) {
  * dela, ou geral). Não há agenda por horário: o dia inteiro é a janela.
  * Checklists semanais ficam de fora.
  */
-export async function getPainelGestor(organizationId: number, from: string, to: string, unitId: number | null) {
+export async function getPainelGestor(organizationId: number, from: string, to: string, unitId: number | null, jobFunctionId: number | null = null) {
   const people = await db
     .select({ id: users.id, name: users.name, unitId: users.unitId, unitName: units.name, jobFunctionId: users.jobFunctionId })
     .from(users)
@@ -57,6 +57,7 @@ export async function getPainelGestor(organizationId: number, from: string, to: 
         inArray(users.profile, ["gerente", "lider"]),
         isNotNull(users.unitId),
         unitId ? eq(users.unitId, unitId) : undefined,
+        jobFunctionId ? eq(users.jobFunctionId, jobFunctionId) : undefined,
       ),
     );
 
