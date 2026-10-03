@@ -60,10 +60,10 @@ export default async function IndicadoresPage({
   const partialPct = totals.scheduled ? Math.round((totals.startedNotFinished / totals.scheduled) * 100) : 0;
 
   const kpis: [string, number, string][] = [
-    ["Agendados (total)", totals.scheduled, "var(--text-strong)"],
-    ["Não iniciados", totals.notStarted, "#e63946"],
-    ["Iniciados, não finalizados", totals.startedNotFinished, "#b58900"],
-    ["Concluídos", totals.concluded, GREEN],
+    ["Agendados (total)", totals.scheduled, "info"],
+    ["Não iniciados", totals.notStarted, "bad"],
+    ["Iniciados, não finalizados", totals.startedNotFinished, "warn"],
+    ["Concluídos", totals.concluded, "good"],
   ];
   const X0 = 34, X1 = 630, step = evolution.length > 1 ? (X1 - X0) / (evolution.length - 1) : 0;
 
@@ -94,16 +94,19 @@ export default async function IndicadoresPage({
         <button className="btn-save" type="submit">Filtrar</button>
       </form>
 
-      <div className="summary-cards" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-        {kpis.map(([label, value, color]) => (
-          <div className="summary-card" key={label}>
-            <div className="summary-card-label">{label}</div>
-            <div className="summary-card-value" style={{ color }}>{value}</div>
+      <div className="summary-cards cols-4" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        {kpis.map(([label, value, tone]) => (
+          <div className={`tone-card ${tone}`} key={label}>
+            <div className="tone-label">{label}</div>
+            <div className="tone-value">{value}</div>
+            {tone !== "info" && totals.scheduled > 0 && (
+              <div className="tone-bar"><i style={{ width: `${Math.round((value / totals.scheduled) * 100)}%` }} /></div>
+            )}
           </div>
         ))}
       </div>
 
-      <div className="board-layout" style={{ gridTemplateColumns: "300px 1fr", marginBottom: 20 }}>
+      <div className="painel-grid">
         <div className="today-card">
           <div className="today-card-title" style={{ marginBottom: 12 }}>Taxa de conclusão</div>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>

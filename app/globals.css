@@ -2478,3 +2478,74 @@ button {
     border-top: 1px solid var(--border);
   }
 }
+
+/* Cards de indicador coloridos (Indicadores, Detalhe da resposta) */
+.tone-card {
+  --tone: var(--text-dim);
+  --tone-text: var(--text-strong);
+  --tone-bg: var(--surface);
+  background: var(--tone-bg);
+  border: 1px solid color-mix(in srgb, var(--tone) 28%, transparent);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.tone-card.good { --tone: var(--success); --tone-text: var(--success-text); --tone-bg: var(--success-bg); }
+.tone-card.warn { --tone: var(--warning); --tone-text: var(--warning-text); --tone-bg: var(--warning-bg); }
+.tone-card.bad { --tone: var(--danger); --tone-text: var(--danger-text); --tone-bg: var(--danger-bg); }
+.tone-card.info { --tone: var(--info); --tone-text: var(--info-text); --tone-bg: var(--info-bg); }
+.tone-card .tone-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tone-text);
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+.tone-card .tone-value {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--tone-text);
+}
+.tone-card .tone-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+.tone-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tone) 18%, transparent);
+  margin-top: 10px;
+  overflow: hidden;
+}
+.tone-bar > i { display: block; height: 100%; background: var(--tone); border-radius: 3px; }
+.tone-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--tone-bg, var(--neutral-bg));
+  color: var(--tone-text, var(--text-strong));
+  border: 1px solid color-mix(in srgb, var(--tone, var(--text-dim)) 28%, transparent);
+}
+.tone-pill.good { --tone: var(--success); --tone-text: var(--success-text); --tone-bg: var(--success-bg); }
+.tone-pill.warn { --tone: var(--warning); --tone-text: var(--warning-text); --tone-bg: var(--warning-bg); }
+.tone-pill.bad { --tone: var(--danger); --tone-text: var(--danger-text); --tone-bg: var(--danger-bg); }
+.info-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 14px; border-bottom: 1px solid var(--border-row); }
+.info-row:last-of-type { border-bottom: none; }
+.info-row .ico { width: 22px; text-align: center; opacity: 0.8; }
+.info-row .k { color: var(--text-muted); min-width: 140px; }
+@media (max-width: 720px) {
+  .summary-cards.cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .summary-cards.cols-3 { grid-template-columns: 1fr; }
+}
+
+.painel-grid { display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; margin-bottom: 20px; }
+@media (max-width: 720px) { .painel-grid { grid-template-columns: 1fr; } }

@@ -19,6 +19,8 @@ const STATUS_COLOR: Record<string, string> = {
   pending: "var(--warning-text)",
 };
 
+const toneOf = (v: number | null) => (v === null ? "" : v >= 90 ? "good" : v >= 75 ? "warn" : "bad");
+
 const hhmm = (d: Date | null) =>
   d ? new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "—";
 
@@ -57,6 +59,10 @@ export default async function DetalheRespostaPage({
   const quality = qualityScore(data.items);
   const effort = effortScore(data.items);
   const punctuality = punctualityScore(data.items, data.checklistType.deadlineTime);
+  const overall = (() => {
+    const v = [punctuality, effort, quality].filter((x): x is number => x !== null);
+    return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null;
+  })();
   const fill = total > 0 ? Math.round((answered.length / total) * 100) : 0;
   const done = total > 0 && answered.length >= total;
 
@@ -69,14 +75,14 @@ export default async function DetalheRespostaPage({
   if (unitId !== null) pdfParams.set("unitId", String(unitId));
   const dateLabel = new Date(`${date}T00:00:00`).toLocaleDateString("pt-BR");
 
-  const info: [string, string][] = [
-    ["Checklist", data.checklistType.name],
-    ["Unidade", data.unitName ?? "—"],
-    ["Responsável", data.userName],
-    ["Data", dateLabel],
-    ["Primeira resposta", hhmm(start)],
-    ["Última resposta", hhmm(end)],
-    ["Duração", duration],
+  const info: [string, string, string][] = [
+    ["📋", "Checklist", data.checklistType.name],
+    ["🏢", "Unidade", data.unitName ?? "—"],
+    ["👤", "Responsável", data.userName],
+    ["📅", "Data", dateLabel],
+    ["▶", "Primeira resposta", hhmm(start)],
+    ["■", "Última resposta", hhmm(end)],
+    ["⏱", "Duração", duration],
   ];
 
   return (
@@ -89,35 +95,31 @@ export default async function DetalheRespostaPage({
         </div>
       </div>
 
-      <p style={{ marginBottom: 12 }}>
-        <span className={`status-pill ${done ? "completed" : "pending"}`}>{done ? "Concluída" : "Em andamento"}</span>
-      </p>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+        <span className={`tone-pill ${done ? "good" : "warn"}`}>{done ? "✓ Concluída" : "◔ Em andamento"}</span>
+        {overall !== null && <span className={`tone-pill ${toneOf(overall)}`}>★ {overall}%</span>}
+      </div>
 
-      <div className="summary-cards">
-        <div className="summary-card">
-          <div className="summary-card-label">Pontualidade</div>
-          <div className="summary-card-value">{punctuality !== null ? `${punctuality}%` : "—"}</div>
-          <div className="summary-card-meta">
-            {data.checklistType.deadlineTime ? `Limite ${data.checklistType.deadlineTime} · concluído ${hhmm(end)}` : "Sem horário-limite definido"}
+      <div className="summary-cards cols-3">
+        {[
+          ["Pontualidade", punctuality, data.checklistType.deadlineTime ? `Limite ${data.checklistType.deadlineTime} · concluído ${hhmm(end)}` : "Sem horário-limite definido"],
+          ["Esforço", effort, "Respondido com justificativa e foto quando exigidas"],
+          ["Qualidade", quality, `${conformes} conformes · ${naoConformes} não conformes`],
+        ].map(([label, value, meta]) => (
+          <div key={label as string} className={`tone-card ${toneOf(value as number | null)}`}>
+            <div className="tone-label">{label}</div>
+            <div className="tone-value">{value !== null ? `${value}%` : "—"}</div>
+            <div className="tone-meta">{meta}</div>
           </div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-card-label">Esforço</div>
-          <div className="summary-card-value">{effort !== null ? `${effort}%` : "—"}</div>
-          <div className="summary-card-meta">Respondido com justificativa e foto quando exigidas</div>
-        </div>
-        <div className="summary-card">
-          <div className="summary-card-label">Qualidade</div>
-          <div className="summary-card-value">{quality !== null ? `${quality}%` : "—"}</div>
-          <div className="summary-card-meta">{conformes} conformes · {naoConformes} não conformes</div>
-        </div>
+        ))}
       </div>
 
       <div className="today-card" style={{ marginBottom: 16 }}>
         <div className="today-card-title" style={{ marginBottom: 10 }}>Informações</div>
-        {info.map(([k, v]) => (
-          <div key={k} style={{ display: "flex", gap: 8, padding: "4px 0", fontSize: 14 }}>
-            <span style={{ color: "var(--text-muted)", minWidth: 150 }}>{k}:</span>
+        {info.map(([ico, k, v]) => (
+          <div key={k} className="info-row">
+            <span className="ico">{ico}</span>
+            <span className="k">{k}:</span>
             <strong>{v}</strong>
           </div>
         ))}
@@ -126,8 +128,8 @@ export default async function DetalheRespostaPage({
             <span>Preenchimento</span>
             <span>{answered.length} de {total} itens</span>
           </div>
-          <div style={{ height: 8, borderRadius: 4, background: "var(--border)", overflow: "hidden" }}>
-            <div style={{ width: `${fill}%`, height: "100%", background: "var(--success-text)" }} />
+          <div className="tone-card good" style={{ padding: 0, border: "none", background: "none", boxShadow: "none" }}>
+            <div className="tone-bar" style={{ marginTop: 0, height: 8 }}><i style={{ width: `${fill}%` }} /></div>
           </div>
         </div>
       </div>
