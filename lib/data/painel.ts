@@ -3,7 +3,8 @@ import { and, eq, gte, inArray, isNotNull, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { checklistCompletions, checklistTypeItems, checklistTypes, units, users } from "@/lib/db/schema";
 import { daysBeforeISO } from "@/lib/date-utils";
-import { effortScore, punctualityScore, qualityScore, type ScoreItem } from "@/lib/checklist-scoring";
+import { deadlineMinutes, effortScore, minutesIntoChecklistDay, punctualityScore, qualityScore, type ScoreItem } from "@/lib/checklist-scoring";
+import { checklistDayISO } from "@/lib/date-utils";
 
 export type RankingRow = {
   userId: number;
@@ -46,7 +47,9 @@ function eachDay(from: string, to: string) {
  * dela, ou geral). Não há agenda por horário: o dia inteiro é a janela.
  * Checklists semanais ficam de fora.
  */
-export async function getPainelGestor(organizationId: number, from: string, to: string, unitId: number | null, jobFunctionId: number | null = null) {
+type Inst = { userId: number; userName: string; unitName: string | null; typeName: string; deadlineTime: string | null; answered: number; total: number; date: string; state: "none" | "partial" | "done"; p: number | null; e: number | null; q: number | null };
+
+async function loadInstances(organizationId: number, from: string, to: string, unitId: number | null, jobFunctionId: number | null = null) {
   const people = await db
     .select({ id: users.id, name: users.name, unitId: users.unitId, unitName: units.name, jobFunctionId: users.jobFunctionId })
     .from(users)
@@ -62,7 +65,7 @@ export async function getPainelGestor(organizationId: number, from: string, to: 
     );
 
   const types = await db
-    .select({ id: checklistTypes.id, jobFunctionId: checklistTypes.jobFunctionId, assignedUserId: checklistTypes.assignedUserId, deadlineTime: checklistTypes.deadlineTime })
+    .select({ id: checklistTypes.id, name: checklistTypes.name, jobFunctionId: checklistTypes.jobFunctionId, assignedUserId: checklistTypes.assignedUserId, deadlineTime: checklistTypes.deadlineTime })
     .from(checklistTypes)
     .where(and(eq(checklistTypes.organizationId, organizationId), eq(checklistTypes.type, "daily"), eq(checklistTypes.active, true)));
   const items = types.length
@@ -87,7 +90,6 @@ export async function getPainelGestor(organizationId: number, from: string, to: 
   }
 
   const days = eachDay(from, to);
-  type Inst = { userId: number; date: string; state: "none" | "partial" | "done"; p: number | null; e: number | null; q: number | null };
   const insts: Inst[] = [];
   for (const p of people) {
     for (const t of types) {
@@ -104,6 +106,12 @@ export async function getPainelGestor(organizationId: number, from: string, to: 
         const state = n === 0 ? "none" : n < scoreItems.length ? "partial" : "done";
         insts.push({
           userId: p.id,
+          userName: p.name,
+          unitName: p.unitName,
+          typeName: t.name,
+          deadlineTime: t.deadlineTime,
+          answered: n,
+          total: scoreItems.length,
           date,
           state,
           p: state === "done" ? punctualityScore(scoreItems, t.deadlineTime) : null,
@@ -113,6 +121,14 @@ export async function getPainelGestor(organizationId: number, from: string, to: 
       }
     }
   }
+
+  return insts;
+}
+
+export async function getPainelGestor(organizationId: number, from: string, to: string, unitId: number | null, jobFunctionId: number | null = null) {
+  const insts = await loadInstances(organizationId, from, to, unitId, jobFunctionId);
+  const days = eachDay(from, to);
+  const people = [...new Map(insts.map((i) => [i.userId, { id: i.userId, name: i.userName, unitName: i.unitName }])).values()];
 
   const count = (s: Inst["state"]) => insts.filter((i) => i.state === s).length;
   const totals = {
@@ -161,4 +177,26 @@ export async function getPainelGestor(organizationId: number, from: string, to: 
   });
 
   return { totals, ranking, evolution };
+}
+
+export type Atraso = { typeName: string; userName: string; unitName: string | null; deadlineTime: string; answered: number; total: number; minutesLate: number };
+
+/** Checklists diários de hoje cujo horário-limite já passou e que não foram
+ * concluídos (não iniciados ou pela metade), do mais atrasado ao menos. */
+export async function getAtrasosHoje(organizationId: number, unitId: number | null): Promise<Atraso[]> {
+  const today = checklistDayISO();
+  const insts = await loadInstances(organizationId, today, today, unitId, null);
+  const nowMin = minutesIntoChecklistDay(new Date());
+  return insts
+    .filter((i) => i.state !== "done" && i.deadlineTime && deadlineMinutes(i.deadlineTime) < nowMin)
+    .map((i) => ({
+      typeName: i.typeName,
+      userName: i.userName,
+      unitName: i.unitName,
+      deadlineTime: i.deadlineTime!,
+      answered: i.answered,
+      total: i.total,
+      minutesLate: nowMin - deadlineMinutes(i.deadlineTime!),
+    }))
+    .sort((a, b) => b.minutesLate - a.minutesLate);
 }

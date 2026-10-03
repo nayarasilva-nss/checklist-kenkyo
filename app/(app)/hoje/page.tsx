@@ -17,6 +17,7 @@ import { resolvePendencia } from "@/lib/actions/shift-logs";
 import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { tiposPermitidos } from "@/lib/auth/requisicoes";
+import { getAtrasosHoje } from "@/lib/data/painel";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { greeting, todayISO, todayShortLabel } from "@/lib/date-utils";
 import { UnitFilter } from "../UnitFilter";
@@ -64,10 +65,11 @@ export default async function HojePage({
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const painelUnitId = resolveUnitScope(user, requestedUnitId);
 
-  const [units, checklists, coAudits] = await Promise.all([
+  const [units, checklists, coAudits, atrasos] = await Promise.all([
     user.unitId || isGestor || isRh ? getUnits(user.organizationId!) : Promise.resolve([]),
     isRh ? Promise.resolve([]) : getChecklistsForUser("daily", viewer),
     isGestor ? getPendingCoAudits(user.organizationId!, user.id) : Promise.resolve([]),
+    (isGestor || user.profile === "gerente") && isPainelToday ? getAtrasosHoje(user.organizationId!, painelUnitId) : Promise.resolve([]),
   ]);
   const unitName = units.find((u) => u.id === user.unitId)?.name ?? null;
 
@@ -111,6 +113,21 @@ export default async function HojePage({
 
       <div className="hoje-layout">
         <div className="hoje-column">
+          {atrasos.length > 0 && (
+            <div className="tone-card bad" style={{ marginBottom: 16 }}>
+              <div className="tone-label">Checklists em atraso · {atrasos.length}</div>
+              {atrasos.slice(0, 8).map((a, i) => (
+                <div key={i} style={{ padding: "8px 0", borderTop: i ? "1px solid color-mix(in srgb, var(--tone) 20%, transparent)" : "none", fontSize: 14 }}>
+                  <strong>{a.typeName}</strong>
+                  <div className="tone-meta" style={{ marginTop: 2 }}>
+                    {a.userName}{a.unitName ? ` · ${a.unitName}` : ""} · limite {a.deadlineTime} · {a.answered === 0 ? "não iniciado" : `${a.answered}/${a.total} itens`} · {a.minutesLate >= 60 ? `${Math.floor(a.minutesLate / 60)} h ${a.minutesLate % 60} min` : `${a.minutesLate} min`} de atraso
+                  </div>
+                </div>
+              ))}
+              {atrasos.length > 8 && <div className="tone-meta">e mais {atrasos.length - 8}…</div>}
+            </div>
+          )}
+
           {coAudits.length > 0 && (
             <div className="today-card">
               <div className="today-card-header">

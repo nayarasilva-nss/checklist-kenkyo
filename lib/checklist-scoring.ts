@@ -12,7 +12,7 @@ export type ScoreItem = {
 const BRT = "America/Sao_Paulo";
 
 /** Minutos desde o início do dia de checklist (vira às 02:00, não à meia-noite). */
-function minutesIntoChecklistDay(d: Date) {
+export function minutesIntoChecklistDay(d: Date) {
   const parts = new Intl.DateTimeFormat("en-GB", { timeZone: BRT, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(d);
   const h = Number(parts.find((p) => p.type === "hour")!.value);
   const m = Number(parts.find((p) => p.type === "minute")!.value);
@@ -39,13 +39,18 @@ export function effortScore(items: ScoreItem[]) {
   return Math.round((good / items.length) * 100);
 }
 
+/** Horário-limite "HH:MM" em minutos do dia de checklist (02:00 = fim do dia). */
+export function deadlineMinutes(deadlineTime: string) {
+  const [dh, dm] = deadlineTime.split(":").map(Number);
+  return (dh <= 2 ? dh + 24 : dh) * 60 + dm;
+}
+
 /** Pontualidade: 100 se concluiu até o horário-limite; perde 25 pontos a
  * cada 15 min de atraso. Sem horário-limite, ou ainda em andamento dentro
  * do prazo, não há nota (null). Não concluído depois do prazo = 0. */
 export function punctualityScore(items: ScoreItem[], deadlineTime: string | null) {
   if (!deadlineTime) return null;
-  const [dh, dm] = deadlineTime.split(":").map(Number);
-  const deadline = (dh <= 2 ? dh + 24 : dh) * 60 + dm; // 02:00 = fim do dia de checklist
+  const deadline = deadlineMinutes(deadlineTime);
   const answered = items.filter((i) => i.status !== "pending");
   const done = items.length > 0 && answered.length === items.length;
   if (!done) return null;
