@@ -45,7 +45,7 @@ export function effortScore(items: ScoreItem[]) {
 export function punctualityScore(items: ScoreItem[], deadlineTime: string | null) {
   if (!deadlineTime) return null;
   const [dh, dm] = deadlineTime.split(":").map(Number);
-  const deadline = (dh < 2 ? dh + 24 : dh) * 60 + dm;
+  const deadline = (dh <= 2 ? dh + 24 : dh) * 60 + dm; // 02:00 = fim do dia de checklist
   const answered = items.filter((i) => i.status !== "pending");
   const done = items.length > 0 && answered.length === items.length;
   if (!done) return null;
