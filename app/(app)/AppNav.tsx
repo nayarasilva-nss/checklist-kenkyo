@@ -55,6 +55,7 @@ function buildGroups(
       items: [
         { href: "/perdas", label: "Perdas" },
         ...(showFormularios ? [{ href: "/formularios", label: "Formulários" }] : []),
+        ...(isGestorProfile(profile) ? [{ href: "/indicadores", label: "Indicadores" }] : []),
         ...(isGestorProfile(profile) ? [{ href: "/auditorias", label: "Auditorias", badge: pendingAuditCount }] : []),
         { href: "/relatorio", label: "Relatórios" },
         { href: "/historico", label: "Histórico" },
@@ -208,6 +209,9 @@ export function AppNav({
       : []),
     ...(showFormularios
       ? [{ href: "/formularios", title: "Formulários", description: "Registros personalizados" }]
+      : []),
+    ...(isGestorProfile(profile)
+      ? [{ href: "/indicadores", title: "Indicadores", description: "Conclusão, ranking e evolução" }]
       : []),
     ...(isGestorProfile(profile)
       ? [
