@@ -1,10 +1,7 @@
 import { getCurrentUser } from "@/lib/auth/dal";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { getHistoryEntries } from "@/lib/data/history-list";
-import {
-  getChecklistHistoryItems,
-  getChecklistHistorySummary,
-} from "@/lib/data/checklist-history";
+import { getChecklistHistorySummary } from "@/lib/data/checklist-history";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { UnitFilter } from "../UnitFilter";
 import { ChecklistHistoryRow } from "./ChecklistHistoryRow";
@@ -27,15 +24,6 @@ export default async function HistoricoPage({
     getChecklistHistorySummary(unitId, user.organizationId!),
     isGestor ? getUnits(user.organizationId!) : Promise.resolve([]),
   ]);
-
-  const itemsByCombo = await getChecklistHistoryItems(
-    checklistSummary.map((s) => ({
-      checklistTypeId: s.checklistTypeId,
-      userId: s.userId,
-      date: s.date,
-      unitId: s.unitId,
-    })),
-  );
 
   return (
     <>
@@ -67,9 +55,6 @@ export default async function HistoricoPage({
               date={s.date}
               completedItems={s.completedItems}
               totalItems={s.totalItems}
-              items={
-                itemsByCombo.get(`${s.checklistTypeId}-${s.userId}-${s.date}-${s.unitId ?? "null"}`) ?? []
-              }
             />
           ))
         )}

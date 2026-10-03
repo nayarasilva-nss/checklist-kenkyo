@@ -1,20 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
-const STATUS_LABELS: Record<string, string> = {
-  conforme: "✓ Conforme",
-  "nao-conforme": "✗ Não Conforme",
-  "nao-se-aplica": "➖ Não se Aplica",
-  pending: "○ Pendente",
-};
-
-type Item = {
-  label: string;
-  status: string;
-  justification: string | null;
-  photoUrl: string | null;
-};
+import Link from "next/link";
 
 export function ChecklistHistoryRow({
   checklistTypeId,
@@ -26,7 +12,6 @@ export function ChecklistHistoryRow({
   date,
   completedItems,
   totalItems,
-  items,
 }: {
   checklistTypeId: number;
   checklistName: string;
@@ -37,9 +22,7 @@ export function ChecklistHistoryRow({
   date: string;
   completedItems: number;
   totalItems: number;
-  items: Item[];
 }) {
-  const [expanded, setExpanded] = useState(false);
   const done = totalItems > 0 && completedItems >= totalItems;
 
   const pdfParams = new URLSearchParams({
@@ -66,29 +49,11 @@ export function ChecklistHistoryRow({
           <a className="btn-small" href={`/api/historico/pdf?${pdfParams.toString()}`} target="_blank" rel="noopener noreferrer">
             📥 PDF
           </a>
-          <button className="btn-small" type="button" onClick={() => setExpanded((e) => !e)}>
-            {expanded ? "Ocultar" : "Ver detalhes"}
-          </button>
+          <Link className="btn-small" href={`/historico/detalhe?${pdfParams.toString()}`}>
+            Ver detalhes
+          </Link>
         </div>
       </div>
-      {expanded && (
-        <div className="history-item-details">
-          {items.map((item, i) => (
-            <div key={i} className="item-text">
-              <strong>{item.label}</strong> — {STATUS_LABELS[item.status] ?? item.status}
-              {item.justification ? ` — ${item.justification}` : ""}
-              {item.photoUrl && (
-                <>
-                  {" "}
-                  <a href={item.photoUrl} target="_blank" rel="noopener noreferrer">
-                    Ver foto
-                  </a>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
