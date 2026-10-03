@@ -10,6 +10,8 @@ type CatalogItem = {
   unitMeasure: string;
   categoryId: number | null;
   categoryName: string | null;
+  // false = o ERP diz que é de outro setor (some da lista até "ver todos")
+  doSetor: boolean;
 };
 
 type SelectedItem = {
@@ -42,6 +44,7 @@ export function NovaRequisicaoForm({
   tiposPermitidos,
   categorias,
   catalogItems,
+  setorFiltro,
   units,
   todayWeekday,
   editing,
@@ -52,6 +55,9 @@ export function NovaRequisicaoForm({
   tiposPermitidos: ("interna" | "externa")[];
   categorias: { id: number; name: string; orderDays: number[] }[];
   catalogItems: CatalogItem[];
+  // O setor do ERP da função de quem pede: com ele, a lista mostra só os
+  // produtos do setor (e "ver todos" para a exceção).
+  setorFiltro: string | null;
   // Só passado (não-vazio) pra quem não tem unidade fixa — hoje, Gestor —
   // que por isso precisa escolher pra qual unidade é a requisição.
   units: { id: number; name: string }[];
@@ -98,13 +104,17 @@ export function NovaRequisicaoForm({
   const [error, setError] = useState<string | undefined>();
   const [isPending, startTransition] = useTransition();
 
+  const [verTodos, setVerTodos] = useState(false);
+  const foraDoSetor = catalogItems.filter((item) => !item.doSetor).length;
+
   const listaFiltrada = useMemo(() => {
     return catalogItems.filter((item) => {
+      const bateSetor = verTodos || item.doSetor;
       const bateCategoria = categoria === "todas" || item.categoryId === categoria;
       const bateBusca = item.name.toLowerCase().includes(busca.toLowerCase());
-      return bateCategoria && bateBusca;
+      return bateSetor && bateCategoria && bateBusca;
     });
-  }, [catalogItems, categoria, busca]);
+  }, [catalogItems, categoria, busca, verTodos]);
 
   function setQtd(item: CatalogItem, qtd: number) {
     setSelecionados((prev) => {
@@ -258,6 +268,20 @@ export function NovaRequisicaoForm({
           placeholder="Buscar item..."
         />
       </div>
+
+      {setorFiltro && foraDoSetor > 0 && (
+        <p className="items-count" style={{ marginTop: -6, marginBottom: 12 }}>
+          {verTodos ? "Mostrando todos os itens. " : `Mostrando os itens do setor ${setorFiltro}. `}
+          <button
+            type="button"
+            className="btn-link"
+            style={{ background: "none", border: 0, padding: 0, color: "var(--accent, inherit)", textDecoration: "underline", cursor: "pointer", font: "inherit" }}
+            onClick={() => setVerTodos((v) => !v)}
+          >
+            {verTodos ? `Só os do setor ${setorFiltro}` : `Ver todos (+${foraDoSetor})`}
+          </button>
+        </p>
+      )}
 
       <div className="filter-pills-scroll">
         <button

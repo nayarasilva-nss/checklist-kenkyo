@@ -260,6 +260,13 @@
       "when": 1791037805131,
       "tag": "0036_gorgeous_amphibian",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791046459615,
+      "tag": "0037_luxuriant_iron_monger",
+      "breakpoints": true
     }
   ]
 }

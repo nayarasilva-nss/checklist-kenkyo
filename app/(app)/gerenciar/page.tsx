@@ -27,6 +27,7 @@ import { getOrganizationById } from "@/lib/data/organizations";
 import { BrandForm } from "./BrandForm";
 import { AuditTemplateEditor } from "./AuditTemplateEditor";
 import { getAuditTemplate } from "@/lib/data/audits";
+import { ErpPainel } from "./ErpPainel";
 
 const TABS = [
   { key: "usuarios", label: "Usuários" },
@@ -35,6 +36,7 @@ const TABS = [
   { key: "unidades", label: "Unidades" },
   { key: "funcoes", label: "Funções" },
   { key: "catalogo", label: "Catálogo" },
+  { key: "erp", label: "ERP" },
   { key: "auditoria", label: "Auditoria" },
   { key: "marca", label: "Marca" },
 ] as const;
@@ -211,6 +213,8 @@ export default async function GerenciarPage({
           </div>
         </div>
       )}
+
+      {tab === "erp" && <ErpPainel organizationId={gestor.organizationId!} />}
 
       {tab === "auditoria" && <AuditTemplateEditor groups={auditTemplate} />}
 

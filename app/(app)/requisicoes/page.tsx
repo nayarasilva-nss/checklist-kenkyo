@@ -8,7 +8,7 @@ import {
   getRequisicoesByScope,
   getRequisicoesForLink,
 } from "@/lib/data/requisicoes";
-import { getCatalogCategories, getCatalogItems } from "@/lib/data/catalog";
+import { getCatalogCategories, getCatalogItemsParaRequisicao } from "@/lib/data/catalog";
 import { getUnits } from "@/lib/data/units";
 import { todayWeekdayBrazil } from "@/lib/date-utils";
 import { RequisicoesBoard } from "./RequisicoesBoard";
@@ -40,10 +40,14 @@ export default async function RequisicoesPage({
   // Quem não tem unidade fixa (Gestor) escolhe a unidade na hora de criar.
   const needsUnitPicker = canCreate && !effectiveUnitId;
 
-  const [records, categorias, catalogItems, units] = await Promise.all([
+  // Gestor e gerente veem o catálogo inteiro; os demais, o do setor da função.
+  const veTudo = isGestorProfile(user.profile) || user.profile === "gerente";
+  const [records, categorias, catalogo, units] = await Promise.all([
     getRequisicoesByScope(scope, user.organizationId!, activeTipo),
     canCreate ? getCatalogCategories(user.organizationId!) : Promise.resolve([]),
-    canCreate ? getCatalogItems(user.organizationId!) : Promise.resolve([]),
+    canCreate
+      ? getCatalogItemsParaRequisicao(user.organizationId!, user.jobFunctionId ?? null, veTudo)
+      : Promise.resolve({ setor: null, itens: [] }),
     needsUnitPicker ? getUnits(user.organizationId!) : Promise.resolve([]),
   ]);
 
@@ -74,7 +78,8 @@ export default async function RequisicoesPage({
       canConferir={canConferir}
       currentUserId={user.id}
       categorias={categorias}
-      catalogItems={catalogItems}
+      catalogItems={catalogo.itens}
+      setorFiltro={catalogo.setor}
       units={units}
       todayWeekday={todayWeekdayBrazil()}
       criarTiposPermitidos={criarTiposPermitidos}

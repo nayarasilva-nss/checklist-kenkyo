@@ -3,6 +3,8 @@
 import { isGestorProfile } from "@/lib/auth/profile";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao, canRequestExterna, canRequestInterna } from "@/lib/auth/requisicoes";
@@ -341,8 +343,27 @@ export async function conferirRequisicao(
 
   await db
     .update(requisicoes)
-    .set({ status: "conferida", conferidoPorId: user.id, concluidoEm: new Date() })
+    .set({
+      status: "conferida",
+      conferidoPorId: user.id,
+      concluidoEm: new Date(),
+      // conferiu = saiu do estoque: entra na fila do ERP
+      erpStatus: "pendente",
+    })
     .where(eq(requisicoes.id, id));
+
+  // A baixa no ERP vai depois da resposta: a conferência nunca espera o
+  // ERP, e se ele estiver fora do ar a requisição fica pendente e vai na
+  // próxima. Aproveita para levar o que tinha ficado para trás.
+  const organizationId = user.organizationId;
+  after(async () => {
+    try {
+      await enviarRequisicaoAoErp(id);
+      await enviarPendentesAoErp(organizationId, 10);
+    } catch (erro) {
+      console.error("Envio da requisição ao ERP falhou:", erro);
+    }
+  });
 
   await addHistoryEntry(
     user.id,

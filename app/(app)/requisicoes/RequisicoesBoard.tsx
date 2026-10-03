@@ -120,6 +120,7 @@ export function RequisicoesBoard({
   currentUserId,
   categorias,
   catalogItems,
+  setorFiltro,
   units,
   todayWeekday,
   criarTiposPermitidos,
@@ -140,7 +141,9 @@ export function RequisicoesBoard({
     unitMeasure: string;
     categoryId: number | null;
     categoryName: string | null;
+    doSetor: boolean;
   }[];
+  setorFiltro: string | null;
   units: { id: number; name: string }[];
   todayWeekday: number;
   criarTiposPermitidos: ("interna" | "externa")[];
@@ -578,6 +581,7 @@ export function RequisicoesBoard({
               tiposPermitidos={criarTiposPermitidos}
               categorias={categorias}
               catalogItems={catalogItems}
+              setorFiltro={setorFiltro}
               units={units}
               todayWeekday={todayWeekday}
               linkCandidatesByUnit={editingRecord ? undefined : linkCandidatesByUnit}

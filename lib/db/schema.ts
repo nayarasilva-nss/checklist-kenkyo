@@ -44,6 +44,17 @@ export const requisicaoStatusEnum = pgEnum("requisicao_status", [
   "conferida",
   "cancelada",
 ]);
+// Ligação com o ERP Kenkyo: a requisição conferida aqui vira baixa de
+// estoque lá (POST /api/requisicoes do ERP). "nao_enviada" é o que nunca
+// entrou na fila (as conferidas antes da ligação existir); "aguardando" é
+// a que tem produto do catálogo ainda sem item do ERP ligado.
+export const erpEnvioStatusEnum = pgEnum("erp_envio_status", [
+  "nao_enviada",
+  "pendente",
+  "aguardando",
+  "enviada",
+  "erro",
+]);
 export const catalogUnitMeasureEnum = pgEnum("catalog_unit_measure", [
   "kg",
   "g",
@@ -105,6 +116,12 @@ export const units = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    // Qual empresa do ERP é esta unidade (CNPJ, só dígitos) e de qual local
+    // de estoque do ERP sai a requisição interna (da própria unidade) e a
+    // externa (estoque central). Ids são do ERP, não deste banco.
+    erpCnpj: varchar("erp_cnpj", { length: 14 }),
+    erpLocalInternoId: integer("erp_local_interno_id"),
+    erpLocalExternoId: integer("erp_local_externo_id"),
   },
   (table) => [uniqueIndex("units_org_name_idx").on(table.organizationId, table.name)],
 );
@@ -118,6 +135,10 @@ export const jobFunctions = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    // O setor do ERP desta função (Bar, Sushibar, Produção…). Na requisição,
+    // quem tem setor vê só os produtos que o ERP marca para ele (produto sem
+    // setor no ERP aparece para todos). Vazio = vê o catálogo inteiro.
+    erpSetor: varchar("erp_setor", { length: 60 }),
   },
   (table) => [uniqueIndex("job_functions_org_name_idx").on(table.organizationId, table.name)],
 );
@@ -496,6 +517,10 @@ export const catalogItems = pgTable(
     }),
     unitMeasure: catalogUnitMeasureEnum("unit_measure").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    // O item do ERP (pelo código) e quanto da unidade de uso dele vem em 1
+    // unidade deste produto: pedido em g e ERP em KG → 0,001.
+    erpItemCodigo: varchar("erp_item_codigo", { length: 60 }),
+    erpFator: numeric("erp_fator", { precision: 14, scale: 6 }),
   },
   (table) => [uniqueIndex("catalog_items_org_name_idx").on(table.organizationId, table.name)],
 );
@@ -536,6 +561,10 @@ export const requisicoes = pgTable("requisicoes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   editedAt: timestamp("edited_at"),
   concluidoEm: timestamp("concluido_em"),
+  erpStatus: erpEnvioStatusEnum("erp_status").notNull().default("nao_enviada"),
+  erpNumero: varchar("erp_numero", { length: 30 }),
+  erpMensagem: text("erp_mensagem"),
+  erpEnviadoEm: timestamp("erp_enviado_em"),
 });
 
 export const requisicaoItens = pgTable("requisicao_itens", {
