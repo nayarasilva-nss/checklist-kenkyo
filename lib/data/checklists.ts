@@ -144,7 +144,7 @@ export async function getChecklistsForUser(
   const allTypes = await db
     .select()
     .from(checklistTypes)
-    .where(and(eq(checklistTypes.type, type), eq(checklistTypes.organizationId, viewer.organizationId)))
+    .where(and(eq(checklistTypes.type, type), eq(checklistTypes.organizationId, viewer.organizationId), eq(checklistTypes.active, true)))
     .orderBy(asc(checklistTypes.id));
 
   const types = allTypes.filter((t) => checklistVisibleToViewer(t, viewer));
@@ -239,7 +239,7 @@ export async function getChecklistForUser(
     .select()
     .from(checklistTypes)
     .where(
-      and(eq(checklistTypes.id, checklistTypeId), eq(checklistTypes.organizationId, viewer.organizationId)),
+      and(eq(checklistTypes.id, checklistTypeId), eq(checklistTypes.organizationId, viewer.organizationId), eq(checklistTypes.active, true)),
     )
     .limit(1);
 

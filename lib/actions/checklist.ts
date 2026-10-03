@@ -43,6 +43,7 @@ async function getItemContext(itemId: number, checklistTypeId: number, organizat
         eq(checklistTypeItems.id, itemId),
         eq(checklistTypeItems.checklistTypeId, checklistTypeId),
         eq(checklistTypes.organizationId, organizationId),
+        eq(checklistTypes.active, true),
       ),
     )
     .limit(1);

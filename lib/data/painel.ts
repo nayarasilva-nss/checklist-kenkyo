@@ -64,7 +64,7 @@ export async function getPainelGestor(organizationId: number, from: string, to: 
   const types = await db
     .select({ id: checklistTypes.id, jobFunctionId: checklistTypes.jobFunctionId, assignedUserId: checklistTypes.assignedUserId, deadlineTime: checklistTypes.deadlineTime })
     .from(checklistTypes)
-    .where(and(eq(checklistTypes.organizationId, organizationId), eq(checklistTypes.type, "daily")));
+    .where(and(eq(checklistTypes.organizationId, organizationId), eq(checklistTypes.type, "daily"), eq(checklistTypes.active, true)));
   const items = types.length
     ? await db
         .select({ id: checklistTypeItems.id, checklistTypeId: checklistTypeItems.checklistTypeId, requiresPhoto: checklistTypeItems.requiresPhoto })

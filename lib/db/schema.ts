@@ -157,6 +157,9 @@ export const checklistTypes = pgTable("checklist_types", {
   // "HH:MM" (horário de Brasília) até quando o checklist deveria estar
   // concluído — base da nota de Pontualidade. Nulo = sem horário-limite.
   deadlineTime: varchar("deadline_time", { length: 5 }),
+  // false = arquivado: some das listas e dos indicadores, mas as respostas
+  // antigas continuam no Histórico.
+  active: boolean("active").notNull().default(true),
   type: checklistTypeEnum("type").notNull(),
   jobFunctionId: integer("job_function_id").references(
     () => jobFunctions.id,

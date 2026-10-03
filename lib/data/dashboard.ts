@@ -16,7 +16,7 @@ export async function getDashboardStats(
   const today = date;
 
   const totalResult = await db.execute<{ count: string }>(
-    sql`select count(*)::text as count from checklist_types where organization_id = ${organizationId}`,
+    sql`select count(*)::text as count from checklist_types where organization_id = ${organizationId} and active`,
   );
   const totalChecklists = Number(totalResult.rows[0]?.count ?? 0);
 
@@ -35,7 +35,7 @@ export async function getDashboardStats(
     from (
       select cti.checklist_type_id
       from checklist_type_items cti
-      join checklist_types ctd on ctd.id = cti.checklist_type_id and ctd.organization_id = ${organizationId}
+      join checklist_types ctd on ctd.id = cti.checklist_type_id and ctd.organization_id = ${organizationId} and ctd.active
       left join (
         select cc.*, coalesce(cc.unit_id, u.unit_id) as effective_unit_id
         from checklist_completions cc
@@ -213,7 +213,7 @@ export async function getUsersWithoutChecklistToday(
       assignedUserId: checklistTypes.assignedUserId,
     })
     .from(checklistTypes)
-    .where(and(eq(checklistTypes.type, "daily"), eq(checklistTypes.organizationId, organizationId)));
+    .where(and(eq(checklistTypes.type, "daily"), eq(checklistTypes.organizationId, organizationId), eq(checklistTypes.active, true)));
 
   const candidateIds = candidates.map((c) => c.id);
   const completedRows = await db
