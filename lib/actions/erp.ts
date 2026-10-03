@@ -7,6 +7,7 @@ import { requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { catalogItems, jobFunctions, requisicoes, units } from "@/lib/db/schema";
 import { enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
+import { aplicarEspelho, planoEspelho, type PlanoEspelho } from "@/lib/erp/espelho";
 
 export type ActionState = { error?: string; ok?: string } | undefined;
 
@@ -138,4 +139,30 @@ export async function salvarSetoresFuncoes(_prev: ActionState, formData: FormDat
   }
   revalidar();
   return { ok: "Setores salvos." };
+}
+
+export type EstadoEspelho = { error?: string; ok?: string; plano?: PlanoEspelho; aplicado?: boolean } | undefined;
+
+/** O que o espelho do catálogo do ERP vai mudar aqui — sem mudar nada. */
+export async function verEspelhoErp(): Promise<EstadoEspelho> {
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
+  try {
+    return { plano: await planoEspelho(gestor.organizationId) };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Não foi possível ler o ERP." };
+  }
+}
+
+/** Deixa o catálogo daqui igual ao do ERP (ver lib/erp/espelho.ts). */
+export async function aplicarEspelhoErp(): Promise<EstadoEspelho> {
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
+  try {
+    const plano = await aplicarEspelho(gestor.organizationId);
+    revalidar();
+    return { plano, aplicado: true, ok: "Catálogo igual ao do ERP." };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Não foi possível aplicar." };
+  }
 }

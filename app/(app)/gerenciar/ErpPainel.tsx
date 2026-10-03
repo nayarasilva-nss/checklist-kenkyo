@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { catalogItems, jobFunctions, requisicoes, units } from "@/lib/db/schema";
 import { reenviarRequisicaoErp } from "@/lib/actions/erp";
 import { erpConfigurado, lerCatalogoErp, type ErpCatalogo } from "@/lib/erp/integracao";
-import { EnviarAntigas, ProdutosErp, SetoresFuncoes, TentarPendentes, UnidadesErp } from "./ErpLigacao";
+import { EnviarAntigas, EspelharCatalogo, ProdutosErp, SetoresFuncoes, TentarPendentes, UnidadesErp } from "./ErpLigacao";
 
 const SITUACAO: Record<string, [string, string]> = {
   pendente: ["pendente", "pending"],
@@ -38,7 +38,7 @@ export async function ErpPainel({ organizationId }: { organizationId: number }) 
     db.select({ id: units.id, name: units.name, erpCnpj: units.erpCnpj, erpLocalInternoId: units.erpLocalInternoId, erpLocalExternoId: units.erpLocalExternoId })
       .from(units).where(eq(units.organizationId, organizationId)).orderBy(units.name),
     db.select({ id: catalogItems.id, name: catalogItems.name, unitMeasure: catalogItems.unitMeasure, erpItemCodigo: catalogItems.erpItemCodigo, erpFator: catalogItems.erpFator })
-      .from(catalogItems).where(eq(catalogItems.organizationId, organizationId)).orderBy(catalogItems.name),
+      .from(catalogItems).where(and(eq(catalogItems.organizationId, organizationId), eq(catalogItems.ativo, true))).orderBy(catalogItems.name),
     db.select({ id: requisicoes.id, tipo: requisicoes.tipo, unidade: units.name, concluidoEm: requisicoes.concluidoEm, erpStatus: requisicoes.erpStatus, erpMensagem: requisicoes.erpMensagem })
       .from(requisicoes).innerJoin(units, eq(units.id, requisicoes.unitId))
       .where(and(eq(requisicoes.organizationId, organizationId), eq(requisicoes.status, "conferida"), inArray(requisicoes.erpStatus, ["pendente", "aguardando", "erro"])))
@@ -99,6 +99,10 @@ export async function ErpPainel({ organizationId }: { organizationId: number }) 
           <div className="today-card">
             <div className="today-card-title" style={{ marginBottom: 10 }}>Unidades</div>
             <UnidadesErp unidades={unidades} empresas={catalogo.unidades} locais={catalogo.locais} />
+          </div>
+          <div className="today-card">
+            <div className="today-card-title" style={{ marginBottom: 6 }}>Catálogo igual ao do ERP</div>
+            <EspelharCatalogo />
           </div>
           <div className="today-card">
             <div className="today-card-title" style={{ marginBottom: 10 }}>Setor de cada função</div>

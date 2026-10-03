@@ -521,6 +521,9 @@ export const catalogItems = pgTable(
     // unidade deste produto: pedido em g e ERP em KG → 0,001.
     erpItemCodigo: varchar("erp_item_codigo", { length: 60 }),
     erpFator: numeric("erp_fator", { precision: 14, scale: 6 }),
+    // Desativado = saiu do catálogo (o espelho do ERP não tem mais), mas já
+    // foi pedido: some das listas e o histórico continua apontando para ele.
+    ativo: boolean("ativo").default(true).notNull(),
   },
   (table) => [uniqueIndex("catalog_items_org_name_idx").on(table.organizationId, table.name)],
 );

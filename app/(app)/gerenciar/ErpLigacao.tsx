@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { enviarConferidasDesde, salvarItensErp, salvarSetoresFuncoes, salvarUnidadesErp, tentarPendentesErp, type ActionState } from "@/lib/actions/erp";
+import { aplicarEspelhoErp, enviarConferidasDesde, salvarItensErp, salvarSetoresFuncoes, salvarUnidadesErp, tentarPendentesErp, verEspelhoErp, type ActionState, type EstadoEspelho } from "@/lib/actions/erp";
 import { sugerirFator, sugerirItemErp, type ItemErp } from "@/lib/erp/sugestao";
 
 type Local = { id: number; nome: string; tipo: string; unidade_cnpj: string; unidade: string };
@@ -192,5 +192,53 @@ export function SetoresFuncoes({ funcoes, setores }: { funcoes: { id: number; na
         <Mensagem estado={estado} />
       </div>
     </form>
+  );
+}
+
+/** Catálogo daqui = catálogo do ERP. Primeiro mostra o que muda; aplica só depois. */
+export function EspelharCatalogo() {
+  const [estado, setEstado] = useState<EstadoEspelho>();
+  const [rodando, iniciar] = useTransition();
+  const plano = estado?.plano;
+  const lista = (titulo: string, itens: string[]) => itens.length === 0 ? null : (
+    <details style={{ marginTop: 6 }}>
+      <summary className="items-count" style={{ cursor: "pointer" }}>{titulo} · {itens.length}</summary>
+      <ul style={{ margin: "6px 0 0", paddingLeft: 18, maxHeight: 260, overflow: "auto" }}>{itens.map((t, i) => <li key={i} className="items-count">{t}</li>)}</ul>
+    </details>
+  );
+  return (
+    <div>
+      <p className="items-count" style={{ marginBottom: 10 }}>
+        Deixa a lista de produtos daqui igual à do ERP: mesmo nome, categoria e unidade, cada um já ligado ao item de lá.
+        Só continua o produto que já está ligado a um item do ERP em &quot;Produtos do catálogo&quot; (abaixo); o resto sai e o item do ERP entra novo.
+        Dois produtos ligados ao mesmo item viram um só (as requisições antigas passam para ele). O que sai e já foi pedido fica desativado, com o histórico; o que nunca foi pedido é excluído.
+      </p>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <button className="btn-small" type="button" disabled={rodando} onClick={() => iniciar(async () => setEstado(await verEspelhoErp()))}>
+          {rodando && !plano ? "Lendo o ERP…" : "Ver o que muda"}
+        </button>
+        {plano && !estado?.aplicado && (
+          <button className="btn-save" type="button" disabled={rodando} onClick={() => {
+            if (!confirm(`Aplicar? ${plano.criar.length} novos, ${plano.renomear.length} renomeados, ${plano.juntar.length} juntados, ${plano.desativar.length} desativados e ${plano.excluir.length} excluídos.`)) return;
+            iniciar(async () => setEstado(await aplicarEspelhoErp()));
+          }}>{rodando ? "Aplicando…" : "Aplicar"}</button>
+        )}
+        {estado?.error && <p className="login-error" style={{ margin: 0 }}>{estado.error}</p>}
+        {estado?.ok && <p className="items-count" style={{ margin: 0, color: "var(--success-text)" }}>{estado.ok}</p>}
+      </div>
+      {plano && (
+        <div style={{ marginTop: 12 }}>
+          <p className="items-count" style={{ margin: 0 }}>
+            {estado?.aplicado ? "Feito: " : "Vai mudar: "}
+            {plano.criar.length} novos · {plano.renomear.length} renomeados · {plano.manter} já iguais · {plano.juntar.length} juntados · {plano.desativar.length} desativados · {plano.excluir.length} excluídos
+          </p>
+          {lista("Renomeados", plano.renomear.map((r) => `${r.de} → ${r.para}`))}
+          {lista("Juntados", plano.juntar.map((j) => `${j.nome} → ${j.em}`))}
+          {lista("Novos", plano.criar.map((c) => c.nome))}
+          {lista("Desativados (já pedidos, o ERP não tem)", plano.desativar.map((d) => d.nome))}
+          {lista("Excluídos (nunca pedidos, o ERP não tem)", plano.excluir.map((d) => d.nome))}
+        </div>
+      )}
+    </div>
   );
 }

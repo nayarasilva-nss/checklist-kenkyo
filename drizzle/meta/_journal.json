@@ -267,6 +267,13 @@
       "when": 1791046459615,
       "tag": "0037_luxuriant_iron_monger",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791047292979,
+      "tag": "0038_exotic_talisman",
+      "breakpoints": true
     }
   ]
 }

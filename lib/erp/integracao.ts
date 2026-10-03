@@ -84,6 +84,15 @@ export function produtoDoSetor(erpItemCodigo: string | null, setor: string, seto
   return !doItem || doItem.length === 0 || doItem.includes(setor);
 }
 
+const MEDIDA: Record<string, [string, number]> = { kg: ["massa", 1], g: ["massa", 0.001], L: ["volume", 1], ml: ["volume", 0.001] };
+
+/** Quanto de "para" vem em 1 de "de" (g → kg = 0,001); null se não converte. */
+export function converterMedida(de: string, para: string | null): number | null {
+  if (!para || de === para) return 1;
+  const a = MEDIDA[de], b = MEDIDA[para];
+  return a && b && a[0] === b[0] ? a[1] / b[1] : null;
+}
+
 export type ResultadoEnvio = { status: "enviada" | "aguardando" | "pendente" | "erro"; mensagem: string | null; numero: string | null };
 
 async function gravar(id: number, r: ResultadoEnvio) {
@@ -149,6 +158,8 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
       catalogItemId: requisicaoItens.catalogItemId,
       qtdPedida: requisicaoItens.qtdPedida,
       qtdConferida: requisicaoItens.qtdConferida,
+      unidadePedida: requisicaoItens.unidadeMedida,
+      unidadeProduto: catalogItems.unitMeasure,
       erpItemCodigo: catalogItems.erpItemCodigo,
       erpFator: catalogItems.erpFator,
     })
@@ -158,7 +169,18 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
 
   // Item avulso (fora do catálogo) não tem como baixar estoque: vai como aviso.
   const avulsos = itens.filter((i) => i.catalogItemId === null).map((i) => i.nome);
+  // O fator vale para a medida atual do produto; item pedido antes noutra
+  // medida (o catálogo mudou depois, ex.: espelho do ERP) é convertido.
+  const fatorDe = (i: (typeof itens)[number]) => {
+    const conversao = converterMedida(i.unidadePedida, i.unidadeProduto);
+    return conversao === null ? null : Number(i.erpFator) * conversao;
+  };
   const semLigacao = itens.filter((i) => i.catalogItemId !== null && (!i.erpItemCodigo || !(Number(i.erpFator) > 0))).map((i) => i.nome);
+  const outraMedida = itens.filter((i) => i.catalogItemId !== null && i.erpItemCodigo && Number(i.erpFator) > 0 && fatorDe(i) === null)
+    .map((i) => `${i.nome} (pedido em ${i.unidadePedida}, produto agora em ${i.unidadeProduto})`);
+  if (outraMedida.length > 0) {
+    return gravar(req.id, { status: "aguardando", mensagem: `Medida que não dá para converter: ${outraMedida.join(", ")}.`, numero: null });
+  }
   if (semLigacao.length > 0) {
     return gravar(req.id, {
       status: "aguardando",
@@ -171,7 +193,7 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
   const porCodigo = new Map<string, { solicitada: number; atendida: number }>();
   for (const i of itens) {
     if (!i.erpItemCodigo) continue;
-    const fator = Number(i.erpFator);
+    const fator = fatorDe(i) ?? 0;
     const atual = porCodigo.get(i.erpItemCodigo) ?? { solicitada: 0, atendida: 0 };
     atual.solicitada += Number(i.qtdPedida) * fator;
     atual.atendida += Number(i.qtdConferida ?? i.qtdPedida) * fator;

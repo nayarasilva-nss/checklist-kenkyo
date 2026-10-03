@@ -1,0 +1,1 @@
+ALTER TABLE "catalog_items" ADD COLUMN IF NOT EXISTS "ativo" boolean DEFAULT true NOT NULL;

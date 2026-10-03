@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { catalogCategories, catalogItems, jobFunctions } from "@/lib/db/schema";
 import { produtoDoSetor, setoresDosItensErp } from "@/lib/erp/integracao";
@@ -23,7 +23,7 @@ export async function getCatalogItems(organizationId: number) {
     })
     .from(catalogItems)
     .leftJoin(catalogCategories, eq(catalogCategories.id, catalogItems.categoryId))
-    .where(eq(catalogItems.organizationId, organizationId))
+    .where(and(eq(catalogItems.organizationId, organizationId), eq(catalogItems.ativo, true)))
     .orderBy(asc(catalogItems.name));
 }
 
@@ -46,7 +46,7 @@ export async function getCatalogItemsParaRequisicao(organizationId: number, jobF
       })
       .from(catalogItems)
       .leftJoin(catalogCategories, eq(catalogCategories.id, catalogItems.categoryId))
-      .where(eq(catalogItems.organizationId, organizationId))
+      .where(and(eq(catalogItems.organizationId, organizationId), eq(catalogItems.ativo, true)))
       .orderBy(asc(catalogItems.name)),
     !veTudo && jobFunctionId
       ? db.select({ erpSetor: jobFunctions.erpSetor }).from(jobFunctions).where(eq(jobFunctions.id, jobFunctionId)).limit(1)

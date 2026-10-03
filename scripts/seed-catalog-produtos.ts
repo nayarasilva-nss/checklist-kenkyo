@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "../lib/db";
 import { catalogCategories, catalogItems, organizations } from "../lib/db/schema";
 
@@ -353,6 +353,15 @@ async function main() {
   const [kenkyo] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, "kenkyo"));
   if (!kenkyo) {
     console.log("Organização Kenkyo não encontrada, pulando.");
+    return;
+  }
+
+  // Catálogo espelhado do ERP (Gerenciar › ERP): a lista é a de lá. Semear
+  // aqui recriaria os nomes antigos a cada deploy.
+  const [espelhado] = await db.select({ id: catalogItems.id }).from(catalogItems)
+    .where(and(eq(catalogItems.organizationId, kenkyo.id), isNotNull(catalogItems.erpItemCodigo))).limit(1);
+  if (espelhado) {
+    console.log("Catálogo ligado ao ERP: a lista vem de lá, pulando.");
     return;
   }
 
