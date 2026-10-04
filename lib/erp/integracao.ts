@@ -6,10 +6,11 @@ import { checklistDayForInstant } from "@/lib/date-utils";
 import type { ItemErp } from "./sugestao";
 
 /**
- * Ligação com o ERP Kenkyo. A requisição conferida aqui vira baixa de
- * estoque lá: o ERP recebe o que saiu (POST /api/requisicoes) e tira do
- * estoque pelo custo médio. A conferência nunca depende do ERP: se ele
- * estiver fora do ar, a requisição fica "pendente" e vai na próxima vez.
+ * Ligação com o ERP Kenkyo. A requisição acompanha lá a fase daqui
+ * (POST /api/requisicoes com "situacao"): lançada ou editada entra como
+ * aberta; conferida vira a baixa de estoque, pelo custo médio; cancelada ou
+ * excluída é cancelada lá. Nada aqui depende do ERP: se ele estiver fora do
+ * ar, a requisição fica "pendente" e vai na próxima vez.
  *
  * Configuração (variáveis de ambiente): ERP_API_URL (ex.:
  * https://erp-kenkyo.vercel.app) e ERP_API_TOKEN (o mesmo valor de
@@ -108,10 +109,37 @@ async function gravar(id: number, r: ResultadoEnvio) {
   return r;
 }
 
+/** Cancela no ERP (requisição cancelada ou excluída aqui). */
+async function cancelarNoErp(requisicaoId: number): Promise<ResultadoEnvio> {
+  let resposta: Response;
+  try {
+    resposta = await chamarErp("/api/requisicoes", {
+      method: "POST",
+      body: JSON.stringify({ id_externo: `checklist-${requisicaoId}`, situacao: "cancelada" }),
+    });
+  } catch {
+    return { status: "pendente", mensagem: "O ERP não respondeu. Vai de novo na próxima tentativa.", numero: null };
+  }
+  const dados = (await resposta.json().catch(() => ({}))) as { numero?: string; erros?: string[]; erro?: string };
+  if (resposta.ok) return { status: "enviada", mensagem: null, numero: dados.numero ?? null };
+  if (resposta.status === 401 || resposta.status === 503) {
+    return { status: "pendente", mensagem: dados.erro ?? "O ERP recusou a chave da ligação.", numero: null };
+  }
+  return { status: "erro", mensagem: (dados.erros ?? [dados.erro ?? `O ERP respondeu com erro ${resposta.status}.`]).join(" "), numero: null };
+}
+
+/** A requisição foi excluída aqui: cancela a aberta no ERP (não há mais onde gravar o resultado). */
+export async function cancelarExcluidaNoErp(requisicaoId: number): Promise<void> {
+  if (!erpConfigurado()) return;
+  const r = await cancelarNoErp(requisicaoId);
+  if (r.status !== "enviada") console.error(`Requisição ${requisicaoId} excluída, mas o ERP não cancelou: ${r.mensagem}`);
+}
+
 /**
- * Envia uma requisição conferida ao ERP e grava o resultado nela. Nunca
- * lança: o que der errado vira status e mensagem para o gestor ver em
- * Gerenciar › ERP.
+ * Leva ao ERP a fase atual da requisição (aberta, conferida ou cancelada) e
+ * grava o resultado nela. Nunca lança: o que der errado vira status e
+ * mensagem para o gestor ver em Gerenciar › ERP. O ERP reconhece a mesma
+ * requisição pelo id: mandar de novo não duplica nem baixa duas vezes.
  */
 export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<ResultadoEnvio> {
   const [req] = await db
@@ -136,9 +164,9 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
     .where(eq(requisicoes.id, requisicaoId))
     .limit(1);
   if (!req) return { status: "erro", mensagem: "Requisição não encontrada.", numero: null };
-  if (req.status !== "conferida") return { status: "erro", mensagem: "Só requisição conferida vai para o ERP.", numero: null };
-  if (req.erpStatus === "enviada") return { status: "enviada", mensagem: null, numero: null };
   if (!erpConfigurado()) return gravar(req.id, { status: "pendente", mensagem: "A ligação com o ERP ainda não está configurada.", numero: null });
+  if (req.status === "cancelada") return gravar(req.id, await cancelarNoErp(req.id));
+  const conferida = req.status === "conferida";
 
   if (!req.erpCnpj) {
     return gravar(req.id, { status: "aguardando", mensagem: `A unidade ${req.unitName} ainda não está ligada a uma empresa do ERP.`, numero: null });
@@ -178,10 +206,12 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
   const semLigacao = itens.filter((i) => i.catalogItemId !== null && (!i.erpItemCodigo || !(Number(i.erpFator) > 0))).map((i) => i.nome);
   const outraMedida = itens.filter((i) => i.catalogItemId !== null && i.erpItemCodigo && Number(i.erpFator) > 0 && fatorDe(i) === null)
     .map((i) => `${i.nome} (pedido em ${i.unidadePedida}, produto agora em ${i.unidadeProduto})`);
-  if (outraMedida.length > 0) {
+  // Conferida baixa estoque: tem que ir inteira. Aberta vai com o que já está
+  // ligado, para o ERP ver o pedido na hora; o resto fica no aviso.
+  if (conferida && outraMedida.length > 0) {
     return gravar(req.id, { status: "aguardando", mensagem: `Medida que não dá para converter: ${outraMedida.join(", ")}.`, numero: null });
   }
-  if (semLigacao.length > 0) {
+  if (conferida && semLigacao.length > 0) {
     return gravar(req.id, {
       status: "aguardando",
       mensagem: `Produto sem item do ERP ligado: ${[...new Set(semLigacao)].join(", ")}.`,
@@ -193,27 +223,37 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
   const porCodigo = new Map<string, { solicitada: number; atendida: number }>();
   for (const i of itens) {
     if (!i.erpItemCodigo) continue;
-    const fator = fatorDe(i) ?? 0;
+    const fator = fatorDe(i);
+    if (fator === null || !(Number(i.erpFator) > 0)) continue;
     const atual = porCodigo.get(i.erpItemCodigo) ?? { solicitada: 0, atendida: 0 };
     atual.solicitada += Number(i.qtdPedida) * fator;
     atual.atendida += Number(i.qtdConferida ?? i.qtdPedida) * fator;
     porCodigo.set(i.erpItemCodigo, atual);
   }
-  const aviso = avulsos.length > 0 ? `Itens avulsos não baixados no ERP: ${avulsos.join(", ")}.` : null;
-  if (porCodigo.size === 0) return gravar(req.id, { status: "enviada", mensagem: aviso ?? "Nenhum produto do catálogo: nada a baixar.", numero: null });
+  const faltaLigar = conferida ? [] : [...new Set([...semLigacao, ...outraMedida])];
+  const aviso = [
+    avulsos.length > 0 ? `Itens avulsos não baixados no ERP: ${avulsos.join(", ")}.` : null,
+    faltaLigar.length > 0 ? `Ainda sem item do ERP ligado (precisa ligar antes de conferir): ${faltaLigar.join(", ")}.` : null,
+  ].filter(Boolean).join(" ") || null;
+  if (porCodigo.size === 0) {
+    return gravar(req.id, conferida
+      ? { status: "enviada", mensagem: aviso ?? "Nenhum produto do catálogo: nada a baixar.", numero: null }
+      : { status: "aguardando", mensagem: aviso ?? "Nenhum produto ligado ao ERP ainda.", numero: null });
+  }
 
   const arredondar = (n: number) => Math.round(n * 10_000) / 10_000;
   const corpo = {
     id_externo: `checklist-${req.id}`,
+    situacao: conferida ? "conferida" : "aberta",
     unidade_cnpj: req.erpCnpj,
     local_origem_id: localId,
     setor: req.setor ?? undefined,
     data_solicitacao: checklistDayForInstant(req.createdAt),
-    data_atendimento: checklistDayForInstant(req.concluidoEm ?? new Date()),
+    data_atendimento: conferida ? checklistDayForInstant(req.concluidoEm ?? new Date()) : checklistDayForInstant(req.createdAt),
     observacao: [`Requisição ${req.tipo} nº ${req.id} do app de checklist`, req.observacao].filter(Boolean).join(" · "),
     itens: [...porCodigo.entries()]
       .filter(([, q]) => q.solicitada > 0)
-      .map(([codigo, q]) => ({ codigo, qtd_solicitada: arredondar(q.solicitada), qtd_atendida: arredondar(q.atendida) })),
+      .map(([codigo, q]) => ({ codigo, qtd_solicitada: arredondar(q.solicitada), ...(conferida ? { qtd_atendida: arredondar(q.atendida) } : {}) })),
   };
 
   let resposta: Response;
@@ -237,9 +277,9 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
 }
 
 /**
- * Tenta de novo o que ficou para trás: pendente (ERP fora do ar) e
- * aguardando (faltava ligação, que pode já ter sido feita). Erro de dado
- * não volta sozinho — o gestor corrige e manda reenviar.
+ * Tenta de novo o que ficou para trás, em qualquer fase: pendente (ERP fora
+ * do ar) e aguardando (faltava ligação, que pode já ter sido feita). Erro de
+ * dado não volta sozinho — o gestor corrige e manda reenviar.
  */
 export async function enviarPendentesAoErp(organizationId: number, limite = 20): Promise<number> {
   if (!erpConfigurado()) return 0;
@@ -249,11 +289,10 @@ export async function enviarPendentesAoErp(organizationId: number, limite = 20):
     .where(
       and(
         eq(requisicoes.organizationId, organizationId),
-        eq(requisicoes.status, "conferida"),
         inArray(requisicoes.erpStatus, ["pendente", "aguardando"]),
       ),
     )
-    .orderBy(requisicoes.concluidoEm)
+    .orderBy(requisicoes.createdAt)
     .limit(limite);
   let enviadas = 0;
   for (const r of fila) {

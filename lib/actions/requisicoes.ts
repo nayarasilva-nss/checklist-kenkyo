@@ -4,7 +4,7 @@ import { isGestorProfile } from "@/lib/auth/profile";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
-import { enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
+import { cancelarExcluidaNoErp, enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao, canRequestExterna, canRequestInterna } from "@/lib/auth/requisicoes";
@@ -25,6 +25,23 @@ function isValidUnitMeasure(value: string): value is (typeof UNIT_MEASURES)[numb
 
 function revalidateRequisicaoViews() {
   revalidatePath("/requisicoes");
+}
+
+/**
+ * Leva ao ERP a fase nova da requisição (lançada, editada, conferida,
+ * cancelada) depois da resposta: nada aqui espera o ERP, e se ele estiver
+ * fora do ar fica pendente e vai na próxima. Aproveita para levar o que
+ * tinha ficado para trás.
+ */
+function sincronizarComErp(id: number, organizationId: number) {
+  after(async () => {
+    try {
+      await enviarRequisicaoAoErp(id);
+      await enviarPendentesAoErp(organizationId, 10);
+    } catch (erro) {
+      console.error("Envio da requisição ao ERP falhou:", erro);
+    }
+  });
 }
 
 type ParsedItem = {
@@ -137,6 +154,8 @@ export async function createRequisicao(
       urgente,
       observacao,
       relatedRequisicaoId,
+      // lançou = o ERP já vê como aberta
+      erpStatus: "pendente",
     })
     .returning({ id: requisicoes.id });
 
@@ -156,6 +175,7 @@ export async function createRequisicao(
     "completed",
   );
 
+  sincronizarComErp(requisicao.id, user.organizationId);
   revalidateRequisicaoViews();
 }
 
@@ -198,7 +218,7 @@ export async function updateRequisicao(
 
   await db
     .update(requisicoes)
-    .set({ urgente, observacao, editedAt: new Date() })
+    .set({ urgente, observacao, editedAt: new Date(), erpStatus: "pendente" })
     .where(eq(requisicoes.id, id));
 
   await db.delete(requisicaoItens).where(eq(requisicaoItens.requisicaoId, id));
@@ -212,6 +232,7 @@ export async function updateRequisicao(
     })),
   );
 
+  sincronizarComErp(id, user.organizationId);
   revalidateRequisicaoViews();
 }
 
@@ -229,9 +250,10 @@ export async function cancelRequisicao(formData: FormData) {
 
   await db
     .update(requisicoes)
-    .set({ status: "cancelada", concluidoEm: new Date() })
+    .set({ status: "cancelada", concluidoEm: new Date(), erpStatus: "pendente" })
     .where(eq(requisicoes.id, id));
 
+  sincronizarComErp(id, user.organizationId);
   revalidateRequisicaoViews();
 }
 
@@ -258,6 +280,8 @@ export async function deleteRequisicao(
     .delete(requisicoes)
     .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)));
 
+  // excluída aqui: a aberta no ERP é cancelada (a já conferida fica, com a baixa)
+  after(() => cancelarExcluidaNoErp(id).catch((erro) => console.error("Cancelar no ERP falhou:", erro)));
   revalidateRequisicaoViews();
 }
 
@@ -283,9 +307,11 @@ export async function updateRequisicaoTipo(
 
   await db
     .update(requisicoes)
-    .set({ tipo })
+    .set({ tipo, erpStatus: "pendente" })
     .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)));
 
+  // o tipo decide o local de onde sai no ERP: vale enquanto lá estiver aberta
+  sincronizarComErp(id, user.organizationId);
   revalidateRequisicaoViews();
 }
 
@@ -352,18 +378,8 @@ export async function conferirRequisicao(
     })
     .where(eq(requisicoes.id, id));
 
-  // A baixa no ERP vai depois da resposta: a conferência nunca espera o
-  // ERP, e se ele estiver fora do ar a requisição fica pendente e vai na
-  // próxima. Aproveita para levar o que tinha ficado para trás.
-  const organizationId = user.organizationId;
-  after(async () => {
-    try {
-      await enviarRequisicaoAoErp(id);
-      await enviarPendentesAoErp(organizationId, 10);
-    } catch (erro) {
-      console.error("Envio da requisição ao ERP falhou:", erro);
-    }
-  });
+  // A baixa no ERP vai depois da resposta: a conferência nunca espera o ERP.
+  sincronizarComErp(id, user.organizationId);
 
   await addHistoryEntry(
     user.id,
