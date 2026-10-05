@@ -43,7 +43,11 @@ export default async function RequisicoesPage({
   // Gestor e gerente veem o catálogo inteiro; os demais, o do setor da função.
   const veTudo = isGestorProfile(user.profile) || user.profile === "gerente";
   const [records, categorias, catalogo, units] = await Promise.all([
-    getRequisicoesByScope(scope, user.organizationId!, activeTipo),
+    getRequisicoesByScope(
+      resolveRequisicaoScope({ ...user, unitId: effectiveUnitId }, activeTipo) ?? scope,
+      user.organizationId!,
+      activeTipo,
+    ),
     canCreate ? getCatalogCategories(user.organizationId!) : Promise.resolve([]),
     canCreate
       ? getCatalogItemsParaRequisicao(user.organizationId!, user.jobFunctionId ?? null, veTudo)

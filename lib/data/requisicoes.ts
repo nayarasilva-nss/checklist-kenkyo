@@ -3,7 +3,7 @@ import { isGestorProfile } from "@/lib/auth/profile";
 import { and, asc, desc, eq, gte, inArray, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { requisicoes, requisicaoItens, units, users } from "@/lib/db/schema";
-import { canConferirInterna, tiposPermitidos } from "@/lib/auth/requisicoes";
+import { canConferirInterna, canConferirExterna, tiposPermitidos } from "@/lib/auth/requisicoes";
 import { checklistDayForInstant, checklistDayISO } from "@/lib/date-utils";
 
 // Uma requisição interna costuma ser enviada num dia e separada/conferida
@@ -40,8 +40,16 @@ export type RequisicaoScope =
  * (resolveEffectiveUnitId) — quem está cobrindo outra unidade hoje vê e
  * cria requisições da unidade coberta, não da unidade de origem.
  */
-export function resolveRequisicaoScope(viewer: RequisicaoViewer): RequisicaoScope | null {
+export function resolveRequisicaoScope(
+  viewer: RequisicaoViewer,
+  tipo?: string | null,
+): RequisicaoScope | null {
   if (isGestorProfile(viewer.profile)) {
+    return { mode: "all" };
+  }
+  // A externa é pedida pelas unidades e atendida pelo Líder de
+  // Estoque/Produção, que fica numa unidade só: ele vê as externas de todas.
+  if (tipo === "externa" && canConferirExterna(viewer)) {
     return { mode: "all" };
   }
   if (canConferirInterna(viewer)) {

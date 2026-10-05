@@ -339,7 +339,7 @@ export async function conferirRequisicao(
   // já aplicada na listagem e no PDF. Gestor (scope "all") confere de
   // qualquer unidade.
   const effectiveUnitId = await resolveEffectiveUnitId(user);
-  const scope = resolveRequisicaoScope({ ...user, unitId: effectiveUnitId });
+  const scope = resolveRequisicaoScope({ ...user, unitId: effectiveUnitId }, existing.tipo);
   const podeConferir =
     scope?.mode === "all" || (scope?.mode === "unit" && scope.unitId === existing.unitId);
   if (!podeConferir) {
