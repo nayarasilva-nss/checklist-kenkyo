@@ -193,3 +193,41 @@ export async function getRequisicaoWithItens(id: number, organizationId: number)
 
   return { ...requisicao, itens, podeEditar: canEditToday(requisicao), related };
 }
+
+export type RecebimentoComDiferenca = {
+  id: number;
+  unitName: string;
+  recebidoEm: Date;
+  recebimentoObs: string | null;
+  itens: { nome: string; unidadeMedida: string; enviado: string; recebido: string }[];
+};
+
+/** Externas dos últimos 7 dias em que a unidade recebeu menos/mais do que foi enviado. */
+export async function getRecebimentosComDiferenca(organizationId: number): Promise<RecebimentoComDiferenca[]> {
+  const desde = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({
+      id: requisicoes.id,
+      unitName: units.name,
+      recebidoEm: requisicoes.recebidoEm,
+      recebimentoObs: requisicoes.recebimentoObs,
+      nome: requisicaoItens.nome,
+      unidadeMedida: requisicaoItens.unidadeMedida,
+      conferida: requisicaoItens.qtdConferida,
+      recebida: requisicaoItens.qtdRecebida,
+    })
+    .from(requisicoes)
+    .innerJoin(units, eq(units.id, requisicoes.unitId))
+    .innerJoin(requisicaoItens, eq(requisicaoItens.requisicaoId, requisicoes.id))
+    .where(and(eq(requisicoes.organizationId, organizationId), eq(requisicoes.tipo, "externa"), gte(requisicoes.recebidoEm, desde)))
+    .orderBy(desc(requisicoes.recebidoEm));
+
+  const porId = new Map<number, RecebimentoComDiferenca>();
+  for (const r of rows) {
+    if (r.recebida === null || r.conferida === null || Number(r.recebida) === Number(r.conferida)) continue;
+    const atual = porId.get(r.id) ?? { id: r.id, unitName: r.unitName, recebidoEm: r.recebidoEm!, recebimentoObs: r.recebimentoObs, itens: [] };
+    atual.itens.push({ nome: r.nome, unidadeMedida: r.unidadeMedida, enviado: r.conferida, recebido: r.recebida });
+    porId.set(r.id, atual);
+  }
+  return [...porId.values()];
+}

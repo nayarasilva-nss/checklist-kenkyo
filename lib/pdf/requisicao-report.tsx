@@ -16,7 +16,8 @@ const STATUS_LABEL: Record<string, string> = {
   cancelada: "Cancelada",
 };
 
-const COLS = [undefined, 70, 75, 75];
+const COLS = [undefined, 60, 65, 65];
+const COLS_REC = [undefined, 50, 50, 55, 55];
 
 function fmt(d: Date | null) {
   if (!d) return "—";
@@ -28,6 +29,7 @@ export async function renderRequisicaoPdf(
   org: { name: string; logoUrl: string | null },
   origin: string,
 ) {
+  const comRecebimento = requisicao.tipo === "externa" && requisicao.recebidoEm !== null;
   const conferidoLabel = requisicao.tipo === "interna" ? "saiu" : "entregue";
   const logo = (await loadImage(org.logoUrl ?? "/kenkyo-logo.png", origin)) ?? (await loadImage("/kenkyo-logo.png", origin));
 
@@ -71,20 +73,33 @@ export async function renderRequisicaoPdf(
         )}
 
         <View style={shared.table}>
-          <Row header cells={["Item", "Unidade", "Qtd. pedida", `Qtd. ${conferidoLabel}`]} widths={COLS} />
+          {comRecebimento ? (
+            <Row header cells={["Item", "Unidade", "Qtd. pedida", `Qtd. ${conferidoLabel}`, "Qtd. recebida"]} widths={COLS_REC} />
+          ) : (
+            <Row header cells={["Item", "Unidade", "Qtd. pedida", `Qtd. ${conferidoLabel}`]} widths={COLS} />
+          )}
           {requisicao.itens.map((item) => (
             <Row
               key={item.id}
-              widths={COLS}
+              widths={comRecebimento ? COLS_REC : COLS}
               cells={[
                 item.nome,
                 item.unidadeMedida,
                 <Text key="p" style={shared.tdNum}>{item.qtdPedida}</Text>,
                 <Text key="c" style={shared.tdNum}>{item.qtdConferida ?? "—"}</Text>,
+                ...(comRecebimento ? [<Text key="r" style={shared.tdNum}>{item.qtdRecebida ?? "—"}</Text>] : []),
               ]}
             />
           ))}
         </View>
+
+        {comRecebimento && (
+          <Text style={shared.obs}>
+            <Text style={t(13.5, { fontWeight: 700 })}>Recebido pela unidade em </Text>
+            {fmt(requisicao.recebidoEm)}
+            {requisicao.recebimentoObs ? ` — ${requisicao.recebimentoObs}` : ""}
+          </Text>
+        )}
 
         <View style={shared.signRow} wrap={false}>
           <View style={shared.signLine}><Text style={shared.signText}>Solicitante — {requisicao.requesterName}</Text></View>

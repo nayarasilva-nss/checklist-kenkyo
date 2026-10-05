@@ -17,6 +17,7 @@ import { resolvePendencia } from "@/lib/actions/shift-logs";
 import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { tiposPermitidos } from "@/lib/auth/requisicoes";
+import { getRecebimentosComDiferenca } from "@/lib/data/requisicoes";
 import { getAtrasosHoje } from "@/lib/data/painel";
 import { getUnits, resolveUnitScope } from "@/lib/data/units";
 import { greeting, todayISO, todayShortLabel } from "@/lib/date-utils";
@@ -65,11 +66,12 @@ export default async function HojePage({
   const requestedUnitId = rawUnit ? Number(rawUnit) : null;
   const painelUnitId = resolveUnitScope(user, requestedUnitId);
 
-  const [units, checklists, coAudits, atrasos] = await Promise.all([
+  const [units, checklists, coAudits, atrasos, diferencas] = await Promise.all([
     user.unitId || isGestor || isRh ? getUnits(user.organizationId!) : Promise.resolve([]),
     isRh ? Promise.resolve([]) : getChecklistsForUser("daily", viewer),
     isGestor ? getPendingCoAudits(user.organizationId!, user.id) : Promise.resolve([]),
     (isGestor || user.profile === "gerente") && isPainelToday ? getAtrasosHoje(user.organizationId!, painelUnitId) : Promise.resolve([]),
+    isGestor ? getRecebimentosComDiferenca(user.organizationId!) : Promise.resolve([]),
   ]);
   const unitName = units.find((u) => u.id === user.unitId)?.name ?? null;
 
@@ -125,6 +127,22 @@ export default async function HojePage({
                 </div>
               ))}
               {atrasos.length > 8 && <div className="tone-meta">e mais {atrasos.length - 8}…</div>}
+            </div>
+          )}
+
+          {diferencas.length > 0 && (
+            <div className="tone-card warn" style={{ marginBottom: 16 }}>
+              <div className="tone-label">Recebimentos com diferença · {diferencas.length}</div>
+              {diferencas.slice(0, 6).map((d, i) => (
+                <div key={d.id} style={{ padding: "8px 0", borderTop: i ? "1px solid color-mix(in srgb, var(--tone) 20%, transparent)" : "none", fontSize: 14 }}>
+                  <Link href={`/requisicoes?tipo=externa`}><strong>Requisição #{d.id} · {d.unitName}</strong></Link>
+                  <div className="tone-meta" style={{ marginTop: 2 }}>
+                    {d.itens.map((it) => `${it.nome}: enviado ${it.enviado}${it.unidadeMedida}, recebido ${it.recebido}${it.unidadeMedida}`).join(" · ")}
+                    {d.recebimentoObs ? ` — ${d.recebimentoObs}` : ""}
+                  </div>
+                </div>
+              ))}
+              {diferencas.length > 6 && <div className="tone-meta">e mais {diferencas.length - 6}…</div>}
             </div>
           )}
 
