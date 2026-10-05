@@ -18,7 +18,22 @@ type RequisicaoItem = {
   unidadeMedida: string;
   qtdPedida: string;
   qtdConferida: string | null;
+  // externa: "emporio" (o Empório separa) ou "compras" (chega por compra direta)
+  destino: string | null;
 };
+
+/** A parte que vai por Compras, como está no ERP (solicitação de compra). */
+type SituacaoCompras = { numero: string; status: string; pedido: string | null };
+
+const FASE_COMPRAS: Record<string, string> = {
+  aberta: "aguardando o comprador",
+  em_cotacao: "em cotação",
+  pedido_feito: "pedido feito ao fornecedor",
+  recebida: "recebida",
+  cancelada: "cancelada",
+};
+
+const vaiPorCompras = (r: { tipo: string }, item: RequisicaoItem) => r.tipo === "externa" && item.destino === "compras";
 
 type LinkCandidate = { id: number; createdAt: Date; requesterName: string };
 
@@ -61,8 +76,10 @@ function formatDate(d: Date) {
 function ConferirForm({ requisicao, onDone }: { requisicao: Requisicao; onDone: () => void }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>();
+  // o que vai por Compras não passa pelo Empório: só se confere o resto
+  const itens = requisicao.itens.filter((item) => !vaiPorCompras(requisicao, item));
   const [qtds, setQtds] = useState<Record<number, number>>(() =>
-    Object.fromEntries(requisicao.itens.map((item) => [item.id, Number(item.qtdPedida)])),
+    Object.fromEntries(itens.map((item) => [item.id, Number(item.qtdPedida)])),
   );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -86,7 +103,7 @@ function ConferirForm({ requisicao, onDone }: { requisicao: Requisicao; onDone: 
 
   return (
     <form onSubmit={handleSubmit}>
-      {requisicao.itens.map((item) => (
+      {itens.map((item) => (
         <div className="list-item" key={item.id}>
           <div className="info">
             <h4>{item.nome}</h4>
@@ -127,6 +144,7 @@ export function RequisicoesBoard({
   linkCandidatesByUnit,
   fixedUnitId,
   isGestor,
+  situacaoCompras,
 }: {
   records: Requisicao[];
   tipo: string | null;
@@ -150,6 +168,7 @@ export function RequisicoesBoard({
   linkCandidatesByUnit: Record<number, { interna: LinkCandidate[]; externa: LinkCandidate[] }>;
   fixedUnitId: number | null;
   isGestor: boolean;
+  situacaoCompras: Record<number, SituacaoCompras>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -393,9 +412,23 @@ export function RequisicoesBoard({
                     EXCEDENTE
                   </span>
                 )}{" "}
-                <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-neutral"}`}>
-                  {STATUS_LABEL[r.status] ?? r.status}
-                </span>
+                {r.itens.length > 0 && r.itens.every((i) => vaiPorCompras(r, i)) && r.status === "aberta" ? (
+                  <span className="badge badge-info" title="Tudo desta requisição chega por compra direta">
+                    Compras · {FASE_COMPRAS[situacaoCompras[r.id]?.status ?? "aberta"]}
+                  </span>
+                ) : (
+                  <>
+                    <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-neutral"}`}>
+                      {STATUS_LABEL[r.status] ?? r.status}
+                    </span>
+                    {r.itens.some((i) => vaiPorCompras(r, i)) && (
+                      <>
+                        {" "}
+                        <span className="badge badge-info" title="Parte desta requisição chega por compra direta">+ Compras</span>
+                      </>
+                    )}
+                  </>
+                )}
               </span>
             </div>
           ))
@@ -486,11 +519,34 @@ export function RequisicoesBoard({
               </div>
             )}
 
-            {canConferir && selected.status === "aberta" ? (
+            {selected.tipo === "externa" && selected.itens.some((i) => vaiPorCompras(selected, i)) && (
+              <div className="detail-panel-fields">
+                <div>
+                  <div className="detail-panel-field-label">
+                    Vai pra Compras · {FASE_COMPRAS[situacaoCompras[selected.id]?.status ?? "aberta"]}
+                    {situacaoCompras[selected.id]?.pedido ? ` (${situacaoCompras[selected.id]!.pedido})` : ""}
+                  </div>
+                  <div className="detail-panel-field-value">
+                    {selected.itens.filter((i) => vaiPorCompras(selected, i)).map((i) => `${i.nome} (${i.qtdPedida}${i.unidadeMedida})`).join(" · ")}
+                  </div>
+                  <div className="detail-panel-field-label" style={{ marginTop: 6 }}>
+                    Chega por compra direta: o comprador cuida no ERP, não sai do Empório.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selected.tipo === "externa" && selected.itens.some((i) => vaiPorCompras(selected, i)) && (
+              <div className="detail-panel-field-label">Vai pro Empório</div>
+            )}
+
+            {canConferir && selected.status === "aberta" && selected.itens.every((i) => vaiPorCompras(selected, i)) ? (
+              <p className="items-count">Nada para o Empório separar: tudo desta requisição chega por compra direta.</p>
+            ) : canConferir && selected.status === "aberta" ? (
               <ConferirForm requisicao={selected} onDone={() => setSelectedId(null)} />
             ) : (
               <div>
-                {selected.itens.map((item) => (
+                {selected.itens.filter((item) => !vaiPorCompras(selected, item)).map((item) => (
                   <div className="list-item" key={item.id}>
                     <div className="info">
                       <h4>{item.nome}</h4>

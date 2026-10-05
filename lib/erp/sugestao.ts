@@ -2,7 +2,7 @@
 // quando o gestor escolhe um item.
 
 // setores: os setores do ERP que pedem o item (vazio = todos).
-export type ItemErp = { codigo: string; nome: string; unidade_uso: string; categoria: string; tipo: string; setores?: string[] };
+export type ItemErp = { codigo: string; nome: string; unidade_uso: string; categoria: string; tipo: string; setores?: string[]; abastecimento?: string };
 
 // ---------------------------------------------------------------------------
 // Sugestão de ligação pelo nome

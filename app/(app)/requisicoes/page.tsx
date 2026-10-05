@@ -11,6 +11,7 @@ import {
 import { getCatalogCategories, getCatalogItemsParaRequisicao } from "@/lib/data/catalog";
 import { getUnits } from "@/lib/data/units";
 import { todayWeekdayBrazil } from "@/lib/date-utils";
+import { situacaoComprasNoErp } from "@/lib/erp/integracao";
 import { RequisicoesBoard } from "./RequisicoesBoard";
 
 export default async function RequisicoesPage({
@@ -73,6 +74,10 @@ export default async function RequisicoesPage({
     );
   }
 
+  // a parte que vai por Compras: a fase dela no ERP (aguardando, em cotação, pedido feito, recebida)
+  const comCompras = records.filter((r) => r.tipo === "externa" && r.itens.some((i) => i.destino === "compras")).map((r) => r.id);
+  const situacaoCompras = await situacaoComprasNoErp(comCompras.slice(0, 200));
+
   return (
     <RequisicoesBoard
       records={records}
@@ -90,6 +95,7 @@ export default async function RequisicoesPage({
       linkCandidatesByUnit={linkCandidatesByUnit}
       fixedUnitId={effectiveUnitId}
       isGestor={isGestorProfile(user.profile)}
+      situacaoCompras={situacaoCompras}
     />
   );
 }

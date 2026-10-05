@@ -4,7 +4,7 @@ import { isGestorProfile } from "@/lib/auth/profile";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
-import { cancelarExcluidaNoErp, enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
+import { cancelarExcluidaNoErp, definirDestinos, enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao, canRequestExterna, canRequestInterna } from "@/lib/auth/requisicoes";
@@ -175,6 +175,8 @@ export async function createRequisicao(
     "completed",
   );
 
+  // externa: o que vai pro Empório e o que vai pra Compras (o ERP diz como cada item chega)
+  await definirDestinos(requisicao.id);
   sincronizarComErp(requisicao.id, user.organizationId);
   revalidateRequisicaoViews();
 }
@@ -232,6 +234,7 @@ export async function updateRequisicao(
     })),
   );
 
+  await definirDestinos(id);
   sincronizarComErp(id, user.organizationId);
   revalidateRequisicaoViews();
 }
@@ -310,7 +313,9 @@ export async function updateRequisicaoTipo(
     .set({ tipo, erpStatus: "pendente" })
     .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)));
 
-  // o tipo decide o local de onde sai no ERP: vale enquanto lá estiver aberta
+  // o tipo decide o local de onde sai no ERP (vale enquanto lá estiver aberta)
+  // e, na externa, o que vai pro Empório e o que vai pra Compras
+  await definirDestinos(id);
   sincronizarComErp(id, user.organizationId);
   revalidateRequisicaoViews();
 }
@@ -356,6 +361,8 @@ export async function conferirRequisicao(
     .where(eq(requisicaoItens.requisicaoId, id));
 
   for (const item of itens) {
+    // o que vai por Compras não passa pelo Empório: não se confere aqui
+    if (existing.tipo === "externa" && item.destino === "compras") continue;
     const raw = formData.get(`qtd-${item.id}`);
     const qtdConferida = raw !== null ? Number(raw) : Number(item.qtdPedida);
     if (!Number.isFinite(qtdConferida) || qtdConferida < 0) {

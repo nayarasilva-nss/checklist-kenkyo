@@ -586,6 +586,10 @@ export const requisicaoItens = pgTable("requisicao_itens", {
   unidadeMedida: catalogUnitMeasureEnum("unidade_medida").notNull(),
   qtdPedida: numeric("qtd_pedida", { precision: 10, scale: 3 }).notNull(),
   qtdConferida: numeric("qtd_conferida", { precision: 10, scale: 3 }),
+  // Só na externa: "emporio" (o Empório separa e confere) ou "compras" (chega
+  // por compra direta: vira solicitação de compra no ERP). Decidido pelo ERP
+  // (como o item chega na unidade); null = ainda não decidido.
+  destino: varchar("destino", { length: 10 }),
 });
 
 // Solicitação de item avulso (ex: rádio comunicador, lâmpada do
