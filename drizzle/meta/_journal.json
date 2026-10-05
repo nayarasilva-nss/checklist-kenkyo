@@ -281,6 +281,13 @@
       "when": 1791231073973,
       "tag": "0039_massive_black_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791241478306,
+      "tag": "0040_skinny_calypso",
+      "breakpoints": true
     }
   ]
 }

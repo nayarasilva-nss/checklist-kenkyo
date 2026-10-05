@@ -95,6 +95,7 @@ export default async function RequisicoesPage({
       linkCandidatesByUnit={linkCandidatesByUnit}
       fixedUnitId={effectiveUnitId}
       isGestor={isGestorProfile(user.profile)}
+      canReceber={user.profile === "gerente" || isGestorProfile(user.profile)}
       situacaoCompras={situacaoCompras}
     />
   );

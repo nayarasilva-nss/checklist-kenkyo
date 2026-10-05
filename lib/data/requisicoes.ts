@@ -76,6 +76,8 @@ function baseQuery() {
       createdAt: requisicoes.createdAt,
       editedAt: requisicoes.editedAt,
       concluidoEm: requisicoes.concluidoEm,
+      recebidoEm: requisicoes.recebidoEm,
+      recebimentoObs: requisicoes.recebimentoObs,
     })
     .from(requisicoes)
     .innerJoin(units, eq(units.id, requisicoes.unitId))

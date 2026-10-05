@@ -564,6 +564,10 @@ export const requisicoes = pgTable("requisicoes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   editedAt: timestamp("edited_at"),
   concluidoEm: timestamp("concluido_em"),
+  // Só na externa: a unidade confirma o que chegou depois da conferência.
+  recebidoEm: timestamp("recebido_em"),
+  recebidoPorId: integer("recebido_por_id").references(() => users.id, { onDelete: "set null" }),
+  recebimentoObs: text("recebimento_obs"),
   erpStatus: erpEnvioStatusEnum("erp_status").notNull().default("nao_enviada"),
   erpNumero: varchar("erp_numero", { length: 30 }),
   erpMensagem: text("erp_mensagem"),
@@ -586,6 +590,7 @@ export const requisicaoItens = pgTable("requisicao_itens", {
   unidadeMedida: catalogUnitMeasureEnum("unidade_medida").notNull(),
   qtdPedida: numeric("qtd_pedida", { precision: 10, scale: 3 }).notNull(),
   qtdConferida: numeric("qtd_conferida", { precision: 10, scale: 3 }),
+  qtdRecebida: numeric("qtd_recebida", { precision: 10, scale: 3 }),
   // Só na externa: "emporio" (o Empório separa e confere) ou "compras" (chega
   // por compra direta: vira solicitação de compra no ERP). Decidido pelo ERP
   // (como o item chega na unidade); null = ainda não decidido.

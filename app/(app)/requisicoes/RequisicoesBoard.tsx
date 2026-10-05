@@ -6,6 +6,7 @@ import {
   cancelRequisicao,
   conferirRequisicao,
   deleteRequisicao,
+  receberRequisicao,
   updateRequisicaoTipo,
 } from "@/lib/actions/requisicoes";
 import { NovaRequisicaoForm } from "./NovaRequisicaoForm";
@@ -18,6 +19,7 @@ type RequisicaoItem = {
   unidadeMedida: string;
   qtdPedida: string;
   qtdConferida: string | null;
+  qtdRecebida: string | null;
   // externa: "emporio" (o Empório separa) ou "compras" (chega por compra direta)
   destino: string | null;
 };
@@ -53,6 +55,8 @@ type Requisicao = {
   createdAt: Date;
   editedAt: Date | null;
   concluidoEm: Date | null;
+  recebidoEm: Date | null;
+  recebimentoObs: string | null;
   itens: RequisicaoItem[];
   podeEditar: boolean;
 };
@@ -128,6 +132,63 @@ function ConferirForm({ requisicao, onDone }: { requisicao: Requisicao; onDone: 
   );
 }
 
+function ReceberForm({ requisicao, onDone }: { requisicao: Requisicao; onDone: () => void }) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | undefined>();
+  const [obs, setObs] = useState("");
+  const itens = requisicao.itens.filter((item) => !vaiPorCompras(requisicao, item));
+  const [qtds, setQtds] = useState<Record<number, number>>(() =>
+    Object.fromEntries(itens.map((item) => [item.id, Number(item.qtdConferida ?? item.qtdPedida)])),
+  );
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const fd = new FormData();
+    fd.set("id", String(requisicao.id));
+    fd.set("obs", obs);
+    for (const [itemId, qtd] of Object.entries(qtds)) fd.set(`qtd-${itemId}`, String(qtd));
+    startTransition(async () => {
+      const result = await receberRequisicao(undefined, fd);
+      if (result?.error) setError(result.error);
+      else onDone();
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="detail-panel-field-label">Recebido pela unidade</div>
+      {itens.map((item) => (
+        <div className="list-item" key={item.id}>
+          <div className="info">
+            <h4>{item.nome}</h4>
+            <p>Enviado: {item.qtdConferida ?? item.qtdPedida}{item.unidadeMedida}</p>
+          </div>
+          <div className="list-item-actions">
+            <QuantidadeStepper
+              value={qtds[item.id] ?? 0}
+              unidade={item.unidadeMedida}
+              onChange={(v) => setQtds((prev) => ({ ...prev, [item.id]: v }))}
+            />
+          </div>
+        </div>
+      ))}
+      <textarea
+        id={`recebimento-obs-${requisicao.id}`}
+        className="form-input"
+        placeholder="Observação (ex.: veio menos, item danificado)"
+        value={obs}
+        onChange={(e) => setObs(e.target.value)}
+      />
+      {error && <p className="login-error">{error}</p>}
+      <div className="inline-form-buttons">
+        <button className="btn-save" type="submit" disabled={isPending}>
+          Confirmar o que chegou
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export function RequisicoesBoard({
   records,
   tipo,
@@ -144,6 +205,7 @@ export function RequisicoesBoard({
   linkCandidatesByUnit,
   fixedUnitId,
   isGestor,
+  canReceber,
   situacaoCompras,
 }: {
   records: Requisicao[];
@@ -168,6 +230,7 @@ export function RequisicoesBoard({
   linkCandidatesByUnit: Record<number, { interna: LinkCandidate[]; externa: LinkCandidate[] }>;
   fixedUnitId: number | null;
   isGestor: boolean;
+  canReceber: boolean;
   situacaoCompras: Record<number, SituacaoCompras>;
 }) {
   const router = useRouter();
@@ -555,11 +618,26 @@ export function RequisicoesBoard({
                         {item.unidadeMedida}
                         {item.qtdConferida !== null &&
                           ` · Conferido: ${item.qtdConferida}${item.unidadeMedida}`}
+                        {item.qtdRecebida !== null &&
+                          ` · Recebido: ${item.qtdRecebida}${item.unidadeMedida}`}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
+            )}
+
+            {selected.tipo === "externa" && selected.status === "conferida" && (
+              selected.recebidoEm ? (
+                <p className="items-count">
+                  Recebido pela unidade em {formatDate(selected.recebidoEm)}
+                  {selected.recebimentoObs ? ` — ${selected.recebimentoObs}` : ""}
+                </p>
+              ) : canReceber && (isGestor || selected.unitId === fixedUnitId) ? (
+                <ReceberForm requisicao={selected} onDone={() => setSelectedId(null)} />
+              ) : (
+                <p className="items-count">Aguardando a unidade confirmar o recebimento.</p>
+              )
             )}
 
             {selected.requesterId === currentUserId && selected.status === "aberta" && (

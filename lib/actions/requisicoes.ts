@@ -396,3 +396,57 @@ export async function conferirRequisicao(
 
   revalidateRequisicaoViews();
 }
+
+/**
+ * Recebido pela unidade (só externa): depois da conferência, o Gerente da
+ * unidade que pediu (ou o Gestor) confirma o que chegou. Não mexe no
+ * estoque do ERP; fica no histórico e no PDF, com a diferença à vista.
+ */
+export async function receberRequisicao(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await getCurrentUser();
+  const id = Number(formData.get("id"));
+  if (!id || !user.organizationId) return { error: "Requisição inválida" };
+
+  const [existing] = await db
+    .select()
+    .from(requisicoes)
+    .where(and(eq(requisicoes.id, id), eq(requisicoes.organizationId, user.organizationId)))
+    .limit(1);
+  if (!existing) return { error: "Requisição não encontrada" };
+  if (existing.tipo !== "externa") return { error: "Só a requisição externa tem recebimento" };
+  if (existing.status !== "conferida") return { error: "A requisição ainda não foi conferida" };
+  if (existing.recebidoEm) return { error: "Essa requisição já foi recebida" };
+
+  const effectiveUnitId = await resolveEffectiveUnitId(user);
+  const daUnidade = user.profile === "gerente" && effectiveUnitId === existing.unitId;
+  if (!daUnidade && !isGestorProfile(user.profile)) {
+    return { error: "Só o gerente da unidade que pediu pode confirmar o recebimento" };
+  }
+
+  const itens = await db.select().from(requisicaoItens).where(eq(requisicaoItens.requisicaoId, id));
+  for (const item of itens) {
+    if (item.destino === "compras") continue; // chega por compra direta, não passa pelo Empório
+    const raw = formData.get(`qtd-${item.id}`);
+    const qtd = raw !== null ? Number(raw) : Number(item.qtdConferida ?? item.qtdPedida);
+    if (!Number.isFinite(qtd) || qtd < 0) return { error: "Quantidade recebida inválida" };
+    await db
+      .update(requisicaoItens)
+      .set({ qtdRecebida: qtd.toFixed(3) })
+      .where(and(eq(requisicaoItens.id, item.id), eq(requisicaoItens.requisicaoId, id)));
+  }
+
+  await db
+    .update(requisicoes)
+    .set({
+      recebidoEm: new Date(),
+      recebidoPorId: user.id,
+      recebimentoObs: String(formData.get("obs") ?? "").trim() || null,
+    })
+    .where(eq(requisicoes.id, id));
+
+  await addHistoryEntry(user.id, `Requisição externa recebida (unidade ${existing.unitId})`, "completed");
+  revalidateRequisicaoViews();
+}
