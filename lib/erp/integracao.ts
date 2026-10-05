@@ -365,7 +365,7 @@ async function enviarParteEstoque(req: ReqEnvio, itens: ItemEnvio[]): Promise<Re
     id_externo: `checklist-${req.id}`,
     situacao: conferida ? "conferida" : "aberta",
     unidade_cnpj: req.erpCnpj,
-    // o ERP decide o local: interna do Estoque local da unidade, externa do Estoque central do Empório
+    // o ERP decide o local: interna do Estoque local da unidade, externa do Estoque local do Empório
     tipo: req.tipo,
     setor: req.setor ?? undefined,
     data_solicitacao: checklistDayForInstant(req.createdAt),
