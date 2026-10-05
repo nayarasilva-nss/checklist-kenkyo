@@ -153,8 +153,6 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
       concluidoEm: requisicoes.concluidoEm,
       unitName: units.name,
       erpCnpj: units.erpCnpj,
-      erpLocalInternoId: units.erpLocalInternoId,
-      erpLocalExternoId: units.erpLocalExternoId,
       setor: jobFunctions.name,
     })
     .from(requisicoes)
@@ -170,14 +168,6 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
 
   if (!req.erpCnpj) {
     return gravar(req.id, { status: "aguardando", mensagem: `A unidade ${req.unitName} ainda não está ligada a uma empresa do ERP.`, numero: null });
-  }
-  const localId = req.tipo === "externa" ? req.erpLocalExternoId : req.erpLocalInternoId;
-  if (!localId) {
-    return gravar(req.id, {
-      status: "aguardando",
-      mensagem: `Falta dizer de qual local do ERP sai a requisição ${req.tipo} da unidade ${req.unitName}.`,
-      numero: null,
-    });
   }
 
   const itens = await db
@@ -246,7 +236,8 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
     id_externo: `checklist-${req.id}`,
     situacao: conferida ? "conferida" : "aberta",
     unidade_cnpj: req.erpCnpj,
-    local_origem_id: localId,
+    // o ERP decide o local: interna do Estoque local da unidade, externa do Estoque central do Empório
+    tipo: req.tipo,
     setor: req.setor ?? undefined,
     data_solicitacao: checklistDayForInstant(req.createdAt),
     data_atendimento: conferida ? checklistDayForInstant(req.concluidoEm ?? new Date()) : checklistDayForInstant(req.createdAt),

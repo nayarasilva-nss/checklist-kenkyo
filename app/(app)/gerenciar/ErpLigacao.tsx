@@ -17,12 +17,18 @@ function Mensagem({ estado }: { estado: ActionState }) {
 
 const rotulo = (i: ItemErp) => `${i.codigo} — ${i.nome} (${i.unidade_uso})`;
 
-/** Unidade do checklist → empresa do ERP e os locais de onde sai a requisição. */
+/**
+ * Unidade do checklist → empresa do ERP. O local de onde sai a requisição é
+ * regra, não escolha: interna do "Estoque local" da unidade, externa do
+ * "Estoque central" do Empório (a mercadoria continua sendo da unidade).
+ */
 export function UnidadesErp({ unidades, empresas, locais }: { unidades: Unidade[]; empresas: Empresa[]; locais: Local[] }) {
   const [cnpjs, setCnpjs] = useState<Record<number, string>>(() => Object.fromEntries(unidades.map((u) => [u.id, u.erpCnpj ?? ""])));
   const [estado, setEstado] = useState<ActionState>();
   const [salvando, iniciar] = useTransition();
   const centrais = new Set(empresas.filter((e) => e.tipo === "central").map((e) => e.cnpj));
+  const localDe = (cnpj: string, nome: string) => locais.find((l) => l.unidade_cnpj === cnpj && l.nome.toUpperCase() === nome.toUpperCase());
+  const central = locais.find((l) => centrais.has(l.unidade_cnpj) && l.nome.toUpperCase() === "ESTOQUE CENTRAL");
   return (
     <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); iniciar(async () => setEstado(await salvarUnidadesErp(undefined, fd))); }}>
       <table className="ranking-table">
@@ -37,21 +43,19 @@ export function UnidadesErp({ unidades, empresas, locais }: { unidades: Unidade[
               </select>
             </td>
             <td>
-              <select name={`interno-${u.id}`} defaultValue={u.erpLocalInternoId ?? ""}>
-                <option value="">—</option>
-                {locais.filter((l) => l.unidade_cnpj === cnpjs[u.id]).map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}
-              </select>
+              {!cnpjs[u.id] ? "—" : localDe(cnpjs[u.id]!, "Estoque local")
+                ? `${localDe(cnpjs[u.id]!, "Estoque local")!.unidade} · Estoque local`
+                : <span className="login-error" style={{ margin: 0 }}>falta o &quot;Estoque local&quot; no ERP</span>}
             </td>
             <td>
-              <select name={`externo-${u.id}`} defaultValue={u.erpLocalExternoId ?? ""}>
-                <option value="">—</option>
-                {locais.filter((l) => centrais.has(l.unidade_cnpj)).map((l) => <option key={l.id} value={l.id}>{l.unidade} · {l.nome}</option>)}
-              </select>
+              {!cnpjs[u.id] ? "—" : central
+                ? `${central.unidade} · Estoque central`
+                : <span className="login-error" style={{ margin: 0 }}>falta o &quot;Estoque central&quot; do Empório no ERP</span>}
             </td>
           </tr>
         ))}</tbody>
       </table>
-      {locais.length === 0 && <p className="items-count" style={{ marginTop: 10 }}>O ERP ainda não tem locais de estoque cadastrados (Cadastros › Empresa › Locais de estoque, no ERP). Sem local, a requisição fica aguardando.</p>}
+      <p className="items-count" style={{ marginTop: 10 }}>De onde sai é regra: requisição interna do &quot;Estoque local&quot; da unidade, externa do &quot;Estoque central&quot; do Empório. A mercadoria continua sendo da unidade que pediu.</p>
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12 }}>
         <button className="btn-save" type="submit" disabled={salvando}>{salvando ? "Salvando…" : "Salvar unidades"}</button>
         <Mensagem estado={estado} />

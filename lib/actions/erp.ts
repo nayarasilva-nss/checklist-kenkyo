@@ -16,12 +16,7 @@ function revalidar() {
   revalidatePath("/requisicoes");
 }
 
-function idOpcional(valor: FormDataEntryValue | null): number | null {
-  const n = Number(String(valor ?? "").trim());
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-/** Cada unidade do checklist: qual empresa do ERP ela é e de onde sai cada tipo de requisição. */
+/** Cada unidade do checklist: qual empresa do ERP ela é. O local de onde sai a requisição o ERP decide pelo tipo. */
 export async function salvarUnidadesErp(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const gestor = await requireGestor();
   if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
@@ -31,11 +26,7 @@ export async function salvarUnidadesErp(_prev: ActionState, formData: FormData):
     if (cnpj && cnpj.length !== 14) return { error: "CNPJ inválido em uma das unidades." };
     await db
       .update(units)
-      .set({
-        erpCnpj: cnpj || null,
-        erpLocalInternoId: idOpcional(formData.get(`interno-${u.id}`)),
-        erpLocalExternoId: idOpcional(formData.get(`externo-${u.id}`)),
-      })
+      .set({ erpCnpj: cnpj || null })
       .where(and(eq(units.id, u.id), eq(units.organizationId, gestor.organizationId)));
   }
   after(() => enviarPendentesAoErp(gestor.organizationId!).catch(() => 0));
