@@ -2549,3 +2549,30 @@ button {
 
 .painel-grid { display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; margin-bottom: 20px; }
 @media (max-width: 720px) { .painel-grid { grid-template-columns: 1fr; } }
+
+/* Contagem de estoque: barra de salvar sempre à mão (no celular, acima da barra de navegação) */
+.contagem-rodape {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 10px 0;
+  background: var(--bg-rail);
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .contagem-rodape {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 78px;
+    padding: 10px 16px;
+  }
+  .contagem-espaco {
+    height: 96px;
+  }
+}
