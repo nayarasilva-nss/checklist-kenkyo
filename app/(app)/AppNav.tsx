@@ -20,6 +20,7 @@ const PROFILE_LABELS: Record<string, string> = {
 function buildGroups(
   profile: string,
   showRequisicoes: boolean,
+  showContagem: boolean,
   showSolicitacoes: boolean,
   showFormularios: boolean,
   showPlataforma: boolean,
@@ -47,6 +48,7 @@ function buildGroups(
         { href: "/diario-de-bordo", label: "Diário de bordo" },
         { href: "/anomalias", label: "Anomalias" },
         ...(showRequisicoes ? [{ href: "/requisicoes", label: "Requisições" }] : []),
+        ...(showContagem ? [{ href: "/contagem", label: "Contagem" }] : []),
         ...(showSolicitacoes ? [{ href: "/solicitacoes", label: "Solicitações" }] : []),
       ],
     },
@@ -140,6 +142,7 @@ export function AppNav({
   canSubmitRestoIngesta,
   canWriteShiftLog,
   showRequisicoes,
+  showContagem = false,
   canCreateRequisicao,
   showSolicitacoes,
   showFormularios,
@@ -156,6 +159,7 @@ export function AppNav({
   canSubmitRestoIngesta: boolean;
   canWriteShiftLog: boolean;
   showRequisicoes: boolean;
+  showContagem?: boolean;
   canCreateRequisicao: boolean;
   showSolicitacoes: boolean;
   showFormularios: boolean;
@@ -163,7 +167,7 @@ export function AppNav({
   pendingAuditCount: number;
 }) {
   const pathname = usePathname();
-  const groups = buildGroups(profile, showRequisicoes, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
+  const groups = buildGroups(profile, showRequisicoes, showContagem, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
   const scope =
     isGestorProfile(profile) || profile === "rh"
       ? "Todas as unidades"

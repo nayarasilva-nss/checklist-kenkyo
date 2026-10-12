@@ -13,6 +13,8 @@ import { getPendingCoAudits } from "@/lib/data/audits";
 import { logout } from "@/lib/auth/actions";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { resolveBrandColors } from "@/lib/branding";
+import { canContar } from "@/lib/auth/contagem";
+import { erpConfigurado } from "@/lib/erp/integracao";
 import { AppNav } from "./AppNav";
 import { CoveringUnitBanner } from "./CoveringUnitBanner";
 import { GestorFuncaoBanner } from "./GestorFuncaoBanner";
@@ -90,6 +92,7 @@ export default async function AppLayout({
         canSubmitRestoIngesta={canSubmitRestoIngesta(user)}
         canWriteShiftLog={user.profile === "gerente" || user.profile === "lider"}
         showRequisicoes={showRequisicoes}
+        showContagem={canContar(user) && erpConfigurado()}
         canCreateRequisicao={canCreateRequisicao}
         showSolicitacoes={showSolicitacoes}
         showFormularios={showFormularios}

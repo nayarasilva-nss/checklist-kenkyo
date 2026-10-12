@@ -28,7 +28,7 @@ export function erpConfigurado(): boolean {
   return Boolean(process.env.ERP_API_URL && process.env.ERP_API_TOKEN);
 }
 
-async function chamarErp(caminho: string, init?: RequestInit): Promise<Response> {
+export async function chamarErp(caminho: string, init?: RequestInit): Promise<Response> {
   const base = (process.env.ERP_API_URL ?? "").replace(/\/+$/, "");
   return fetch(`${base}${caminho}`, {
     ...init,
