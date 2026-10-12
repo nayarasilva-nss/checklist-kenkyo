@@ -73,6 +73,14 @@ const STATUS_LABEL: Record<string, string> = {
   cancelada: "Cancelada",
 };
 
+/** Itens que o estoque conferiu com quantidade diferente da pedida. */
+function itensAlterados(r: { status: string; itens: RequisicaoItem[] } & { tipo: string }) {
+  if (r.status !== "conferida") return [];
+  return r.itens.filter(
+    (i) => !vaiPorCompras(r, i) && i.qtdConferida !== null && Number(i.qtdConferida) !== Number(i.qtdPedida),
+  );
+}
+
 function formatDate(d: Date) {
   return new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
@@ -484,6 +492,14 @@ export function RequisicoesBoard({
                     <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-neutral"}`}>
                       {STATUS_LABEL[r.status] ?? r.status}
                     </span>
+                    {itensAlterados(r).length > 0 && (
+                      <>
+                        {" "}
+                        <span className="badge badge-warning" title="O estoque conferiu quantidades diferentes das pedidas">
+                          Alterada pelo estoque
+                        </span>
+                      </>
+                    )}
                     {r.itens.some((i) => vaiPorCompras(r, i)) && (
                       <>
                         {" "}
@@ -612,7 +628,15 @@ export function RequisicoesBoard({
                 {selected.itens.filter((item) => !vaiPorCompras(selected, item)).map((item) => (
                   <div className="list-item" key={item.id}>
                     <div className="info">
-                      <h4>{item.nome}</h4>
+                      <h4>
+                        {item.nome}
+                        {selected.status === "conferida" && item.qtdConferida !== null && Number(item.qtdConferida) !== Number(item.qtdPedida) && (
+                          <>
+                            {" "}
+                            <span className="badge badge-warning">Alterado</span>
+                          </>
+                        )}
+                      </h4>
                       <p>
                         Pedido: {item.qtdPedida}
                         {item.unidadeMedida}
