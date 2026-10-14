@@ -175,7 +175,15 @@ export function NovaRequisicaoForm({
     if (relatedRequisicaoId) fd.set("relatedRequisicaoId", String(relatedRequisicaoId));
 
     startTransition(async () => {
-      const result = await (editing ? updateRequisicao : createRequisicao)(undefined, fd);
+      let result: Awaited<ReturnType<typeof createRequisicao>>;
+      try {
+        result = await (editing ? updateRequisicao : createRequisicao)(undefined, fd);
+      } catch {
+        // Sem sinal ou falha no servidor: sem isto o botão só voltava ao
+        // normal, sem aviso, e a requisição não ia.
+        setError("Não foi possível enviar. Confira a internet e tente de novo.");
+        return;
+      }
       if (result?.error) {
         setError(result.error);
       } else {
@@ -386,9 +394,15 @@ export function NovaRequisicaoForm({
         />
       </div>
 
-      {error && <p className="login-error">{error}</p>}
-
-      <div className="inline-form-buttons req-submit-footer">
+      {/* O erro fica dentro do rodapé: no celular ele é fixo na tela e a
+          lista de itens é longa, então um erro logo acima dele ficava fora
+          da vista — parecia que o botão não fazia nada. */}
+      <div className="inline-form-buttons req-submit-footer" style={{ flexWrap: "wrap", alignItems: "center" }}>
+        {error && (
+          <p className="login-error" role="alert" style={{ flexBasis: "100%", margin: 0 }}>
+            {error}
+          </p>
+        )}
         <span className="pill-count">
           {totalItens} {totalItens === 1 ? "item selecionado" : "itens selecionados"}
         </span>
