@@ -7,7 +7,7 @@ import { canVerEscala } from "@/lib/auth/escala";
 import { getEscalaMes } from "@/lib/data/escala";
 import { getUnits } from "@/lib/data/units";
 import { checklistDayISO } from "@/lib/date-utils";
-import { PREVIA, PREVIA_FECHADOS, PREVIA_MES } from "@/lib/data/escala-previa";
+import { PREVIA, PREVIA_MES } from "@/lib/data/escala-previa";
 import { UnitFilter } from "../UnitFilter";
 import { EscalaTabela } from "./EscalaTabela";
 
@@ -65,12 +65,12 @@ export default async function EscalaPage({
       {previa ? (
         <div className="today-card" style={{ overflowX: "auto" }}>
           <p className="items-count" style={{ marginBottom: 12 }}>
-            <strong>Lista provisória, só você vê.</strong> Vem da planilha de dezembro e não está cadastrada no sistema: não muda nenhum indicador nem aparece para as unidades. F = folga; colunas cinza = casa fechada; nome em vermelho = vaga a contratar.
+            <strong>Lista provisória, só você vê.</strong> Vem da planilha de dezembro e não está cadastrada no sistema: não muda nenhum indicador nem aparece para as unidades. Nome em vermelho = vaga a contratar; 24, 25 e 31/12 a casa fica fechada e todos folgam.
           </p>
           <EscalaTabela
             mes={PREVIA_MES}
             hoje={hoje}
-            fechados={PREVIA_FECHADOS.map((d) => `${PREVIA_MES}-${String(d).padStart(2, "0")}`)}
+            unidade={PREVIA[previa].unidade}
             grupos={PREVIA[previa].grupos.map((g) => ({
               titulo: g.titulo,
               pessoas: g.pessoas.map((p, i) => ({
@@ -107,6 +107,7 @@ export default async function EscalaPage({
           <EscalaTabela
             mes={mes}
             hoje={hoje}
+            unidade={unitName ?? null}
             grupos={[{ titulo: null, pessoas: escala.pessoas.map((p) => ({ key: p.id, nome: p.name, funcao: p.funcao, folgas: p.folgas })) }]}
           />
         </div>

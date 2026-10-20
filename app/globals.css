@@ -2576,3 +2576,48 @@ button {
     height: 96px;
   }
 }
+
+/* Escala de folgas: grade do mês no modelo da planilha impressa */
+.escala-wrap { overflow-x: auto; }
+.escala-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.escala-title { font-size: 20px; font-weight: 800; letter-spacing: .01em; text-transform: uppercase; }
+.escala-unit { font-size: 13px; color: var(--text-muted, #667085); }
+.escala-grid { border-collapse: collapse; font-size: 12px; border: 2px solid #1f2933; }
+.escala-grid th, .escala-grid td { border: 1px solid #b8c0c8; padding: 0; text-align: center; }
+.escala-grid .semana { font-size: 10px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; border: none; padding: 0 0 4px; color: var(--text-muted, #475467); text-align: center; }
+.escala-grid thead th.dia { background: #1f2933; color: #fff; min-width: 26px; height: 44px; line-height: 1.15; }
+.escala-grid thead th.dia small { display: block; font-size: 9px; font-weight: 600; opacity: .85; }
+.escala-grid thead th.dia b { font-size: 15px; }
+.escala-grid thead th.fds { background: #475563; }
+.escala-grid thead th.vespera { background: #b7860b; }
+.escala-grid thead th.feriado { background: #c62828; }
+.escala-grid thead th.nome { background: #1f2933; color: #fff; text-align: center; font-size: 13px; letter-spacing: .04em; min-width: 170px; }
+.escala-grid thead th.total { background: #1f2933; color: #fff; font-size: 11px; line-height: 1.15; padding: 0 8px; }
+.escala-grid td.fds { background: #e9edf1; }
+.escala-grid td.vespera { background: #fdf1c7; }
+.escala-grid td.feriado { background: #fbd5d7; }
+.escala-grid td.hoje, .escala-grid th.hoje { box-shadow: inset 0 -3px 0 var(--kenkyo-red); }
+.escala-grid .ini-semana { border-left: 2px solid #1f2933; }
+.escala-grid td.pessoa { text-align: left; padding: 4px 8px; white-space: nowrap; font-weight: 600; position: sticky; left: 0; background: var(--bg, #fff); z-index: 1; border-right: 2px solid #1f2933; }
+.escala-grid td.pessoa .num { color: #6b7d8f; font-weight: 700; font-size: 11px; margin-right: 8px; }
+.escala-grid td.pessoa .funcao { display: block; font-weight: 400; font-size: 11px; color: var(--text-muted, #667085); margin-left: 24px; }
+.escala-grid td.pessoa.a-contratar .nome-txt { color: #b42318; }
+.escala-grid tr.sep-grupo td { border-bottom: 1px solid #6b7d8f; }
+.escala-grid tr.titulo-grupo td { background: #eef1f4; text-align: left; padding: 4px 10px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: #344054; position: sticky; left: 0; }
+.escala-grid .folga { display: inline-block; min-width: 22px; padding: 3px 0; background: #1f2933; color: #fff; font-weight: 700; font-size: 11px; border-radius: 3px; }
+.escala-grid td.tot { font-weight: 700; padding: 0 8px; }
+.escala-legenda { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 14px; font-size: 12px; color: var(--text-muted, #475467); }
+.escala-legenda span { display: inline-flex; align-items: center; gap: 8px; }
+.escala-legenda i { width: 14px; height: 14px; display: inline-block; border-radius: 2px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .escala-grid td.fds { background: #26303a; }
+  :root:not([data-theme="light"]) .escala-grid td.vespera { background: #4a3d12; }
+  :root:not([data-theme="light"]) .escala-grid td.feriado { background: #4a2024; }
+  :root:not([data-theme="light"]) .escala-grid tr.titulo-grupo td { background: #1c242c; color: #cbd5e1; }
+  :root:not([data-theme="light"]) .escala-grid .folga { background: #cbd5e1; color: #101820; }
+}
+:root[data-theme="dark"] .escala-grid td.fds { background: #26303a; }
+:root[data-theme="dark"] .escala-grid td.vespera { background: #4a3d12; }
+:root[data-theme="dark"] .escala-grid td.feriado { background: #4a2024; }
+:root[data-theme="dark"] .escala-grid tr.titulo-grupo td { background: #1c242c; color: #cbd5e1; }
+:root[data-theme="dark"] .escala-grid .folga { background: #cbd5e1; color: #101820; }

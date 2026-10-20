@@ -1,84 +1,130 @@
 import { Fragment } from "react";
 import { diaDaSemana } from "@/lib/escala";
+import { diasEspeciais } from "@/lib/feriados";
 
-const DIA = ["D", "S", "T", "Q", "Q", "S", "S"];
+const DIA = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 export type TabelaGrupo = {
   titulo: string | null;
   pessoas: { key: string | number; nome: string; funcao: string | null; folgas: Set<string>; aContratar?: boolean }[];
 };
 
-/** Grade de folgas do mês: pessoas nas linhas, dias nas colunas, F = folga. */
+const dd = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Grade de folgas do mês no modelo da planilha impressa: semanas de segunda
+ * a domingo, fim de semana em cinza, feriado em vermelho, véspera em amarelo.
+ */
 export function EscalaTabela({
   mes,
   grupos,
   hoje,
-  fechados = [],
+  unidade,
 }: {
   mes: string;
   grupos: TabelaGrupo[];
   hoje: string;
-  fechados?: string[];
+  unidade?: string | null;
 }) {
   const [y, m] = mes.split("-").map(Number);
   const total = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const especiais = diasEspeciais(y);
   const dias = Array.from({ length: total }, (_, i) => {
-    const date = `${mes}-${String(i + 1).padStart(2, "0")}`;
-    return { date, dow: diaDaSemana(date) };
+    const date = `${mes}-${dd(i + 1)}`;
+    const dow = diaDaSemana(date);
+    const esp = especiais.get(date);
+    // a semana começa na segunda-feira (ou no dia 1)
+    return { n: i + 1, date, dow, ini: i === 0 || dow === 1, esp };
   });
-  const sticky = { position: "sticky", left: 0, background: "var(--bg, #fff)" } as const;
+  const semanas: { de: number; ate: number; cols: number }[] = [];
+  for (const d of dias) {
+    if (d.ini) semanas.push({ de: d.n, ate: d.n, cols: 1 });
+    else {
+      const s = semanas[semanas.length - 1];
+      s.ate = d.n;
+      s.cols += 1;
+    }
+  }
+  const cls = (d: (typeof dias)[number]) =>
+    d.esp ? (d.esp.tipo === "feriado" ? "feriado" : "vespera") : d.dow === 0 || d.dow === 6 ? "fds" : "";
+  const doMes = [...new Set([...especiais.values()].filter((e) => e.date.startsWith(mes)).map((e) => `${e.tipo}|${e.nome}|${e.date}`))];
+  const legenda = doMes.map((x) => x.split("|"));
 
+  // número corrido das pessoas, atravessando os grupos
+  const inicioGrupo = grupos.map((_, gi) => grupos.slice(0, gi).reduce((acc, g) => acc + g.pessoas.length, 0));
   return (
-    <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
-      <thead>
-        <tr>
-          <th style={{ textAlign: "left", padding: "4px 12px 4px 0", ...sticky }}>Pessoa</th>
-          {dias.map((d) => (
-            <th
-              key={d.date}
-              style={{
-                padding: "2px 4px",
-                textAlign: "center",
-                minWidth: 26,
-                color: d.date === hoje ? "var(--kenkyo-red)" : fechados.includes(d.date) ? "var(--text-muted, #888)" : undefined,
-                borderBottom: d.date === hoje ? "2px solid var(--kenkyo-red)" : undefined,
-              }}
-              title={fechados.includes(d.date) ? "Casa fechada" : undefined}
-            >
-              <div style={{ fontWeight: 400, fontSize: 11 }}>{DIA[d.dow]}</div>
-              <div>{Number(d.date.slice(8))}</div>
-            </th>
-          ))}
-          <th style={{ padding: "2px 8px", textAlign: "center" }}>Folgas</th>
-        </tr>
-      </thead>
-      <tbody>
-        {grupos.map((g, gi) => (
-          <Fragment key={gi}>
-            {g.titulo && (
-              <tr>
-                <td colSpan={total + 2} style={{ padding: "14px 0 4px", fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-muted, #888)", fontWeight: 600 }}>
-                  {g.titulo}
-                </td>
-              </tr>
-            )}
-            {g.pessoas.map((p) => (
-              <tr key={`${gi}-${p.key}`} style={{ borderTop: "1px solid var(--border, #e5e5e5)" }}>
-                <td style={{ padding: "6px 12px 6px 0", whiteSpace: "nowrap", ...sticky }}>
-                  <strong style={p.aContratar ? { color: "var(--danger-text, #b42318)" } : undefined}>{p.nome}</strong>
-                  {p.funcao && <div className="items-count">{p.funcao}</div>}
-                </td>
-                {dias.map((d) => (
-                  <td key={d.date} style={{ textAlign: "center", padding: 2, background: fechados.includes(d.date) ? "var(--bg-muted, rgba(0,0,0,.05))" : undefined }}>
-                    {p.folgas.has(d.date) ? <span className="badge badge-warning" style={{ padding: "2px 5px" }}>F</span> : null}
-                  </td>
-                ))}
-                <td style={{ textAlign: "center", padding: "0 8px" }}>{p.folgas.size}</td>
-              </tr>
+    <div className="escala-wrap">
+      <div className="escala-head">
+        <div className="escala-title">Escala de folgas — {MESES[m - 1]} {y}</div>
+        {unidade && <div className="escala-unit">Setor/Unidade: <strong>{unidade}</strong></div>}
+      </div>
+      <table className="escala-grid">
+        <thead>
+          <tr>
+            <th className="semana" />
+            {semanas.map((s, i) => (
+              <th key={i} className="semana" colSpan={s.cols}>
+                Semana {i + 1} ({dd(s.de)}–{dd(s.ate)})
+              </th>
             ))}
-          </Fragment>
+            <th className="semana" />
+          </tr>
+          <tr>
+            <th className="nome">FUNCIONÁRIO</th>
+            {dias.map((d) => (
+              <th
+                key={d.date}
+                className={`dia ${cls(d)}${d.ini ? " ini-semana" : ""}${d.date === hoje ? " hoje" : ""}`}
+                title={d.esp?.nome}
+              >
+                <small>{DIA[d.dow]}</small>
+                <b>{d.n}</b>
+              </th>
+            ))}
+            <th className="total">TOTAL<br />FOLGAS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {grupos.map((g, gi) => (
+            <Fragment key={gi}>
+              {g.titulo && (
+                <tr className="titulo-grupo">
+                  <td colSpan={total + 2}>{g.titulo}</td>
+                </tr>
+              )}
+              {g.pessoas.map((p, pi) => {
+                const numero = inicioGrupo[gi] + pi + 1;
+                return (
+                  <tr key={`${gi}-${p.key}`} className={(pi + 1) % 5 === 0 ? "sep-grupo" : undefined}>
+                    <td className={`pessoa${p.aContratar ? " a-contratar" : ""}`}>
+                      <span className="num">{dd(numero)}</span>
+                      <span className="nome-txt">{p.nome}</span>
+                      {p.funcao && <span className="funcao">{p.funcao}</span>}
+                    </td>
+                    {dias.map((d) => (
+                      <td key={d.date} className={`${cls(d)}${d.ini ? " ini-semana" : ""}${d.date === hoje ? " hoje" : ""}`}>
+                        {p.folgas.has(d.date) ? <span className="folga">F</span> : null}
+                      </td>
+                    ))}
+                    <td className="tot">{p.folgas.size}</td>
+                  </tr>
+                );
+              })}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
+      <div className="escala-legenda">
+        {legenda.map(([tipo, nome, date]) => (
+          <span key={date}>
+            <i style={{ background: tipo === "feriado" ? "#c62828" : "#b7860b" }} />
+            {Number(date.slice(8))}/{date.slice(5, 7)} — {nome}{tipo === "feriado" ? " · feriado" : " · ponto facultativo"}
+          </span>
         ))}
-      </tbody>
-    </table>
+        <span><i style={{ background: "#475563" }} />Fim de semana</span>
+        <span><span className="folga" style={{ minWidth: 18, padding: "1px 0", textAlign: "center" }}>F</span>Folga</span>
+      </div>
+    </div>
   );
 }
