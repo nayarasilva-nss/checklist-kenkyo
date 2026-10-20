@@ -3,6 +3,7 @@ import { canSubmitFilleting } from "@/lib/data/filleting";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { canCoverOtherUnits, getCoveringUnit } from "@/lib/auth/covering-unit";
 import { getGestorFuncao } from "@/lib/auth/gestor-funcao";
+import { canVerEscala } from "@/lib/auth/escala";
 import { resolveRequisicaoScope } from "@/lib/data/requisicoes";
 import { tiposPermitidos } from "@/lib/auth/requisicoes";
 import { canCreateSolicitacao } from "@/lib/auth/solicitacoes";
@@ -93,6 +94,7 @@ export default async function AppLayout({
         canWriteShiftLog={user.profile === "gerente" || user.profile === "lider"}
         showRequisicoes={showRequisicoes}
         showContagem={canContar(user) && erpConfigurado()}
+        showEscala={canVerEscala(user)}
         canCreateRequisicao={canCreateRequisicao}
         showSolicitacoes={showSolicitacoes}
         showFormularios={showFormularios}

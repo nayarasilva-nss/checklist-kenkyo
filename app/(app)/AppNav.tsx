@@ -21,6 +21,7 @@ function buildGroups(
   profile: string,
   showRequisicoes: boolean,
   showContagem: boolean,
+  showEscala: boolean,
   showSolicitacoes: boolean,
   showFormularios: boolean,
   showPlataforma: boolean,
@@ -50,6 +51,7 @@ function buildGroups(
         ...(showRequisicoes ? [{ href: "/requisicoes", label: "Requisições" }] : []),
         ...(showContagem ? [{ href: "/contagem", label: "Contagem" }] : []),
         ...(showSolicitacoes ? [{ href: "/solicitacoes", label: "Solicitações" }] : []),
+        ...(showEscala ? [{ href: "/escala", label: "Escala" }] : []),
       ],
     },
     {
@@ -143,6 +145,7 @@ export function AppNav({
   canWriteShiftLog,
   showRequisicoes,
   showContagem = false,
+  showEscala = false,
   canCreateRequisicao,
   showSolicitacoes,
   showFormularios,
@@ -160,6 +163,7 @@ export function AppNav({
   canWriteShiftLog: boolean;
   showRequisicoes: boolean;
   showContagem?: boolean;
+  showEscala?: boolean;
   canCreateRequisicao: boolean;
   showSolicitacoes: boolean;
   showFormularios: boolean;
@@ -167,7 +171,7 @@ export function AppNav({
   pendingAuditCount: number;
 }) {
   const pathname = usePathname();
-  const groups = buildGroups(profile, showRequisicoes, showContagem, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
+  const groups = buildGroups(profile, showRequisicoes, showContagem, showEscala, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
   const scope =
     isGestorProfile(profile) || profile === "rh"
       ? "Todas as unidades"
@@ -208,6 +212,7 @@ export function AppNav({
     ...(showRequisicoes
       ? [{ href: "/requisicoes", title: "Requisições", description: "Pedidos de estoque" }]
       : []),
+    ...(showEscala ? [{ href: "/escala", title: "Escala", description: "Folgas do mês" }] : []),
     ...(showSolicitacoes
       ? [{ href: "/solicitacoes", title: "Solicitações", description: "Itens avulsos, com aprovação" }]
       : []),
