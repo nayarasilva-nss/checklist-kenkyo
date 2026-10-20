@@ -28,6 +28,7 @@ import { BrandForm } from "./BrandForm";
 import { AuditTemplateEditor } from "./AuditTemplateEditor";
 import { getAuditTemplate } from "@/lib/data/audits";
 import { ErpPainel } from "./ErpPainel";
+import { EscalaPainel } from "./EscalaPainel";
 
 const TABS = [
   { key: "usuarios", label: "Usuários" },
@@ -36,6 +37,7 @@ const TABS = [
   { key: "unidades", label: "Unidades" },
   { key: "funcoes", label: "Funções" },
   { key: "catalogo", label: "Catálogo" },
+  { key: "escala", label: "Escala" },
   { key: "erp", label: "ERP" },
   { key: "auditoria", label: "Auditoria" },
   { key: "marca", label: "Marca" },
@@ -81,6 +83,8 @@ export default async function GerenciarPage({
           </Link>
         ))}
       </div>
+
+      {tab === "escala" && <EscalaPainel organizationId={gestor.organizationId!} />}
 
       {tab === "usuarios" && (
         <div className="board-layout">
