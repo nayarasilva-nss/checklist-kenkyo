@@ -1,6 +1,7 @@
 import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { carregarEscala } from "@/lib/data/escala";
 import { checklistCompletions, checklistTypes, units, users } from "@/lib/db/schema";
 // Checklist-derived stats use the same 02:00 BRT rollover as the
 // checklist page itself (checklistDayISO), not plain midnight — otherwise
@@ -187,6 +188,7 @@ export async function getUsersWithoutChecklistToday(
       id: users.id,
       name: users.name,
       jobFunctionId: users.jobFunctionId,
+      folgaDias: users.folgaDias,
       unitName: units.name,
     })
     .from(users)
@@ -216,6 +218,7 @@ export async function getUsersWithoutChecklistToday(
     .where(and(eq(checklistTypes.type, "daily"), eq(checklistTypes.organizationId, organizationId), eq(checklistTypes.active, true)));
 
   const candidateIds = candidates.map((c) => c.id);
+  const escala = await carregarEscala(organizationId, candidateIds, today, today);
   const completedRows = await db
     .selectDistinct({ userId: checklistCompletions.userId })
     .from(checklistCompletions)
@@ -237,6 +240,6 @@ export async function getUsersWithoutChecklistToday(
   }
 
   return candidates
-    .filter((c) => !completedIds.has(c.id) && hasVisibleDailyChecklist(c))
+    .filter((c) => !completedIds.has(c.id) && !escala.deFolga(c.id, c.folgaDias, today) && hasVisibleDailyChecklist(c))
     .map((c) => ({ id: c.id, name: c.name, unitName: c.unitName }));
 }

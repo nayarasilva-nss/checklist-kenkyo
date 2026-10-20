@@ -1,3 +1,4 @@
+import { carregarEscala } from "@/lib/data/escala";
 import "server-only";
 import { and, eq, gte, inArray, isNotNull, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -51,7 +52,7 @@ type Inst = { userId: number; userName: string; unitName: string | null; typeNam
 
 async function loadInstances(organizationId: number, from: string, to: string, unitId: number | null, jobFunctionId: number | null = null) {
   const people = await db
-    .select({ id: users.id, name: users.name, unitId: users.unitId, unitName: units.name, jobFunctionId: users.jobFunctionId })
+    .select({ id: users.id, name: users.name, unitId: users.unitId, unitName: units.name, jobFunctionId: users.jobFunctionId, folgaDias: users.folgaDias })
     .from(users)
     .leftJoin(units, eq(units.id, users.unitId))
     .where(
@@ -90,6 +91,7 @@ async function loadInstances(organizationId: number, from: string, to: string, u
   }
 
   const days = eachDay(from, to);
+  const escala = await carregarEscala(organizationId, people.map((p) => p.id), from, to);
   const insts: Inst[] = [];
   for (const p of people) {
     for (const t of types) {
@@ -97,6 +99,7 @@ async function loadInstances(organizationId: number, from: string, to: string, u
       const typeItems = itemsByType.get(t.id) ?? [];
       if (!visible || typeItems.length === 0) continue;
       for (const date of days) {
+        if (escala.deFolga(p.id, p.folgaDias, date)) continue; // dia de folga: não era esperado
         const answered = byKey.get(`${t.id}|${p.id}|${date}`) ?? [];
         const scoreItems: ScoreItem[] = typeItems.map((it) => {
           const c = answered.find((a) => a.itemId === it.id && a.status !== "pending");

@@ -288,6 +288,13 @@
       "when": 1791241478306,
       "tag": "0040_skinny_calypso",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792498398030,
+      "tag": "0041_wide_vision",
+      "breakpoints": true
     }
   ]
 }

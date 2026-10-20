@@ -23,7 +23,10 @@ type User = {
   unitName: string | null;
   jobFunctionId: number | null;
   jobFunctionName: string | null;
+  folgaDias: number[];
 };
+
+const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export function UserRow({
   user,
@@ -151,6 +154,22 @@ export function UserRow({
           ))}
         </select>
       </div>
+      {(user.profile === "gerente" || user.profile === "lider") && (
+        <div className="form-group">
+          <label>Folgas na semana (escala)</label>
+          <p className="items-count" style={{ marginBottom: 8 }}>
+            Nesses dias a pessoa não é cobrada nos checklists, nos alertas de atraso e nos indicadores. Só vale a partir da data de início da escala.
+          </p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {DIAS.map((dia, i) => (
+              <label key={i} htmlFor={`folga-${user.id}-${i}`} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                <input type="checkbox" id={`folga-${user.id}-${i}`} name="folgaDias" value={i} defaultChecked={user.folgaDias.includes(i)} />
+                {dia}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="form-group">
         <label htmlFor={`editUserPassword-${user.id}`}>Senha</label>
         <input

@@ -103,6 +103,9 @@ export async function updateUser(
   const password = String(formData.get("password") ?? "");
   const unitId = parseOptionalId(formData, "unitId");
   const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
+  const folgaDias = [...new Set(formData.getAll("folgaDias").map(Number))]
+    .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+    .sort();
 
   if (
     !id ||
@@ -142,6 +145,7 @@ export async function updateUser(
       profile: profile as (typeof PROFILES)[number],
       unitId,
       jobFunctionId,
+      folgaDias,
       ...(passwordHash ? { passwordHash } : {}),
     })
     .where(and(eq(users.id, id), eq(users.organizationId, gestor.organizationId)));

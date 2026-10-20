@@ -13,6 +13,7 @@ import {
   uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const profileEnum = pgEnum("profile", ["gestor", "gerente", "lider", "rh", "master"]);
 export const checklistTypeEnum = pgEnum("checklist_type_kind", ["daily", "weekly"]);
@@ -102,6 +103,9 @@ export const organizations = pgTable(
     // Kenkyo (vermelho + logo genérica) em vez de quebrar.
     logoUrl: text("logo_url"),
     primaryColor: varchar("primary_color", { length: 7 }),
+    // Escala de folgas (ex.: 5x2): só vale a partir desta data. Antes dela,
+    // todo mundo é esperado todo dia, como sempre foi. Null = sem escala.
+    escalaVigenteDesde: date("escala_vigente_desde", { mode: "string" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("organizations_slug_idx").on(table.slug)],
@@ -163,6 +167,9 @@ export const users = pgTable(
       () => jobFunctions.id,
       { onDelete: "set null" },
     ),
+    // Dias da semana de folga fixa (0=domingo..6=sábado). Só conta a partir
+    // de organizations.escala_vigente_desde.
+    folgaDias: integer("folga_dias").array().notNull().default(sql`'{}'::integer[]`),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [uniqueIndex("users_username_idx").on(table.username)],
@@ -787,3 +794,22 @@ export const auditAnswers = pgTable("audit_answers", {
   note: text("note").notNull().default(""),
   photoUrls: jsonb("photo_urls").notNull().default([]),
 });
+
+// Exceção pontual à folga fixa da pessoa (rodízio, troca de folga, cobertura):
+// "folga" = não é esperada nesse dia; "trabalho" = é esperada mesmo sendo o
+// dia de folga fixa.
+export const escalaExcecoes = pgTable(
+  "escala_excecoes",
+  {
+    id: serial("id").primaryKey(),
+    organizationId: integer("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: date("date", { mode: "string" }).notNull(),
+    tipo: varchar("tipo", { length: 10 }).notNull(),
+  },
+  (table) => [uniqueIndex("escala_excecoes_user_date_idx").on(table.userId, table.date)],
+);
