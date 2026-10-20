@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { canContar } from "@/lib/auth/contagem";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { unidadeDaContagem } from "@/lib/data/contagem";
-import { contagensNoErp, type ContagemDevida, type ContagemResumo } from "@/lib/erp/contagens";
+import { contagensNoErp, type ContagemDevida, type ContagemResumo, type LocalLivre } from "@/lib/erp/contagens";
 import { erpConfigurado } from "@/lib/erp/integracao";
 import { BotaoComecar } from "./BotaoComecar";
 
@@ -20,11 +20,11 @@ export default async function ContagemPage({ searchParams }: { searchParams: Pro
   const { unidade: escolhida } = await searchParams;
   const { lista, unidade } = await unidadeDaContagem(user, Number(escolhida) || null);
 
-  let contagens: ContagemResumo[] = [], devidas: ContagemDevida[] = [], erro: string | null = null;
+  let contagens: ContagemResumo[] = [], devidas: ContagemDevida[] = [], locais: LocalLivre[] = [], erro: string | null = null;
   if (!erpConfigurado()) erro = "A ligação com o ERP não está configurada.";
   else if (unidade) {
     try {
-      ({ contagens, devidas } = await contagensNoErp(unidade.cnpj));
+      ({ contagens, devidas, locais = [] } = await contagensNoErp(unidade.cnpj));
     } catch (e) {
       erro = e instanceof Error ? e.message : "Não foi possível falar com o ERP.";
     }
@@ -74,6 +74,20 @@ export default async function ContagemPage({ searchParams }: { searchParams: Pro
               <div className="list-item-actions"><BotaoComecar unidadeId={unidade.id} agendaId={d.agenda_id} sufixo={sufixo} /></div>
             </div>
           ))}
+          {locais.length > 0 && (
+            <>
+              <h3>Contar todos os itens</h3>
+              <p className="items-count" style={{ marginTop: 0 }}>
+                Para contar o local inteiro quando a agenda não pede, ou na primeira contagem. Só pode haver uma contagem aberta por local.
+              </p>
+              {locais.map((l) => (
+                <div key={l.id} className="list-item">
+                  <div className="info"><h4>{l.nome}</h4><p>Todos os itens do local</p></div>
+                  <div className="list-item-actions"><BotaoComecar unidadeId={unidade.id} localId={l.id} sufixo={sufixo} rotulo="Contar todos os itens" /></div>
+                </div>
+              ))}
+            </>
+          )}
         </>
       )}
     </>

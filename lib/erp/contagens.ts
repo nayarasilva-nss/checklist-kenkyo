@@ -9,6 +9,7 @@ import { chamarErp, erpConfigurado } from "./integracao";
  */
 
 export type ContagemResumo = { id: number; local: string; escopo: string; data: string; status: "aberta" | "contada"; itens: number; contados: number; curva: string | null };
+export type LocalLivre = { id: number; nome: string };
 export type ContagemDevida = { agenda_id: number; local: string; curva: string; dias_desde: number | null; periodicidade_dias: number };
 export type ItemContagem = {
   linha_id: number; codigo: string; nome: string; unidade_uso: string; categoria: string;
@@ -30,11 +31,17 @@ async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {
 }
 
 export function contagensNoErp(cnpj: string) {
-  return pedir<{ unidade: string; contagens: ContagemResumo[]; devidas: ContagemDevida[] }>(`/api/contagens?cnpj=${cnpj}`);
+  // `locais` (locais sem contagem aberta) só vem de um ERP atualizado; sem ele, a lista fica vazia.
+  return pedir<{ unidade: string; contagens: ContagemResumo[]; devidas: ContagemDevida[]; locais?: LocalLivre[] }>(`/api/contagens?cnpj=${cnpj}`);
 }
 
 export function abrirContagemNoErp(cnpj: string, agendaId: number) {
   return pedir<{ id: number; local: string }>("/api/contagens", { method: "POST", body: JSON.stringify({ cnpj, agenda_id: agendaId }) });
+}
+
+/** Abre a contagem de todos os itens de um local, fora da agenda. */
+export function abrirContagemTotalNoErp(cnpj: string, localId: number) {
+  return pedir<{ id: number; local: string }>("/api/contagens", { method: "POST", body: JSON.stringify({ cnpj, local_id: localId, escopo: "total" }) });
 }
 
 export function contagemNoErp(id: number, cnpj: string) {

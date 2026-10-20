@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { canContar, canEntregarContagem } from "@/lib/auth/contagem";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { unidadeDaContagem } from "@/lib/data/contagem";
-import { abrirContagemNoErp, gravarContagemNoErp } from "@/lib/erp/contagens";
+import { abrirContagemNoErp, abrirContagemTotalNoErp, gravarContagemNoErp } from "@/lib/erp/contagens";
 
 export type ResultadoContagem = { error?: string; ok?: string; id?: number; falta?: number; entregue?: boolean };
 
@@ -16,6 +16,22 @@ export async function abrirContagem(unidadeId: number, agendaId: number): Promis
   if (!unidade || unidade.id !== unidadeId) return { error: "Unidade sem ligação com o ERP." };
   try {
     const r = await abrirContagemNoErp(unidade.cnpj, agendaId);
+    revalidatePath("/contagem");
+    return { ok: `Contagem do ${r.local} aberta.`, id: r.id };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Não foi possível abrir a contagem." };
+  }
+}
+
+/** Abre no ERP a contagem de todos os itens de um local, sem depender da agenda. */
+export async function abrirContagemTotal(unidadeId: number, localId: number): Promise<ResultadoContagem> {
+  const user = await getCurrentUser();
+  if (!canContar(user)) return { error: "Você não conta estoque." };
+  const { unidade } = await unidadeDaContagem(user, unidadeId);
+  if (!unidade || unidade.id !== unidadeId) return { error: "Unidade sem ligação com o ERP." };
+  if (!Number.isInteger(localId)) return { error: "Local inválido." };
+  try {
+    const r = await abrirContagemTotalNoErp(unidade.cnpj, localId);
     revalidatePath("/contagem");
     return { ok: `Contagem do ${r.local} aberta.`, id: r.id };
   } catch (e) {
