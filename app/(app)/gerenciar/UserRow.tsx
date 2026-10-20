@@ -158,7 +158,7 @@ export function UserRow({
         <div className="form-group">
           <label>Folgas na semana (escala)</label>
           <p className="items-count" style={{ marginBottom: 8 }}>
-            Nesses dias a pessoa não é cobrada nos checklists, nos alertas de atraso e nos indicadores. Só vale a partir da data de início da escala.
+            Nesses dias a pessoa não é cobrada nos checklists, nos alertas de atraso e nos indicadores. Só vale a partir da data de início da escala; até lá a folga é no domingo para todos.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {DIAS.map((dia, i) => (

@@ -19,7 +19,7 @@ export async function carregarEscala(organizationId: number, userIds: number[], 
   const vigenteDesde = org?.desde ?? null;
 
   const excecoes = new Map<string, TipoExcecao>();
-  if (vigenteDesde && userIds.length > 0) {
+  if (userIds.length > 0) {
     const rows = await db
       .select({ userId: escalaExcecoes.userId, date: escalaExcecoes.date, tipo: escalaExcecoes.tipo })
       .from(escalaExcecoes)

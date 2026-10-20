@@ -6,9 +6,13 @@ export function diaDaSemana(iso: string): number {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
+/** Folga de todos antes de a escala por pessoa começar: domingo. */
+export const FOLGA_ANTES_DA_ESCALA = [0];
+
 /**
- * A pessoa está de folga nesse dia? Antes da vigência da escala (ou sem
- * escala) ninguém folga. Uma exceção do dia vale mais que a folga fixa.
+ * A pessoa está de folga nesse dia? Uma exceção do dia vale mais que tudo.
+ * Antes da vigência da escala (ou sem escala) a folga é a de todos
+ * (domingo); a partir dela, a folga fixa de cada pessoa.
  */
 export function estaDeFolga(
   folgaDias: number[],
@@ -16,7 +20,7 @@ export function estaDeFolga(
   vigenteDesde: string | null,
   excecao?: TipoExcecao,
 ): boolean {
-  if (!vigenteDesde || date < vigenteDesde) return false;
   if (excecao) return excecao === "folga";
-  return folgaDias.includes(diaDaSemana(date));
+  const dias = !vigenteDesde || date < vigenteDesde ? FOLGA_ANTES_DA_ESCALA : folgaDias;
+  return dias.includes(diaDaSemana(date));
 }

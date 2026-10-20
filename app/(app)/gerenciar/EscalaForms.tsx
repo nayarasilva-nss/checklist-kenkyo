@@ -12,7 +12,7 @@ export function InicioEscalaForm({ desde }: { desde: string | null }) {
       <div className="form-group">
         <label htmlFor="escalaDesde">A escala vale a partir de</label>
         <input id="escalaDesde" name="desde" type="date" defaultValue={desde ?? ""} />
-        <p className="items-count">Antes dessa data todos são cobrados todos os dias. Deixe em branco para desligar a escala.</p>
+        <p className="items-count">Antes dessa data a folga é no domingo para todos. A partir dela vale a folga de cada pessoa (Usuários › Editar).</p>
       </div>
       {state?.error && <p className="login-error">{state.error}</p>}
       {state?.ok && <p className="items-count">{state.ok}</p>}

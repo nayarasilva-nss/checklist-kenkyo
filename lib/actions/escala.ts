@@ -69,7 +69,7 @@ export async function removerExcecaoEscala(formData: FormData): Promise<void> {
   revalidar();
 }
 
-/** Data a partir da qual a escala vale (vazio = sem escala, todos cobrados todo dia). */
+/** Data a partir da qual vale a folga de cada pessoa (vazio = só o domingo de todos). */
 export async function definirInicioEscala(_prev: EscalaState, formData: FormData): Promise<EscalaState> {
   const gestor = await requireGestor();
   if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
@@ -80,5 +80,5 @@ export async function definirInicioEscala(_prev: EscalaState, formData: FormData
     .set({ escalaVigenteDesde: raw || null })
     .where(eq(organizations.id, gestor.organizationId));
   revalidar();
-  return { ok: raw ? "Início da escala salvo" : "Escala desligada" };
+  return { ok: raw ? "Início da escala salvo" : "Folga por pessoa desligada: só o domingo" };
 }
