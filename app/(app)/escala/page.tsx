@@ -7,10 +7,14 @@ import { canVerEscala } from "@/lib/auth/escala";
 import { getEscalaMes } from "@/lib/data/escala";
 import { getUnits } from "@/lib/data/units";
 import { checklistDayISO } from "@/lib/date-utils";
+import { PREVIA, PREVIA_FECHADOS, PREVIA_MES } from "@/lib/data/escala-previa";
 import { UnitFilter } from "../UnitFilter";
+import { EscalaTabela } from "./EscalaTabela";
+
+// Prévia provisória (planilha de dezembro): só aparece para este usuário.
+const PREVIA_PARA = "Nayara Silva";
 
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-const DIA = ["D", "S", "T", "Q", "Q", "S", "S"];
 
 function mesVizinho(mes: string, delta: number) {
   const [y, m] = mes.split("-").map(Number);
@@ -21,12 +25,14 @@ function mesVizinho(mes: string, delta: number) {
 export default async function EscalaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; unit?: string }>;
+  searchParams: Promise<{ mes?: string; unit?: string; previa?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!canVerEscala(user)) redirect("/hoje");
 
-  const { mes: rawMes, unit: rawUnit } = await searchParams;
+  const { mes: rawMes, unit: rawUnit, previa: rawPrevia } = await searchParams;
+  const podePrevia = user.name === PREVIA_PARA && isGestorProfile(user.profile);
+  const previa = podePrevia && rawPrevia && PREVIA[rawPrevia] ? rawPrevia : null;
   const hoje = checklistDayISO();
   const mes = rawMes && /^\d{4}-(0[1-9]|1[0-2])$/.test(rawMes) ? rawMes : hoje.slice(0, 7);
 
@@ -45,6 +51,40 @@ export default async function EscalaPage({
         <h2 style={{ marginBottom: 0 }}>Escala</h2>
       </div>
 
+      {podePrevia && (
+        <div className="filter-pills" style={{ marginBottom: 12 }}>
+          <Link href="/escala" className={`pill${!previa ? " active" : ""}`}>Escala cadastrada</Link>
+          {Object.entries(PREVIA).map(([k, v]) => (
+            <Link key={k} href={`/escala?previa=${k}`} className={`pill${previa === k ? " active" : ""}`}>
+              Prévia dez/2026 · {v.unidade}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {previa ? (
+        <div className="today-card" style={{ overflowX: "auto" }}>
+          <p className="items-count" style={{ marginBottom: 12 }}>
+            <strong>Lista provisória, só você vê.</strong> Vem da planilha de dezembro e não está cadastrada no sistema: não muda nenhum indicador nem aparece para as unidades. F = folga; colunas cinza = casa fechada; nome em vermelho = vaga a contratar.
+          </p>
+          <EscalaTabela
+            mes={PREVIA_MES}
+            hoje={hoje}
+            fechados={PREVIA_FECHADOS.map((d) => `${PREVIA_MES}-${String(d).padStart(2, "0")}`)}
+            grupos={PREVIA[previa].grupos.map((g) => ({
+              titulo: g.titulo,
+              pessoas: g.pessoas.map((p, i) => ({
+                key: i,
+                nome: p.nome === "A CONTRATAR" ? "A contratar" : p.nome,
+                aContratar: p.nome === "A CONTRATAR",
+                funcao: p.funcao,
+                folgas: new Set(p.folgas.map((d) => `${PREVIA_MES}-${String(d).padStart(2, "0")}`)),
+              })),
+            }))}
+          />
+        </div>
+      ) : (
+      <>
       {isGestor && <UnitFilter units={units} value={unitId} />}
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "12px 0" }}>
@@ -64,37 +104,14 @@ export default async function EscalaPage({
               ? ` Até ${escala.vigenteDesde.split("-").reverse().join("/")} a folga é no domingo para todos; depois vale a escala de cada pessoa.`
               : " A folga é no domingo para todos."}
           </p>
-          <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", padding: "4px 12px 4px 0", position: "sticky", left: 0, background: "var(--bg, #fff)" }}>Pessoa</th>
-                {escala.dias.map((d) => (
-                  <th key={d.date} style={{ padding: "2px 4px", textAlign: "center", minWidth: 26, color: d.date === hoje ? "var(--kenkyo-red)" : undefined, borderBottom: d.date === hoje ? "2px solid var(--kenkyo-red)" : undefined }}>
-                    <div style={{ fontWeight: 400, fontSize: 11 }}>{DIA[d.dow]}</div>
-                    <div>{Number(d.date.slice(8))}</div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {escala.pessoas.map((p) => (
-                <tr key={p.id} style={{ borderTop: "1px solid var(--border, #e5e5e5)" }}>
-                  <td style={{ padding: "6px 12px 6px 0", whiteSpace: "nowrap", position: "sticky", left: 0, background: "var(--bg, #fff)" }}>
-                    <strong>{p.name}</strong>
-                    {p.funcao && <div className="items-count">{p.funcao}</div>}
-                  </td>
-                  {escala.dias.map((d) => (
-                    <td key={d.date} style={{ textAlign: "center", padding: 2 }}>
-                      {p.folgas.has(d.date) ? (
-                        <span className="badge badge-warning" style={{ padding: "2px 5px" }}>F</span>
-                      ) : null}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <EscalaTabela
+            mes={mes}
+            hoje={hoje}
+            grupos={[{ titulo: null, pessoas: escala.pessoas.map((p) => ({ key: p.id, nome: p.name, funcao: p.funcao, folgas: p.folgas })) }]}
+          />
         </div>
+      )}
+      </>
       )}
     </>
   );
