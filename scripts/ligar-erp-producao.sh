@@ -23,7 +23,7 @@ DATABASE_URL="$URL" npx drizzle-kit migrate
 
 echo "2/2 Ligação na Vercel"
 gravar() { vercel env rm "$1" production --yes > /dev/null 2>&1 || true; printf '%s' "$2" | vercel env add "$1" production > /dev/null; echo "  variável $1 gravada"; }
-gravar ERP_API_URL "https://erp-kenkyo.vercel.app"
+gravar ERP_API_URL "https://erp.kenkyo.com.br"
 TOKEN=$(ler API_REQUISICOES_TOKEN "$ERP_ENV")
 [ -n "$TOKEN" ] || { echo "O .env.local do ERP não tem API_REQUISICOES_TOKEN."; exit 1; }
 gravar ERP_API_TOKEN "$TOKEN"
