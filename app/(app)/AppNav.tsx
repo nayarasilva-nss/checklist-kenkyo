@@ -22,6 +22,7 @@ function buildGroups(
   showRequisicoes: boolean,
   showContagem: boolean,
   showEscala: boolean,
+  showEstoque: boolean,
   showSolicitacoes: boolean,
   showFormularios: boolean,
   showPlataforma: boolean,
@@ -49,6 +50,7 @@ function buildGroups(
         { href: "/diario-de-bordo", label: "Diário de bordo" },
         { href: "/anomalias", label: "Anomalias" },
         ...(showRequisicoes ? [{ href: "/requisicoes", label: "Requisições" }] : []),
+        ...(showEstoque ? [{ href: "/estoque", label: "Estoque" }] : []),
         ...(showContagem ? [{ href: "/contagem", label: "Contagem" }] : []),
         ...(showSolicitacoes ? [{ href: "/solicitacoes", label: "Solicitações" }] : []),
         ...(showEscala ? [{ href: "/escala", label: "Escala" }] : []),
@@ -146,6 +148,7 @@ export function AppNav({
   showRequisicoes,
   showContagem = false,
   showEscala = false,
+  showEstoque = false,
   canCreateRequisicao,
   showSolicitacoes,
   showFormularios,
@@ -164,6 +167,7 @@ export function AppNav({
   showRequisicoes: boolean;
   showContagem?: boolean;
   showEscala?: boolean;
+  showEstoque?: boolean;
   canCreateRequisicao: boolean;
   showSolicitacoes: boolean;
   showFormularios: boolean;
@@ -171,7 +175,7 @@ export function AppNav({
   pendingAuditCount: number;
 }) {
   const pathname = usePathname();
-  const groups = buildGroups(profile, showRequisicoes, showContagem, showEscala, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
+  const groups = buildGroups(profile, showRequisicoes, showContagem, showEscala, showEstoque, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
   const scope =
     isGestorProfile(profile) || profile === "rh"
       ? "Todas as unidades"
@@ -212,6 +216,7 @@ export function AppNav({
     ...(showRequisicoes
       ? [{ href: "/requisicoes", title: "Requisições", description: "Pedidos de estoque" }]
       : []),
+    ...(showEstoque ? [{ href: "/estoque", title: "Estoque", description: "Saldo e alertas da unidade" }] : []),
     ...(showEscala ? [{ href: "/escala", title: "Escala", description: "Folgas do mês" }] : []),
     ...(showSolicitacoes
       ? [{ href: "/solicitacoes", title: "Solicitações", description: "Itens avulsos, com aprovação" }]

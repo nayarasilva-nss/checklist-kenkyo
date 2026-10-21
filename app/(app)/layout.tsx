@@ -4,6 +4,7 @@ import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { canCoverOtherUnits, getCoveringUnit } from "@/lib/auth/covering-unit";
 import { getGestorFuncao } from "@/lib/auth/gestor-funcao";
 import { canVerEscala } from "@/lib/auth/escala";
+import { canVerEstoque } from "@/lib/auth/estoque";
 import { resolveRequisicaoScope } from "@/lib/data/requisicoes";
 import { tiposPermitidos } from "@/lib/auth/requisicoes";
 import { canCreateSolicitacao } from "@/lib/auth/solicitacoes";
@@ -95,6 +96,7 @@ export default async function AppLayout({
         showRequisicoes={showRequisicoes}
         showContagem={canContar(user) && erpConfigurado()}
         showEscala={canVerEscala(user)}
+        showEstoque={canVerEstoque(user) && erpConfigurado()}
         canCreateRequisicao={canCreateRequisicao}
         showSolicitacoes={showSolicitacoes}
         showFormularios={showFormularios}
