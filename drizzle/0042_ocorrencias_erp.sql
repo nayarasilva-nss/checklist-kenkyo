@@ -1,0 +1,1 @@
+ALTER TABLE "anomalies" ADD COLUMN "erp_enviada_em" timestamp;

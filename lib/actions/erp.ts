@@ -7,6 +7,7 @@ import { requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { catalogItems, jobFunctions, requisicoes, units } from "@/lib/db/schema";
 import { enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
+import { enviarOcorrenciasPendentes } from "@/lib/erp/ocorrencias";
 import { aplicarEspelho, planoEspelho, type PlanoEspelho } from "@/lib/erp/espelho";
 
 export type ActionState = { error?: string; ok?: string } | undefined;
@@ -29,7 +30,7 @@ export async function salvarUnidadesErp(_prev: ActionState, formData: FormData):
       .set({ erpCnpj: cnpj || null })
       .where(and(eq(units.id, u.id), eq(units.organizationId, gestor.organizationId)));
   }
-  after(() => enviarPendentesAoErp(gestor.organizationId!).catch(() => 0));
+  after(async () => { await enviarPendentesAoErp(gestor.organizationId!).catch(() => 0); await enviarOcorrenciasPendentes(gestor.organizationId!, 500).catch(() => 0); });
   revalidar();
   return { ok: "Unidades salvas." };
 }
@@ -63,7 +64,7 @@ export async function salvarItensErp(_prev: ActionState, formData: FormData): Pr
       .where(eq(catalogItems.id, id));
     if (escolhido) ligados++;
   }
-  after(() => enviarPendentesAoErp(gestor.organizationId!).catch(() => 0));
+  after(async () => { await enviarPendentesAoErp(gestor.organizationId!).catch(() => 0); await enviarOcorrenciasPendentes(gestor.organizationId!, 500).catch(() => 0); });
   revalidar();
   const aviso = semFator.length > 0 ? ` ${semFator.length} ficaram sem ligar porque falta o fator.` : "";
   return { ok: `Salvo: ${ligados} produto${ligados === 1 ? "" : "s"} ligado${ligados === 1 ? "" : "s"} ao ERP.${aviso}` };

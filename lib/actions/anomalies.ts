@@ -2,12 +2,14 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { anomalies, units } from "@/lib/db/schema";
 import { ANOMALY_SETORES, ANOMALY_TYPES } from "@/lib/data/anomalies";
 import { addHistoryEntry } from "@/lib/data/history";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
+import { enviarOcorrenciaAoErp, enviarOcorrenciasPendentes, excluirOcorrenciaNoErp } from "@/lib/erp/ocorrencias";
 
 export type AnomalyFormState = { error?: string } | undefined;
 
@@ -82,6 +84,13 @@ export async function recordAnomaly(input: RecordAnomalyInput) {
     .returning({ id: anomalies.id });
 
   if (inserted.length === 0) return;
+
+  // vira ocorrência no acompanhamento da semana do ERP (e leva o que tinha ficado para trás)
+  const novaId = inserted[0]!.id;
+  after(async () => {
+    await enviarOcorrenciaAoErp(novaId);
+    await enviarOcorrenciasPendentes(unit.organizationId, 20);
+  });
 
   await addHistoryEntry(
     input.userId,
@@ -174,6 +183,7 @@ export async function deleteAnomaly(formData: FormData) {
   await db
     .delete(anomalies)
     .where(and(eq(anomalies.id, id), eq(anomalies.organizationId, gestor.organizationId)));
+  after(() => excluirOcorrenciaNoErp(id));
   revalidatePath("/anomalias");
 }
 
@@ -183,7 +193,8 @@ export async function markAnomalyTreated(formData: FormData) {
   if (!id || !user.organizationId) return;
   await db
     .update(anomalies)
-    .set({ status: "tratada" })
+    .set({ status: "tratada", erpEnviadaEm: null })
     .where(and(eq(anomalies.id, id), eq(anomalies.organizationId, user.organizationId)));
+  after(() => enviarOcorrenciaAoErp(id));
   revalidatePath("/anomalias");
 }

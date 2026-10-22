@@ -438,6 +438,9 @@ export const anomalies = pgTable(
       { onDelete: "set null" },
     ),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    // Quando a ocorrência chegou ao ERP (lib/erp/ocorrencias.ts). Nulo = falta
+    // mandar (nova, tratada depois, ou o ERP estava fora do ar).
+    erpEnviadaEm: timestamp("erp_enviada_em"),
   },
   (table) => [
     uniqueIndex("anomalies_source_completion_idx").on(
