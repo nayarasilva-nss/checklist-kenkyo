@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  cancelSolicitacao,
-  deleteSolicitacao,
-  decideSolicitacaoItem,
-  setItemComprado,
-  setItemChegou,
-} from "@/lib/actions/solicitacoes";
+import { cancelSolicitacao, deleteSolicitacao, setItemChegou } from "@/lib/actions/solicitacoes";
 import { NovaSolicitacaoForm } from "./NovaSolicitacaoForm";
 
 type SolicitacaoItem = {
@@ -36,6 +30,7 @@ type Solicitacao = {
   observacao: string;
   status: string;
   createdAt: Date;
+  erpEnviadaEm: Date | null;
   itens: SolicitacaoItem[];
   resumo: Resumo;
 };
@@ -68,47 +63,20 @@ function formatDate(d: string | Date) {
   });
 }
 
+/**
+ * Um item: a situação que o ERP diz (aprovação, compra e previsão de entrega — tudo decidido lá, em Compras ›
+ * Solicitações) e o ok da chegada, que é daqui.
+ */
 function ItemRow({
   item,
   solicitacaoId,
-  canApprove,
   canTrackChegada,
 }: {
   item: SolicitacaoItem;
   solicitacaoId: number;
-  canApprove: boolean;
   canTrackChegada: boolean;
 }) {
-  const [dataPrevista, setDataPrevista] = useState(item.dataPrevistaEntrega ?? "");
-  const [motivo, setMotivo] = useState("");
-  const [reprovando, setReprovando] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | undefined>();
-
-  function decidir(decisao: "aprovado" | "reprovado") {
-    setError(undefined);
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("itemId", String(item.id));
-      fd.set("decisao", decisao);
-      if (decisao === "reprovado") fd.set("motivo", motivo);
-      const result = await decideSolicitacaoItem(undefined, fd);
-      if (result?.error) setError(result.error);
-      else setReprovando(false);
-    });
-  }
-
-  function toggleComprado(comprado: boolean) {
-    setError(undefined);
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("itemId", String(item.id));
-      fd.set("comprado", comprado ? "on" : "off");
-      if (dataPrevista) fd.set("dataPrevistaEntrega", dataPrevista);
-      const result = await setItemComprado(undefined, fd);
-      if (result?.error) setError(result.error);
-    });
-  }
 
   function toggleChegou(chegou: boolean) {
     startTransition(async () => {
@@ -126,21 +94,20 @@ function ItemRow({
         <h4>{item.nome}</h4>
         <p>
           Quantidade: {item.quantidade}
-          {item.comprado && item.dataPrevistaEntrega && ` · Previsão: ${formatDate(item.dataPrevistaEntrega)}`}
+          {item.status === "aprovado" && !item.chegou && item.dataPrevistaEntrega && ` · Previsão de chegada: ${formatDate(item.dataPrevistaEntrega)}`}
         </p>
         {item.status === "reprovado" && item.motivoReprovacao && (
           <p>Motivo: {item.motivoReprovacao}</p>
         )}
-        {error && <p className="login-error">{error}</p>}
       </div>
       <div className="list-item-actions" style={{ flexWrap: "wrap", gap: 8 }}>
         {item.status === "aprovado" ? (
           item.chegou ? (
             <span className="badge badge-success">Chegou</span>
           ) : item.comprado ? (
-            <span className="badge badge-info">Comprado</span>
+            <span className="badge badge-info">Comprado{item.dataPrevistaEntrega ? "" : " · sem previsão"}</span>
           ) : (
-            <span className="badge badge-success">Aprovado</span>
+            <span className="badge badge-success">Aprovado · aguardando compra</span>
           )
         ) : (
           <span className={`badge ${ITEM_STATUS_BADGE[item.status] ?? "badge-neutral"}`}>
@@ -148,57 +115,7 @@ function ItemRow({
           </span>
         )}
 
-        {canApprove && item.status === "pendente" && !reprovando && (
-          <>
-            <button type="button" className="btn-small" disabled={isPending} onClick={() => decidir("aprovado")}>
-              Aprovar
-            </button>
-            <button type="button" className="btn-small btn-delete" disabled={isPending} onClick={() => setReprovando(true)}>
-              Reprovar
-            </button>
-          </>
-        )}
-
-        {canApprove && item.status === "pendente" && reprovando && (
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-            <input
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              placeholder="Motivo (opcional)"
-              style={{ fontSize: 12.5, padding: "4px 6px" }}
-            />
-            <button type="button" className="btn-cancel" disabled={isPending} onClick={() => setReprovando(false)}>
-              Cancelar
-            </button>
-            <button type="button" className="btn-destructive" disabled={isPending} onClick={() => decidir("reprovado")}>
-              Confirmar
-            </button>
-          </div>
-        )}
-
-        {canApprove && item.status === "aprovado" && !item.chegou && (
-          <>
-            <input
-              type="date"
-              value={dataPrevista}
-              onChange={(e) => setDataPrevista(e.target.value)}
-              onBlur={() => toggleComprado(item.comprado)}
-              disabled={isPending}
-              style={{ fontSize: 12.5, padding: "4px 6px" }}
-              aria-label="Data prevista de entrega"
-            />
-            <button
-              type="button"
-              className="btn-small"
-              disabled={isPending}
-              onClick={() => toggleComprado(!item.comprado)}
-            >
-              {item.comprado ? "Desmarcar comprado" : "Marcar comprado"}
-            </button>
-          </>
-        )}
-
-        {canTrackChegada && item.status === "aprovado" && item.comprado && !item.chegou && (
+        {canTrackChegada && item.status === "aprovado" && !item.chegou && (
           <button type="button" className="btn-small" disabled={isPending} onClick={() => toggleChegou(true)}>
             Chegou
           </button>
@@ -316,6 +233,12 @@ export function SolicitacoesBoard({
               </button>
             </div>
 
+            <p className="detail-panel-meta" style={{ margin: "0 0 8px" }}>
+              {selected.erpEnviadaEm
+                ? "A aprovação, a compra e a previsão de chegada são feitas no ERP. Aqui você acompanha e marca quando chegar."
+                : "Ainda não foi para o ERP (sem conexão agora): vai sozinha na próxima sincronização."}
+            </p>
+
             {selected.observacao && (
               <div className="detail-panel-fields">
                 <div>
@@ -331,7 +254,6 @@ export function SolicitacoesBoard({
                   key={item.id}
                   item={item}
                   solicitacaoId={selected.id}
-                  canApprove={canApprove}
                   canTrackChegada={canApprove || selected.requesterId === currentUserId}
                 />
               ))}

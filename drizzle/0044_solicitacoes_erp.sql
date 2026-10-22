@@ -1,0 +1,1 @@
+ALTER TABLE "solicitacoes" ADD COLUMN "erp_enviada_em" timestamp;

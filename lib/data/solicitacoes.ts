@@ -36,6 +36,7 @@ function baseQuery() {
       observacao: solicitacoes.observacao,
       status: solicitacoes.status,
       createdAt: solicitacoes.createdAt,
+      erpEnviadaEm: solicitacoes.erpEnviadaEm,
     })
     .from(solicitacoes)
     .innerJoin(units, eq(units.id, solicitacoes.unitId))

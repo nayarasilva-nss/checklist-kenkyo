@@ -309,6 +309,13 @@
       "when": 1792675089515,
       "tag": "0043_resto_ingesta_erp",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1792698370867,
+      "tag": "0044_solicitacoes_erp",
+      "breakpoints": true
     }
   ]
 }

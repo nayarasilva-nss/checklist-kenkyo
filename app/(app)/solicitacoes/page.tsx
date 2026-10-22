@@ -4,6 +4,7 @@ import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canCreateSolicitacao, canApproveSolicitacao } from "@/lib/auth/solicitacoes";
 import { resolveSolicitacaoScope, getSolicitacoesByScope } from "@/lib/data/solicitacoes";
 import { getUnits } from "@/lib/data/units";
+import { sincronizarSolicitacoesDoErp } from "@/lib/erp/solicitacoes";
 import { SolicitacoesBoard } from "./SolicitacoesBoard";
 
 export default async function SolicitacoesPage() {
@@ -20,6 +21,8 @@ export default async function SolicitacoesPage() {
   // escolhe a unidade dentro do formulário ao pedir.
   const needsUnitPicker = canCreate && !effectiveUnitId;
 
+  // a aprovação, a compra e a previsão vêm do ERP
+  await sincronizarSolicitacoesDoErp(user.organizationId!);
   const [records, units] = await Promise.all([
     getSolicitacoesByScope(scope, user.organizationId!),
     needsUnitPicker ? getUnits(user.organizationId!) : Promise.resolve([]),

@@ -3,6 +3,7 @@ import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { anomalies, restoIngestaRecords, units } from "@/lib/db/schema";
 import { chamarErp, erpConfigurado } from "./integracao";
+import { enviarSolicitacoesPendentes } from "./solicitacoes";
 
 /**
  * As anomalias viram "ocorrências operacionais" no ERP (POST /api/ocorrencias), para o acompanhamento da semana.
@@ -111,5 +112,7 @@ export async function enviarAcompanhamentoPendente(organizationId: number, limit
     .orderBy(desc(restoIngestaRecords.date))
     .limit(limite);
   for (const p of pendentes) if (await enviarRestoAoErp(p.id)) enviados++;
+  // e as solicitações de item avulso que ainda não foram (a aprovação é no ERP)
+  enviados += await enviarSolicitacoesPendentes(organizationId, limite);
   return enviados;
 }

@@ -611,8 +611,11 @@ export const requisicaoItens = pgTable("requisicao_itens", {
 
 // Solicitação de item avulso (ex: rádio comunicador, lâmpada do
 // aquecedor) — diferente de requisicoes (consumo de estoque, sem
-// aprovação): aqui todo pedido passa por aprovação do gestor antes da
-// compra ser providenciada (ver lib/auth/solicitacoes.ts).
+// aprovação): aqui todo pedido passa por aprovação antes da compra.
+// Desde 22/10/2026 a aprovação, a compra e a previsão de entrega ficam no
+// ERP (Compras › Solicitações); o checklist pede, acompanha o prazo e dá o
+// ok quando chega (lib/erp/solicitacoes.ts). status/comprado/
+// dataPrevistaEntrega/motivoReprovacao dos itens são a cópia do que o ERP diz.
 export const solicitacoes = pgTable("solicitacoes", {
   id: serial("id").primaryKey(),
   organizationId: integer("organization_id")
@@ -629,6 +632,8 @@ export const solicitacoes = pgTable("solicitacoes", {
   observacao: text("observacao").notNull().default(""),
   status: solicitacaoStatusEnum("status").notNull().default("aberta"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Quando foi para o ERP (Compras › Solicitações): lá se aprova, compra e põe a previsão; null = ainda não foi
+  erpEnviadaEm: timestamp("erp_enviada_em"),
 });
 
 export const solicitacaoItens = pgTable("solicitacao_itens", {

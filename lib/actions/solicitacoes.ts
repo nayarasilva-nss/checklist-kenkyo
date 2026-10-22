@@ -5,9 +5,10 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
-import { canCreateSolicitacao, canApproveSolicitacao } from "@/lib/auth/solicitacoes";
+import { canCreateSolicitacao } from "@/lib/auth/solicitacoes";
 import { db } from "@/lib/db";
 import { solicitacoes, solicitacaoItens } from "@/lib/db/schema";
+import { cancelarSolicitacaoNoErp, enviarChegadaAoErp, enviarSolicitacaoAoErp } from "@/lib/erp/solicitacoes";
 
 export type ActionState = { error?: string } | undefined;
 
@@ -90,6 +91,8 @@ export async function createSolicitacao(
     })),
   );
 
+  // vai para o ERP, onde se aprova e compra; fora do ar, vai na próxima sincronização
+  await enviarSolicitacaoAoErp(solicitacao.id);
   revalidateSolicitacaoViews();
 }
 
@@ -115,6 +118,7 @@ export async function cancelSolicitacao(formData: FormData) {
   if (itens.some((i) => i.status !== "pendente")) return;
 
   await db.update(solicitacoes).set({ status: "cancelada" }).where(eq(solicitacoes.id, id));
+  await cancelarSolicitacaoNoErp(id);
   revalidateSolicitacaoViews();
 }
 
@@ -124,88 +128,16 @@ export async function deleteSolicitacao(formData: FormData) {
   if (!isGestorProfile(user.profile) || !user.organizationId) return;
   const id = Number(formData.get("id"));
   if (!id) return;
+  await cancelarSolicitacaoNoErp(id);
   await db
     .delete(solicitacoes)
     .where(and(eq(solicitacoes.id, id), eq(solicitacoes.organizationId, user.organizationId)));
   revalidateSolicitacaoViews();
 }
 
-/** Aprova ou reprova um item individual — só Gestor. */
-export async function decideSolicitacaoItem(
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const user = await getCurrentUser();
-  if (!canApproveSolicitacao(user)) {
-    return { error: "Só o gestor pode aprovar ou reprovar um item" };
-  }
-
-  const itemId = Number(formData.get("itemId"));
-  const decisao = String(formData.get("decisao") ?? "");
-  if (!itemId || (decisao !== "aprovado" && decisao !== "reprovado")) {
-    return { error: "Requisição inválida" };
-  }
-  const motivo = String(formData.get("motivo") ?? "").trim() || null;
-
-  const [existing] = await db
-    .select({ status: solicitacaoItens.status })
-    .from(solicitacaoItens)
-    .where(eq(solicitacaoItens.id, itemId))
-    .limit(1);
-  if (!existing) return { error: "Item não encontrado" };
-  if (existing.status !== "pendente") {
-    return { error: "Esse item já foi decidido" };
-  }
-
-  await db
-    .update(solicitacaoItens)
-    .set({
-      status: decisao,
-      aprovadoPorId: user.id,
-      aprovadoEm: new Date(),
-      motivoReprovacao: decisao === "reprovado" ? motivo : null,
-    })
-    .where(eq(solicitacaoItens.id, itemId));
-
-  revalidateSolicitacaoViews();
-}
-
-/** Marca um item como comprado (ou desfaz), e a data prevista de
- * entrega — só Gestor, só depois do item aprovado. */
-export async function setItemComprado(
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const user = await getCurrentUser();
-  if (!canApproveSolicitacao(user)) {
-    return { error: "Só o gestor pode marcar um item como comprado" };
-  }
-
-  const itemId = Number(formData.get("itemId"));
-  if (!itemId) return { error: "Item inválido" };
-
-  const [existing] = await db
-    .select({ status: solicitacaoItens.status })
-    .from(solicitacaoItens)
-    .where(eq(solicitacaoItens.id, itemId))
-    .limit(1);
-  if (!existing || existing.status !== "aprovado") {
-    return { error: "O item precisa estar aprovado antes de registrar a compra" };
-  }
-
-  const comprado = formData.get("comprado") === "on";
-  const dataPrevistaEntrega = String(formData.get("dataPrevistaEntrega") ?? "").trim() || null;
-
-  await db
-    .update(solicitacaoItens)
-    .set({ comprado, dataPrevistaEntrega })
-    .where(eq(solicitacaoItens.id, itemId));
-
-  revalidateSolicitacaoViews();
-}
-
 /** Marca a chegada de um item — quem pediu (acompanhando o próprio
- * pedido) ou o gestor. */
+ * pedido) ou o gestor. A aprovação, a compra e a previsão de entrega
+ * ficam no ERP (Compras › Solicitações), desde 22/10/2026. */
 export async function setItemChegou(formData: FormData) {
   const user = await getCurrentUser();
   const itemId = Number(formData.get("itemId"));
@@ -222,7 +154,9 @@ export async function setItemChegou(formData: FormData) {
   if (existing.requesterId !== user.id && !isGestorProfile(user.profile)) return;
 
   const chegou = formData.get("chegou") === "on";
-  await db.update(solicitacaoItens).set({ chegou }).where(eq(solicitacaoItens.id, itemId));
+  await db.update(solicitacaoItens).set({ chegou }).where(and(eq(solicitacaoItens.id, itemId), eq(solicitacaoItens.solicitacaoId, solicitacaoId)));
+  // o ERP fecha a solicitação quando tudo chegou; fora do ar, a sincronização manda de novo
+  await enviarChegadaAoErp(solicitacaoId, itemId, chegou);
 
   revalidateSolicitacaoViews();
 }
