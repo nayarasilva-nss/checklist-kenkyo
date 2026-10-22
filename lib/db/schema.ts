@@ -351,6 +351,8 @@ export const restoIngestaRecords = pgTable("resto_ingesta_records", {
     scale: 3,
   }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Quando chegou ao ERP (lib/erp/ocorrencias.ts). Nulo = falta mandar.
+  erpEnviadoEm: timestamp("erp_enviado_em"),
 });
 
 // Controle do Líder de Bar (ver lib/data/utensil-breakage.ts).

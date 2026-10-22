@@ -9,7 +9,7 @@ import { anomalies, units } from "@/lib/db/schema";
 import { ANOMALY_SETORES, ANOMALY_TYPES } from "@/lib/data/anomalies";
 import { addHistoryEntry } from "@/lib/data/history";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
-import { enviarOcorrenciaAoErp, enviarOcorrenciasPendentes, excluirOcorrenciaNoErp } from "@/lib/erp/ocorrencias";
+import { enviarAcompanhamentoPendente, enviarOcorrenciaAoErp, excluirOcorrenciaNoErp } from "@/lib/erp/ocorrencias";
 
 export type AnomalyFormState = { error?: string } | undefined;
 
@@ -89,7 +89,7 @@ export async function recordAnomaly(input: RecordAnomalyInput) {
   const novaId = inserted[0]!.id;
   after(async () => {
     await enviarOcorrenciaAoErp(novaId);
-    await enviarOcorrenciasPendentes(unit.organizationId, 20);
+    await enviarAcompanhamentoPendente(unit.organizationId, 20);
   });
 
   await addHistoryEntry(

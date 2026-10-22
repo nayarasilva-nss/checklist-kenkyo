@@ -1,7 +1,7 @@
 import "server-only";
 import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { anomalies, units } from "@/lib/db/schema";
+import { anomalies, restoIngestaRecords, units } from "@/lib/db/schema";
 import { chamarErp, erpConfigurado } from "./integracao";
 
 /**
@@ -61,4 +61,55 @@ export async function enviarOcorrenciasPendentes(organizationId: number, limite 
   let enviadas = 0;
   for (const p of pendentes) if (await enviarOcorrenciaAoErp(p.id)) enviadas++;
   return enviadas;
+}
+
+/**
+ * O resto ingestão do dia (experiências vendidas e desperdício em kg) vai para o acompanhamento da semana do ERP
+ * (POST /api/resto-ingestao), do mesmo jeito: o que não foi fica com erpEnviadoEm nulo e vai na próxima.
+ */
+export async function enviarRestoAoErp(id: number): Promise<boolean> {
+  if (!erpConfigurado()) return false;
+  const [r] = await db
+    .select({ id: restoIngestaRecords.id, date: restoIngestaRecords.date, experiencias: restoIngestaRecords.experienciasVendidas,
+      kg: restoIngestaRecords.desperdicioKg, cnpj: units.erpCnpj })
+    .from(restoIngestaRecords)
+    .innerJoin(units, eq(units.id, restoIngestaRecords.unitId))
+    .where(eq(restoIngestaRecords.id, id))
+    .limit(1);
+  if (!r?.cnpj) return false;
+  try {
+    const resposta = await chamarErp("/api/resto-ingestao", {
+      method: "POST",
+      body: JSON.stringify({ id_externo: String(r.id), unidade_cnpj: r.cnpj, data: r.date, experiencias_vendidas: r.experiencias, desperdicio_kg: r.kg }),
+    });
+    if (!resposta.ok) return false;
+    await db.update(restoIngestaRecords).set({ erpEnviadoEm: new Date() }).where(eq(restoIngestaRecords.id, r.id));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function excluirRestoNoErp(id: number): Promise<void> {
+  if (!erpConfigurado()) return;
+  try {
+    await chamarErp("/api/resto-ingestao", { method: "POST", body: JSON.stringify({ id_externo: String(id), excluida: true }) });
+  } catch {
+    // fora do ar: o registro fica no ERP até alguém apagar lá
+  }
+}
+
+/** Ocorrências e resto ingestão que ainda não chegaram ao ERP. */
+export async function enviarAcompanhamentoPendente(organizationId: number, limite = 50): Promise<number> {
+  let enviados = await enviarOcorrenciasPendentes(organizationId, limite);
+  if (!erpConfigurado()) return enviados;
+  const pendentes = await db
+    .select({ id: restoIngestaRecords.id })
+    .from(restoIngestaRecords)
+    .innerJoin(units, eq(units.id, restoIngestaRecords.unitId))
+    .where(and(eq(restoIngestaRecords.organizationId, organizationId), isNull(restoIngestaRecords.erpEnviadoEm), isNotNull(units.erpCnpj)))
+    .orderBy(desc(restoIngestaRecords.date))
+    .limit(limite);
+  for (const p of pendentes) if (await enviarRestoAoErp(p.id)) enviados++;
+  return enviados;
 }

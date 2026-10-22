@@ -2,12 +2,14 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { restoIngestaRecords } from "@/lib/db/schema";
 import { canSubmitRestoIngesta } from "@/lib/data/resto-ingesta";
 import { addHistoryEntry } from "@/lib/data/history";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
+import { enviarRestoAoErp, excluirRestoNoErp } from "@/lib/erp/ocorrencias";
 
 export type RestoIngestaFormState = { error?: string } | undefined;
 
@@ -57,14 +59,16 @@ export async function createRestoIngestaRecord(
 
   if (!user.organizationId) return { error: "Conta sem empresa associada" };
 
-  await db.insert(restoIngestaRecords).values({
+  const [novo] = await db.insert(restoIngestaRecords).values({
     organizationId: user.organizationId,
     unitId: effectiveUnitId,
     userId: user.id,
     date,
     experienciasVendidas,
     desperdicioKg: desperdicioKg.toFixed(3),
-  });
+  }).returning({ id: restoIngestaRecords.id });
+  // vai para o acompanhamento da semana do ERP
+  if (novo) after(() => enviarRestoAoErp(novo.id));
 
   await addHistoryEntry(
     user.id,
@@ -82,5 +86,6 @@ export async function deleteRestoIngestaRecord(formData: FormData) {
   await db
     .delete(restoIngestaRecords)
     .where(and(eq(restoIngestaRecords.id, id), eq(restoIngestaRecords.organizationId, gestor.organizationId)));
+  after(() => excluirRestoNoErp(id));
   revalidatePath("/perdas");
 }

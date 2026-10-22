@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { cancelarExcluidaNoErp, definirDestinos, enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
-import { enviarOcorrenciasPendentes } from "@/lib/erp/ocorrencias";
+import { enviarAcompanhamentoPendente } from "@/lib/erp/ocorrencias";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao, canRequestExterna, canRequestInterna } from "@/lib/auth/requisicoes";
@@ -39,7 +39,7 @@ function sincronizarComErp(id: number, organizationId: number) {
     try {
       await enviarRequisicaoAoErp(id);
       await enviarPendentesAoErp(organizationId, 10);
-      await enviarOcorrenciasPendentes(organizationId, 20);
+      await enviarAcompanhamentoPendente(organizationId, 20);
     } catch (erro) {
       console.error("Envio da requisição ao ERP falhou:", erro);
     }

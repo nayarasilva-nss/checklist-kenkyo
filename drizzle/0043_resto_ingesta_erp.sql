@@ -1,0 +1,1 @@
+ALTER TABLE "resto_ingesta_records" ADD COLUMN "erp_enviado_em" timestamp;
