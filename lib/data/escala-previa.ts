@@ -3,7 +3,6 @@
 export type PreviaPessoa = { nome: string; funcao: string; folgas: number[] };
 export type PreviaGrupo = { titulo: string; pessoas: PreviaPessoa[] };
 export const PREVIA_MES = "2026-12";
-export const PREVIA_FECHADOS = [24, 25, 31];
 export const PREVIA: Record<string, { unidade: string; grupos: PreviaGrupo[] }> = {
  "oriental": {
   "unidade": "Cozinha Oriental",
