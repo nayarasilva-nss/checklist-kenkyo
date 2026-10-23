@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -22,16 +22,21 @@ export async function login(
     return { error: "Preencha usuário e senha" };
   }
 
+  // O usuário é comparado sem diferenciar maiúsculas: o teclado do celular
+  // põe a primeira letra maiúscula e há logins antigos cadastrados assim.
   const rows = await db
     .select()
     .from(users)
-    .where(eq(users.username, username))
+    .where(sql`lower(${users.username}) = ${username}`)
     .limit(1);
 
   const user = rows[0];
-  const passwordMatches = user
-    ? await bcrypt.compare(password, user.passwordHash)
-    : false;
+  // Senha exata primeiro; se falhar e só diferir por espaço no começo ou no
+  // fim (o autocompletar do celular costuma acrescentar), tenta sem ele.
+  let passwordMatches = user ? await bcrypt.compare(password, user.passwordHash) : false;
+  if (user && !passwordMatches && password !== password.trim()) {
+    passwordMatches = await bcrypt.compare(password.trim(), user.passwordHash);
+  }
 
   if (!user || !passwordMatches) {
     return { error: "Usuário ou senha inválidos" };

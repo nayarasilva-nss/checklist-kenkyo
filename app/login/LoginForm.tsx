@@ -17,6 +17,9 @@ export function LoginForm() {
           placeholder="Seu usuário"
           required
           autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
         />
       </div>
 
