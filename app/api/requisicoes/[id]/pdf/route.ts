@@ -3,6 +3,8 @@ import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { canConferirRequisicao } from "@/lib/auth/requisicoes";
 import { getRequisicaoWithItens, resolveRequisicaoScope } from "@/lib/data/requisicoes";
 import { renderRequisicaoPdf } from "@/lib/pdf/requisicao-report";
+import { nomeArquivoRequisicao } from "@/lib/pdf/nome-arquivo";
+import { checklistDayForInstant } from "@/lib/date-utils";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
@@ -26,6 +28,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     (scope?.mode === "unit" && scope.unitId === requisicao.unitId);
   if (!podeVer) return Response.json({ error: "Sem permissão" }, { status: 403 });
 
+  const nome = nomeArquivoRequisicao({ tipo: requisicao.tipo, unitName: requisicao.unitName, dia: checklistDayForInstant(requisicao.createdAt) });
   const pdf = await renderRequisicaoPdf(
     requisicao,
     { name: user.organizationName ?? "Kenkyo", logoUrl: user.organizationLogoUrl },
@@ -35,7 +38,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   return new Response(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="requisicao-${id}.pdf"`,
+      "Content-Disposition": `inline; filename="${nome}"; filename*=UTF-8''${nome}`,
       "Cache-Control": "private, no-store",
     },
   });

@@ -34,7 +34,7 @@ export async function renderRequisicaoPdf(
   const logo = (await loadImage(org.logoUrl ?? "/kenkyo-logo.png", origin)) ?? (await loadImage("/kenkyo-logo.png", origin));
 
   const pdf = await renderToBuffer(
-    <Document title={`${TIPO_LABEL[requisicao.tipo] ?? "Requisição"} ${requisicao.unitName}`} author={org.name}>
+    <Document title={`${TIPO_LABEL[requisicao.tipo] ?? "Requisição"} — ${requisicao.unitName} — ${new Date(requisicao.createdAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`} author={org.name}>
       <Page size="A4" style={shared.page}>
         <View style={shared.head}>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- Image do react-pdf não tem alt */}

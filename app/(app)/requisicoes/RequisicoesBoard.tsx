@@ -9,6 +9,8 @@ import {
   receberRequisicao,
   updateRequisicaoTipo,
 } from "@/lib/actions/requisicoes";
+import { nomeArquivoRequisicao } from "@/lib/pdf/nome-arquivo";
+import { checklistDayForInstant } from "@/lib/date-utils";
 import { NovaRequisicaoForm } from "./NovaRequisicaoForm";
 import type { EditingRequisicao } from "./NovaRequisicaoForm";
 import { QuantidadeStepper } from "./QuantidadeStepper";
@@ -555,7 +557,7 @@ export function RequisicoesBoard({
                     in this Next.js version — clicking it silently did
                     nothing instead of opening the print page. */}
                 <a
-                  href={`/api/requisicoes/${selected.id}/pdf`}
+                  href={`/api/requisicoes/${selected.id}/pdf/${nomeArquivoRequisicao({ tipo: selected.tipo, unitName: selected.unitName, dia: checklistDayForInstant(selected.createdAt) })}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-pdf"
