@@ -20,7 +20,7 @@ const rotulo = (i: ItemErp) => `${i.codigo} — ${i.nome} (${i.unidade_uso})`;
 /**
  * Unidade do checklist → empresa do ERP. O local de onde sai a requisição é
  * regra, não escolha: interna do "Estoque local" da unidade, externa do
- * "Estoque local" do Empório (a mercadoria continua sendo da unidade).
+ * "Estoque central" do Empório (a mercadoria continua sendo da unidade).
  */
 export function UnidadesErp({ unidades, empresas, locais }: { unidades: Unidade[]; empresas: Empresa[]; locais: Local[] }) {
   const [cnpjs, setCnpjs] = useState<Record<number, string>>(() => Object.fromEntries(unidades.map((u) => [u.id, u.erpCnpj ?? ""])));
@@ -28,7 +28,11 @@ export function UnidadesErp({ unidades, empresas, locais }: { unidades: Unidade[
   const [salvando, iniciar] = useTransition();
   const centrais = new Set(empresas.filter((e) => e.tipo === "central").map((e) => e.cnpj));
   const localDe = (cnpj: string, nome: string) => locais.find((l) => l.unidade_cnpj === cnpj && l.nome.toUpperCase() === nome.toUpperCase());
-  const central = locais.find((l) => centrais.has(l.unidade_cnpj) && l.nome.toUpperCase() === "ESTOQUE LOCAL");
+  // a interna sai do "Estoque local" da unidade; no Empório, que só tem o central, do "Estoque central"
+  const localInterno = (cnpj: string) => localDe(cnpj, "Estoque local") ?? (centrais.has(cnpj) ? localDe(cnpj, "Estoque central") : undefined);
+  // o local do Empório se chama "Estoque central" desde 24/10/2026 (antes, "Estoque local")
+  const central = locais.find((l) => centrais.has(l.unidade_cnpj) && l.nome.toUpperCase() === "ESTOQUE CENTRAL")
+    ?? locais.find((l) => centrais.has(l.unidade_cnpj) && l.nome.toUpperCase() === "ESTOQUE LOCAL");
   return (
     <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); iniciar(async () => setEstado(await salvarUnidadesErp(undefined, fd))); }}>
       <table className="ranking-table">
@@ -43,19 +47,19 @@ export function UnidadesErp({ unidades, empresas, locais }: { unidades: Unidade[
               </select>
             </td>
             <td>
-              {!cnpjs[u.id] ? "—" : localDe(cnpjs[u.id]!, "Estoque local")
-                ? `${localDe(cnpjs[u.id]!, "Estoque local")!.unidade} · Estoque local`
+              {!cnpjs[u.id] ? "—" : localInterno(cnpjs[u.id]!)
+                ? `${localInterno(cnpjs[u.id]!)!.unidade} · ${localInterno(cnpjs[u.id]!)!.nome}`
                 : <span className="login-error" style={{ margin: 0 }}>falta o &quot;Estoque local&quot; no ERP</span>}
             </td>
             <td>
               {!cnpjs[u.id] ? "—" : central
-                ? `${central.unidade} · Estoque local`
-                : <span className="login-error" style={{ margin: 0 }}>falta o &quot;Estoque local&quot; do Empório no ERP</span>}
+                ? `${central.unidade} · ${central.nome}`
+                : <span className="login-error" style={{ margin: 0 }}>falta o &quot;Estoque central&quot; do Empório no ERP</span>}
             </td>
           </tr>
         ))}</tbody>
       </table>
-      <p className="items-count" style={{ marginTop: 10 }}>De onde sai é regra: requisição interna do &quot;Estoque local&quot; da unidade, externa do &quot;Estoque local&quot; do Empório. A mercadoria continua sendo da unidade que pediu.</p>
+      <p className="items-count" style={{ marginTop: 10 }}>De onde sai é regra: requisição interna do &quot;Estoque local&quot; da unidade, externa do &quot;Estoque central&quot; do Empório. A mercadoria continua sendo da unidade que pediu.</p>
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12 }}>
         <button className="btn-save" type="submit" disabled={salvando}>{salvando ? "Salvando…" : "Salvar unidades"}</button>
         <Mensagem estado={estado} />
