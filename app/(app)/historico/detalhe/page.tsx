@@ -1,3 +1,4 @@
+import { nomeArquivoChecklist } from "@/lib/pdf/nome-arquivo";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/dal";
@@ -91,7 +92,7 @@ export default async function DetalheRespostaPage({
         <h2 style={{ marginBottom: 0 }}>Detalhe da resposta</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Link href="/historico" className="btn-tertiary">← Voltar</Link>
-          <a className="btn-pdf" href={`/api/historico/pdf?${pdfParams.toString()}`} target="_blank" rel="noopener noreferrer">📥 Exportar PDF</a>
+          <a className="btn-pdf" href={`/api/historico/pdf/${nomeArquivoChecklist({ checklist: data.checklistType.name, unitName: data.unitName, dia: date })}?${pdfParams.toString()}`} target="_blank" rel="noopener noreferrer">📥 Exportar PDF</a>
         </div>
       </div>
 

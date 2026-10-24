@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { nomeArquivoChecklist } from "@/lib/pdf/nome-arquivo";
 
 export function ChecklistHistoryRow({
   checklistTypeId,
@@ -46,7 +47,7 @@ export function ChecklistHistoryRow({
           <span className={`status-pill ${done ? "completed" : "pending"}`}>
             {completedItems}/{totalItems} {done ? "concluído" : "em andamento"}
           </span>
-          <a className="btn-small" href={`/api/historico/pdf?${pdfParams.toString()}`} target="_blank" rel="noopener noreferrer">
+          <a className="btn-small" href={`/api/historico/pdf/${nomeArquivoChecklist({ checklist: checklistName, unitName, dia: date })}?${pdfParams.toString()}`} target="_blank" rel="noopener noreferrer">
             📥 PDF
           </a>
           <Link className="btn-small" href={`/historico/detalhe?${pdfParams.toString()}`}>

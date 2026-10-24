@@ -17,3 +17,15 @@ export function nomeArquivoRequisicao(r: { tipo: string; unitName: string; dia: 
   const tipo = TIPO[r.tipo as keyof typeof TIPO] ?? "";
   return `requisicao${tipo ? `-${tipo}` : ""}-${slug(r.unitName)}-${d}-${m}-${y}.pdf`;
 }
+
+const dataBr = (dia: string) => dia.split("-").reverse().join("-");
+
+/** Nome do PDF de um checklist respondido: checklist, unidade e dia (ex.: checklist-abertura-kenkyo-garden-24-10-2026.pdf). */
+export function nomeArquivoChecklist(r: { checklist: string; unitName: string | null; dia: string }) {
+  return `checklist-${[slug(r.checklist), r.unitName ? slug(r.unitName) : ""].filter(Boolean).join("-")}-${dataBr(r.dia)}.pdf`;
+}
+
+/** Nome do PDF da auditoria: unidade e dia da visita (ex.: auditoria-kenkyo-garden-24-10-2026.pdf). */
+export function nomeArquivoAuditoria(r: { unitName: string; dia: string }) {
+  return `auditoria-${slug(r.unitName)}-${dataBr(r.dia)}.pdf`;
+}

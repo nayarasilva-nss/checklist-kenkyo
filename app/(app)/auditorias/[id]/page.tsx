@@ -1,3 +1,4 @@
+import { nomeArquivoAuditoria } from "@/lib/pdf/nome-arquivo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireGestor } from "@/lib/auth/dal";
@@ -67,7 +68,7 @@ export default async function AuditoriaPage({ params }: { params: Promise<{ id: 
             : `Auditor: ${audit.auditorName}`}
         </p>
         {/* PDF gerado no servidor: mesmo arquivo no celular e no computador. */}
-        <a href={`/api/auditorias/${audit.id}/pdf`} className="btn-pdf" style={{ display: "inline-block", marginTop: 12 }}>
+        <a href={`/api/auditorias/${audit.id}/pdf/${nomeArquivoAuditoria({ unitName: audit.unitName, dia: audit.visitDate })}`} className="btn-pdf" style={{ display: "inline-block", marginTop: 12 }}>
           📥 Gerar PDF
         </a>
       </div>

@@ -26,7 +26,7 @@ export async function renderChecklistPdf(
   const logo = (await loadImage(org.logoUrl ?? "/kenkyo-logo.png", origin)) ?? (await loadImage("/kenkyo-logo.png", origin));
 
   const pdf = await renderToBuffer(
-    <Document title={`${data.checklistType.name} ${date}`} author={org.name}>
+    <Document title={`${data.checklistType.name}${data.unitName ? ` — ${data.unitName}` : ""} — ${date}`} author={org.name}>
       <Page size="A4" style={shared.page}>
         <View style={shared.head}>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- Image do react-pdf não tem alt */}

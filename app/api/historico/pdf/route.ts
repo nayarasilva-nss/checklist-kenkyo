@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth/dal";
 import { getChecklistExportData } from "@/lib/data/checklists";
 import { resolveUnitScope } from "@/lib/data/units";
 import { renderChecklistPdf } from "@/lib/pdf/checklist-report";
+import { nomeArquivoChecklist } from "@/lib/pdf/nome-arquivo";
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -25,6 +26,7 @@ export async function GET(req: Request) {
   const data = await getChecklistExportData(checklistTypeId, userId, date, unitId, user.organizationId!);
   if (!data) return Response.json({ error: "Não encontrado" }, { status: 404 });
 
+  const nome = nomeArquivoChecklist({ checklist: data.checklistType.name, unitName: data.unitName, dia: data.date });
   const pdf = await renderChecklistPdf(
     data,
     { name: user.organizationName ?? "Kenkyo", logoUrl: user.organizationLogoUrl },
@@ -34,7 +36,7 @@ export async function GET(req: Request) {
   return new Response(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": 'inline; filename="checklist.pdf"',
+      "Content-Disposition": `inline; filename="${nome}"; filename*=UTF-8''${nome}`,
       "Cache-Control": "private, no-store",
     },
   });
