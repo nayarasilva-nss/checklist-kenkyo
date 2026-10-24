@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { upload } from "@vercel/blob/client";
 import { setChecklistItemStatus } from "@/lib/actions/checklist";
@@ -14,6 +15,7 @@ type Item = {
   requiresPhoto: boolean;
   requiresShiftLog: boolean;
   requiresRequisicao: boolean;
+  requiresContagem?: boolean;
   status: CompletionStatus;
   justification: string | null;
   photoUrl: string | null;
@@ -194,6 +196,9 @@ export function ChecklistItemRow({
         )}
         {item.requiresRequisicao && (
           <span className="requires-photo-badge">Exige requisição de insumos enviada</span>
+        )}
+        {item.requiresContagem && (
+          <Link href="/contagem" className="requires-photo-badge">Exige a contagem do estoque da semana no ERP</Link>
         )}
       </div>
 

@@ -10,6 +10,8 @@ import { chamarErp, erpConfigurado } from "./integracao";
 
 export type ContagemResumo = { id: number; local: string; escopo: string; data: string; status: "aberta" | "contada"; itens: number; contados: number; curva: string | null };
 export type LocalLivre = { id: number; nome: string };
+/** Contagem total dos últimos 7 dias: quantos locais ativos a unidade tem e em quantos ela foi entregue ou toda contada. */
+export type ContagemDaSemana = { desde: string; locais: number; contados: number };
 export type ContagemDevida = { agenda_id: number; local: string; curva: string; dias_desde: number | null; periodicidade_dias: number };
 export type ItemContagem = {
   linha_id: number; codigo: string; nome: string; unidade_uso: string; categoria: string;
@@ -32,7 +34,7 @@ async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {
 
 export function contagensNoErp(cnpj: string) {
   // `locais` (locais sem contagem aberta) só vem de um ERP atualizado; sem ele, a lista fica vazia.
-  return pedir<{ unidade: string; contagens: ContagemResumo[]; devidas: ContagemDevida[]; locais?: LocalLivre[] }>(`/api/contagens?cnpj=${cnpj}`);
+  return pedir<{ unidade: string; contagens: ContagemResumo[]; devidas: ContagemDevida[]; locais?: LocalLivre[]; semana?: ContagemDaSemana }>(`/api/contagens?cnpj=${cnpj}`);
 }
 
 export function abrirContagemNoErp(cnpj: string, agendaId: number) {

@@ -10,12 +10,15 @@ import {
   checklistCompletions,
   shiftLogs,
   requisicoes,
+  units,
 } from "@/lib/db/schema";
 import { todayISO, getUnmetPrerequisites } from "@/lib/data/checklists";
 import { recordAnomaly } from "@/lib/actions/anomalies";
 import { guessSetorFromText } from "@/lib/anomaly-constants";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { checklistDayForInstant } from "@/lib/date-utils";
+import { contagensNoErp } from "@/lib/erp/contagens";
+import { erpConfigurado } from "@/lib/erp/integracao";
 
 const STATUS_VALUES = ["conforme", "nao-conforme", "nao-se-aplica"] as const;
 type Status = (typeof STATUS_VALUES)[number];
@@ -33,6 +36,7 @@ async function getItemContext(itemId: number, checklistTypeId: number, organizat
       requiresPhoto: checklistTypeItems.requiresPhoto,
       requiresShiftLog: checklistTypeItems.requiresShiftLog,
       requiresRequisicao: checklistTypeItems.requiresRequisicao,
+      requiresContagem: checklistTypeItems.requiresContagem,
       itemLabel: checklistTypeItems.label,
       checklistTypeName: checklistTypes.name,
     })
@@ -115,6 +119,27 @@ export async function setChecklistItemStatus(
     if (!hasToday) {
       return {
         error: "Você precisa preencher a requisição de insumos de hoje antes de marcar esta tarefa como conforme.",
+      };
+    }
+  }
+
+  if (status === "conforme" && context.requiresContagem) {
+    const [unidade] = effectiveUnitId
+      ? await db.select({ cnpj: units.erpCnpj }).from(units).where(eq(units.id, effectiveUnitId)).limit(1)
+      : [];
+    if (!unidade?.cnpj || !erpConfigurado()) {
+      return { error: "Esta unidade não está ligada ao ERP: a contagem do estoque não tem como ser conferida." };
+    }
+    let semana;
+    try {
+      ({ semana } = await contagensNoErp(unidade.cnpj));
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Não foi possível falar com o ERP agora." };
+    }
+    if (!semana) return { error: "O ERP ainda não informa a contagem da semana. Tente de novo mais tarde." };
+    if (semana.locais === 0 || semana.contados < semana.locais) {
+      return {
+        error: `A contagem do estoque desta semana ainda não foi feita em todos os locais (${semana.contados} de ${semana.locais}). Conte em Contagem de estoque e marque depois.`,
       };
     }
   }

@@ -215,6 +215,11 @@ export const checklistTypeItems = pgTable("checklist_type_items", {
   // already criado a requisição de estoque (interna ou externa) nesse dia
   // de checklist — see setChecklistItemStatus.
   requiresRequisicao: boolean("requires_requisicao").notNull().default(false),
+  // When true, this item can only be marked "conforme" if the ERP shows the
+  // week's full stock count (contagem total dos últimos 7 dias, entregue ou
+  // toda contada) for every active location of the unit — see
+  // setChecklistItemStatus and the ERP's GET /api/contagens (`semana`).
+  requiresContagem: boolean("requires_contagem").notNull().default(false),
 });
 
 // Pré-requisito configurável entre modelos de checklist — ex: "Fechamento"

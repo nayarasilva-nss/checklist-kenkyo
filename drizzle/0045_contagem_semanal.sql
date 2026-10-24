@@ -1,0 +1,1 @@
+ALTER TABLE "checklist_type_items" ADD COLUMN "requires_contagem" boolean DEFAULT false NOT NULL;

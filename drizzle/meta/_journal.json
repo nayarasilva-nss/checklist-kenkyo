@@ -316,6 +316,13 @@
       "when": 1792698370867,
       "tag": "0044_solicitacoes_erp",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1792865331253,
+      "tag": "0045_contagem_semanal",
+      "breakpoints": true
     }
   ]
 }
