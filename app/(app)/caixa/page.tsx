@@ -9,8 +9,8 @@ import { erpConfigurado } from "@/lib/erp/integracao";
 import { CaixaForm } from "./CaixaForm";
 
 /**
- * Fechamento de caixa: quem fecha informa o que cada forma de pagamento deu, o dinheiro contado na gaveta e a
- * sangria. Vai direto para o ERP — a sangria entra no cofre na hora, e o financeiro confere no dia seguinte.
+ * Fechamento de caixa, no formato da planilha das lojas: cada maquininha por bandeira, voucher, dinheiro, saídas,
+ * sangria e troco final. Vai direto para o ERP — a sangria entra no cofre na hora, e o financeiro confere no dia seguinte.
  */
 export default async function CaixaPage({ searchParams }: { searchParams: Promise<{ unidade?: string; data?: string }> }) {
   const user = await getCurrentUser();

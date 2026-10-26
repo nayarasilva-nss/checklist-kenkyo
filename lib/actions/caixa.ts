@@ -8,8 +8,10 @@ import { enviarCaixaAoErp } from "@/lib/erp/caixa";
 
 export type ResultadoCaixa = { error?: string; ok?: string };
 export type FechamentoForm = {
-  data: string; caixa: string; fundo_abertura: string; dinheiro_gaveta: string; sangria: string; troco_do_cofre: string;
-  valores: { grupo: string; valor: string }[]; observacao: string;
+  data: string; caixa: string; fundo_abertura: string; suprimento: string; sangria: string; troco_final: string; observacao: string;
+  valores: { terminal: string; grupo: string; valor: string }[];
+  vouchers: { codigo: string; valor: string }[];
+  saidas: { finalidade: string; valor: string }[];
 };
 
 const dinheiro = (t: string) => t.trim() === "" || /^\d{1,3}(\.\d{3})*(,\d{1,2})?$|^\d+([.,]\d{1,2})?$/.test(t.trim());
@@ -21,19 +23,25 @@ export async function enviarFechamentoCaixa(unidadeId: number, f: FechamentoForm
   const { unidade } = await unidadeDaContagem(user, unidadeId);
   if (!unidade || unidade.id !== unidadeId) return { error: "Unidade sem ligação com o ERP." };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(f.data)) return { error: "Data inválida." };
-  if (f.dinheiro_gaveta.trim() === "") return { error: "Informe o dinheiro contado na gaveta (antes da sangria)." };
-  const invalido = [["Dinheiro na gaveta", f.dinheiro_gaveta], ["Sangria", f.sangria], ["Troco do cofre", f.troco_do_cofre], ["Troco ao abrir", f.fundo_abertura],
-    ...f.valores.map((v) => [v.grupo, v.valor])].find(([, v]) => !dinheiro(v ?? ""));
+  if (f.troco_final.trim() === "") return { error: "Informe o troco final (o dinheiro que fica na gaveta)." };
+  const invalido = [["Troco final", f.troco_final], ["Sangria", f.sangria], ["Suprimento", f.suprimento], ["Troco ao abrir", f.fundo_abertura],
+    ...f.valores.map((v) => [v.terminal ? `${v.grupo} (maquininha ${v.terminal})` : v.grupo, v.valor]),
+    ...f.vouchers.map((v) => [`voucher ${v.codigo}`, v.valor]), ...f.saidas.map((s) => [`saída ${s.finalidade}`, s.valor])]
+    .find(([, v]) => !dinheiro(v ?? ""));
   if (invalido) return { error: `Valor inválido em ${invalido[0]}. Use números, como 1.250,40.` };
+  if (f.vouchers.some((v) => v.valor.trim() !== "" && v.codigo.trim() === "")) return { error: "Informe o código de cada voucher." };
+  if (f.saidas.some((s) => s.valor.trim() !== "" && s.finalidade.trim() === "")) return { error: "Informe a finalidade de cada saída." };
   const caixa = f.caixa.trim().slice(0, 40) || "Caixa";
   try {
     await enviarCaixaAoErp({
       id_externo: `${unidade.cnpj}:${f.data}:${caixa.toLowerCase()}`,
       unidade_cnpj: unidade.cnpj, data: f.data, caixa, quem: user.name,
-      fundo_abertura: f.fundo_abertura.trim() || null, dinheiro_gaveta: f.dinheiro_gaveta.trim(),
-      sangria: f.sangria.trim() || "0", troco_do_cofre: f.troco_do_cofre.trim() || "0",
-      valores: f.valores.filter((v) => v.valor.trim() !== "").map((v) => ({ grupo: v.grupo, valor: v.valor.trim() })),
-      observacao: f.observacao.trim().slice(0, 500),
+      fundo_abertura: f.fundo_abertura.trim() || null, troco_final: f.troco_final.trim(),
+      sangria: f.sangria.trim() || "0", suprimento: f.suprimento.trim() || "0",
+      valores: f.valores.filter((v) => v.valor.trim() !== "").map((v) => ({ terminal: v.terminal.trim(), grupo: v.grupo, valor: v.valor.trim() })),
+      vouchers: f.vouchers.filter((v) => v.valor.trim() !== "" || v.codigo.trim() !== "").map((v) => ({ codigo: v.codigo.trim(), valor: v.valor.trim() })),
+      saidas: f.saidas.filter((s) => s.valor.trim() !== "" || s.finalidade.trim() !== "").map((s) => ({ finalidade: s.finalidade.trim(), valor: s.valor.trim() })),
+      observacao: f.observacao.trim().slice(0, 1000),
     });
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Não foi possível enviar o fechamento." };
