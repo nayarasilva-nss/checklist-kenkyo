@@ -103,6 +103,8 @@ export async function updateUser(
   const password = String(formData.get("password") ?? "");
   const unitId = parseOptionalId(formData, "unitId");
   const jobFunctionId = parseOptionalId(formData, "jobFunctionId");
+  // a marca vem como "semChecklist" quando marcada; desmarcada não vem no formulário
+  const checklistObrigatorio = formData.get("semChecklist") === null;
   const folgaDias = [...new Set(formData.getAll("folgaDias").map(Number))]
     .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
     .sort();
@@ -146,6 +148,7 @@ export async function updateUser(
       unitId,
       jobFunctionId,
       folgaDias,
+      checklistObrigatorio,
       ...(passwordHash ? { passwordHash } : {}),
     })
     .where(and(eq(users.id, id), eq(users.organizationId, gestor.organizationId)));

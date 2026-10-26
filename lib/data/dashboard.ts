@@ -199,11 +199,13 @@ export async function getUsersWithoutChecklistToday(
             inArray(users.profile, ["gerente", "lider"]),
             eq(users.unitId, unitId),
             eq(users.organizationId, organizationId),
+            eq(users.checklistObrigatorio, true),
           )
         : and(
             inArray(users.profile, ["gerente", "lider"]),
             sql`${users.unitId} is not null`,
             eq(users.organizationId, organizationId),
+            eq(users.checklistObrigatorio, true),
           ),
     );
 

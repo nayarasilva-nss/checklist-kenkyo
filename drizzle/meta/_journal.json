@@ -323,6 +323,13 @@
       "when": 1792865331253,
       "tag": "0045_contagem_semanal",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793043977622,
+      "tag": "0046_round_namora",
+      "breakpoints": true
     }
   ]
 }

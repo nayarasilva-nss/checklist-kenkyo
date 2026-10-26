@@ -24,6 +24,7 @@ type User = {
   jobFunctionId: number | null;
   jobFunctionName: string | null;
   folgaDias: number[];
+  checklistObrigatorio: boolean;
 };
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -52,6 +53,7 @@ export function UserRow({
             {user.unitName ?? "Sem unidade"}
             {" • "}
             {user.jobFunctionName ?? "Sem função"}
+            {!user.checklistObrigatorio && " • sem checklist obrigatório"}
           </p>
         </div>
         <div className="list-item-actions">
@@ -154,6 +156,18 @@ export function UserRow({
           ))}
         </select>
       </div>
+      {(user.profile === "gerente" || user.profile === "lider") && (
+        <div className="form-group">
+          <label htmlFor={`semChecklist-${user.id}`} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input type="checkbox" id={`semChecklist-${user.id}`} name="semChecklist" defaultChecked={!user.checklistObrigatorio} />
+            Sem checklists obrigatórios
+          </label>
+          <p className="items-count">
+            Não aparece em atraso, em &quot;sem checklist hoje&quot; nem nos indicadores. Só passa a contar se a pessoa
+            começar um checklist (por exemplo, ao cobrir alguém na operação).
+          </p>
+        </div>
+      )}
       {(user.profile === "gerente" || user.profile === "lider") && (
         <div className="form-group">
           <label>Folgas na semana (escala)</label>

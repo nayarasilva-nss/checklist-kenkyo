@@ -27,6 +27,7 @@ export async function getUsers(organizationId: number) {
       jobFunctionId: users.jobFunctionId,
       jobFunctionName: jobFunctions.name,
       folgaDias: users.folgaDias,
+      checklistObrigatorio: users.checklistObrigatorio,
     })
     .from(users)
     .leftJoin(units, eq(units.id, users.unitId))

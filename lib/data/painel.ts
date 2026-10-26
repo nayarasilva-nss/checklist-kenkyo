@@ -52,7 +52,7 @@ type Inst = { userId: number; userName: string; unitName: string | null; typeNam
 
 async function loadInstances(organizationId: number, from: string, to: string, unitId: number | null, jobFunctionId: number | null = null) {
   const people = await db
-    .select({ id: users.id, name: users.name, unitId: users.unitId, unitName: units.name, jobFunctionId: users.jobFunctionId, folgaDias: users.folgaDias })
+    .select({ id: users.id, name: users.name, unitId: users.unitId, unitName: units.name, jobFunctionId: users.jobFunctionId, folgaDias: users.folgaDias, obrigatorio: users.checklistObrigatorio })
     .from(users)
     .leftJoin(units, eq(units.id, users.unitId))
     .where(
@@ -107,6 +107,8 @@ async function loadInstances(organizationId: number, from: string, to: string, u
         });
         const n = scoreItems.filter((i) => i.status !== "pending").length;
         const state = n === 0 ? "none" : n < scoreItems.length ? "partial" : "done";
+        // sem checklist obrigatório: só conta se a pessoa de fato começou (ex.: cobrindo alguém)
+        if (!p.obrigatorio && state === "none") continue;
         insts.push({
           userId: p.id,
           userName: p.name,

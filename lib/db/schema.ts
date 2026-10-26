@@ -169,6 +169,10 @@ export const users = pgTable(
     ),
     // Dias da semana de folga fixa (0=domingo..6=sábado). Só conta a partir
     // de organizations.escala_vigente_desde.
+    // false = não tem checklist obrigatório (ex.: quem coordena e só cobre alguém na
+    // operação de vez em quando): não entra no atraso, no "sem checklist hoje" nem
+    // nos indicadores, a menos que de fato comece um checklist no dia.
+    checklistObrigatorio: boolean("checklist_obrigatorio").notNull().default(true),
     folgaDias: integer("folga_dias").array().notNull().default(sql`'{}'::integer[]`),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
