@@ -551,14 +551,18 @@ button {
 }
 
 .tab-content h2 {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 800;
+  letter-spacing: -0.02em;
   margin-bottom: 24px;
-  background: linear-gradient(135deg, var(--text-strong) 0%, var(--kenkyo-red) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-strong);
   display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .tab-content h2 {
+    font-size: 24px;
+  }
 }
 
 /* Dashboard */
