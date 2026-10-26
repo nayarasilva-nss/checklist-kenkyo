@@ -21,6 +21,7 @@ function buildGroups(
   profile: string,
   showRequisicoes: boolean,
   showContagem: boolean,
+  showCaixa: boolean,
   showEscala: boolean,
   showEstoque: boolean,
   showSolicitacoes: boolean,
@@ -52,6 +53,7 @@ function buildGroups(
         ...(showRequisicoes ? [{ href: "/requisicoes", label: "Requisições" }] : []),
         ...(showEstoque ? [{ href: "/estoque", label: "Estoque" }] : []),
         ...(showContagem ? [{ href: "/contagem", label: "Contagem" }] : []),
+        ...(showCaixa ? [{ href: "/caixa", label: "Fechamento de caixa" }] : []),
         ...(showSolicitacoes ? [{ href: "/solicitacoes", label: "Solicitações" }] : []),
         ...(showEscala ? [{ href: "/escala", label: "Escala" }] : []),
       ],
@@ -147,6 +149,7 @@ export function AppNav({
   canWriteShiftLog,
   showRequisicoes,
   showContagem = false,
+  showCaixa = false,
   showEscala = false,
   showEstoque = false,
   canCreateRequisicao,
@@ -166,6 +169,7 @@ export function AppNav({
   canWriteShiftLog: boolean;
   showRequisicoes: boolean;
   showContagem?: boolean;
+  showCaixa?: boolean;
   showEscala?: boolean;
   showEstoque?: boolean;
   canCreateRequisicao: boolean;
@@ -175,7 +179,7 @@ export function AppNav({
   pendingAuditCount: number;
 }) {
   const pathname = usePathname();
-  const groups = buildGroups(profile, showRequisicoes, showContagem, showEscala, showEstoque, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
+  const groups = buildGroups(profile, showRequisicoes, showContagem, showCaixa, showEscala, showEstoque, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
   const scope =
     isGestorProfile(profile) || profile === "rh"
       ? "Todas as unidades"

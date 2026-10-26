@@ -16,6 +16,7 @@ import { logout } from "@/lib/auth/actions";
 import { isGestorProfile } from "@/lib/auth/profile";
 import { resolveBrandColors } from "@/lib/branding";
 import { canContar } from "@/lib/auth/contagem";
+import { canFecharCaixa } from "@/lib/auth/caixa";
 import { erpConfigurado } from "@/lib/erp/integracao";
 import { AppNav } from "./AppNav";
 import { CoveringUnitBanner } from "./CoveringUnitBanner";
@@ -95,6 +96,7 @@ export default async function AppLayout({
         canWriteShiftLog={user.profile === "gerente" || user.profile === "lider"}
         showRequisicoes={showRequisicoes}
         showContagem={canContar(user) && erpConfigurado()}
+        showCaixa={canFecharCaixa(user) && erpConfigurado()}
         showEscala={canVerEscala(user)}
         showEstoque={canVerEstoque(user) && erpConfigurado()}
         canCreateRequisicao={canCreateRequisicao}
