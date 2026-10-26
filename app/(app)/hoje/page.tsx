@@ -107,7 +107,7 @@ export default async function HojePage({
           </div>
         </div>
         {canCreateAnomaly && (
-          <Link href="/anomalias" className="btn-primary" style={{ display: "inline-block" }}>
+          <Link href="/anomalias" className="btn-primary hide-mobile" style={{ display: "inline-block" }}>
             Registrar anomalia
           </Link>
         )}
@@ -178,74 +178,96 @@ export default async function HojePage({
               ele se de fato tiver algum (por opção/necessidade), sem o
               estado vazio que faz sentido pros outros perfis. */}
           {!isRh && (!isGestor || sortedChecklists.length > 0) ? (
-            <div className="today-card">
-              <div className="today-card-header">
-                <div>
-                  <div className="today-card-title">Seu turno agora</div>
-                  <div className="today-card-subtitle">
-                    {checklists.length} checklist{checklists.length !== 1 ? "s" : ""} atribuído
-                    {checklists.length !== 1 ? "s" : ""} à sua função
-                  </div>
-                </div>
-                {totalItems > 0 && (
-                  <div className="progress-ring" style={{ background: `conic-gradient(var(--kenkyo-red) 0turn ${overallPct / 100}turn, #262a31 ${overallPct / 100}turn 1turn)` }}>
-                    <div className="progress-ring-inner">{overallPct}%</div>
-                  </div>
-                )}
-              </div>
-
+            <>
               {sortedChecklists.length === 0 ? (
-                <p className="empty-state">
-                  Nenhum checklist disponível para você ainda. Peça a um Gestor para criar um
-                  modelo para a sua função.
-                </p>
+                <div className="today-card">
+                  <div className="today-card-title">Seu turno agora</div>
+                  <p className="empty-state">
+                    Nenhum checklist disponível para você ainda. Peça a um Gestor para criar um
+                    modelo para a sua função.
+                  </p>
+                </div>
               ) : (
-                <div className="today-checklist-list">
-                  {sortedChecklists.map((c) => {
+                (() => {
+                  const linhas = sortedChecklists.map((c) => {
                     const done = c.items.filter((i) => i.status !== "pending").length;
                     const total = c.items.length;
-                    const state = checklistState(done, total);
-                    const requiresPhoto = c.items.filter((i) => i.requiresPhoto).length;
-                    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                    return (
-                      <div key={c.id} className={`today-checklist-row ${state}`}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div className="today-checklist-name">{c.name}</div>
-                          {state === "aguardando" ? (
-                            <div className="today-checklist-meta">
-                              {total} itens{requiresPhoto > 0 ? ` · ${requiresPhoto} exigem foto` : ""}
+                    return {
+                      c,
+                      done,
+                      total,
+                      state: checklistState(done, total),
+                      requiresPhoto: c.items.filter((i) => i.requiresPhoto).length,
+                      bloqueado: c.prerequisitosPendentes.length > 0,
+                    };
+                  });
+                  // o próximo passo: o que já está em andamento; senão o primeiro que dá para começar
+                  const proximo =
+                    linhas.find((l) => l.state === "andamento" && !l.bloqueado) ??
+                    linhas.find((l) => l.state === "aguardando" && !l.bloqueado);
+                  return (
+                    <>
+                      {proximo ? (
+                        <div className="turno-hero">
+                          <div className="turno-hero-top">
+                            {totalItems > 0 && (
+                              <div className="turno-ring" style={{ background: `conic-gradient(#fff ${overallPct}%, rgba(255,255,255,.3) 0)` }}>
+                                <div className="turno-ring-inner">{overallPct}%</div>
+                              </div>
+                            )}
+                            <div style={{ minWidth: 0 }}>
+                              <div className="turno-label">Seu turno agora</div>
+                              <div className="turno-name">{proximo.c.name}</div>
+                              <div className="turno-meta">
+                                {proximo.state === "andamento"
+                                  ? `${proximo.done}/${proximo.total} itens`
+                                  : `${proximo.total} itens${proximo.requiresPhoto > 0 ? ` · ${proximo.requiresPhoto} exigem foto` : ""}`}
+                              </div>
                             </div>
-                          ) : (
-                            <>
-                              <div className="today-checklist-meta">
-                                {done}/{total}
-                              </div>
-                              <div className="today-checklist-progress-bar">
-                                <div
-                                  className="today-checklist-progress-fill"
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        <div className="today-checklist-actions">
-                          <span className={`state-pill state-pill-${state}`}>
-                            {STATE_LABEL[state]}
-                          </span>
-                          <Link
-                            href={`/checklist/${c.id}?type=daily`}
-                            className={state === "andamento" ? "btn-primary" : "btn-tertiary"}
-                          >
-                            {state === "aguardando" ? "Abrir" : state === "andamento" ? "Continuar" : "Ver"}
+                          </div>
+                          <Link href={`/checklist/${proximo.c.id}?type=daily`} className="turno-cta">
+                            {proximo.state === "andamento" ? "Continuar" : "Começar"}
                           </Link>
                         </div>
+                      ) : linhas.every((l) => l.state === "concluido") ? (
+                        <div className="turno-ok">
+                          <div className="turno-ok-mark">✓</div>
+                          <div>
+                            <div className="turno-ok-title">Todos os checklists concluídos</div>
+                            <div className="turno-ok-meta">{doneItems} de {totalItems} itens registrados</div>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="today-card">
+                        <div className="today-card-header">
+                          <div className="today-card-title">Checklists de hoje</div>
+                          <Link href="/checklist" className="today-card-link">Ver todos</Link>
+                        </div>
+                        <div className="turno-lista">
+                          {linhas.map((l) => (
+                            <Link key={l.c.id} href={`/checklist/${l.c.id}?type=daily`} className="turno-linha">
+                              <span className={`turno-marca ${l.state}`}>{l.state === "concluido" ? "✓" : ""}</span>
+                              <span style={{ flex: 1, minWidth: 0 }}>
+                                <span className="turno-linha-nome">{l.c.name}</span>
+                                <span className="turno-linha-meta">
+                                  {l.bloqueado
+                                    ? `Termine primeiro: ${l.c.prerequisitosPendentes.join(", ")}`
+                                    : l.state === "aguardando"
+                                      ? `${l.total} itens${l.requiresPhoto > 0 ? ` · ${l.requiresPhoto} exigem foto` : ""}`
+                                      : `${l.done}/${l.total} itens`}
+                                </span>
+                              </span>
+                              <span className={`state-pill state-pill-${l.state}`}>{STATE_LABEL[l.state]}</span>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </>
+                  );
+                })()
               )}
-            </div>
+            </>
           ) : null}
 
           {user.unitId && (

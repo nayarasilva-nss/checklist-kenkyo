@@ -5,7 +5,8 @@ import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { resolveEffectiveJobFunctionId } from "@/lib/auth/gestor-funcao";
 import { getChecklistsForUser } from "@/lib/data/checklists";
 
-const TYPE_LABELS = { daily: "📋 Diários", weekly: "📋 Semanais" } as const;
+const TYPE_LABELS = { daily: "Diários", weekly: "Semanais" } as const;
+const ESTADO = { concluido: "Concluído", andamento: "Em andamento", aguardando: "Aguardando" } as const;
 
 export default async function ChecklistPage({
   searchParams,
@@ -29,7 +30,7 @@ export default async function ChecklistPage({
 
   return (
     <>
-      <h2>Selecione o Tipo de Checklist</h2>
+      <h2>Checklists</h2>
       <div className="type-selector">
         {(Object.keys(TYPE_LABELS) as Array<keyof typeof TYPE_LABELS>).map(
           (t) => (
@@ -58,29 +59,28 @@ export default async function ChecklistPage({
               (item) => item.status !== "pending",
             ).length;
             const bloqueado = checklist.prerequisitosPendentes.length > 0;
+            const estado = total > 0 && done === total ? "concluido" : done > 0 ? "andamento" : "aguardando";
             return (
               <Link
                 key={checklist.id}
                 href={`/checklist/${checklist.id}?type=${type}`}
                 className={`checklist-card ${total > 0 && done === total ? "done" : ""}`}
               >
-                <div>
+                <div className="checklist-card-top">
                   <h3>{checklist.name}</h3>
-                  {checklist.description && <p>{checklist.description}</p>}
-                  {checklist.assignedUserName && (
-                    <p className="items-count">
-                      Atribuído a: {checklist.assignedUserName}
-                    </p>
-                  )}
-                  {bloqueado && (
-                    <p className="items-count">
-                      🔒 Termine primeiro: {checklist.prerequisitosPendentes.join(", ")}
-                    </p>
-                  )}
+                  <span className={`state-pill state-pill-${estado}`}>{ESTADO[estado]}</span>
                 </div>
-                <span className="checklist-card-progress">
-                  {done}/{total} concluídos
-                </span>
+                <p className="checklist-card-meta">
+                  {done}/{total} itens
+                  {checklist.assignedUserName ? ` · Atribuído a ${checklist.assignedUserName}` : ""}
+                </p>
+                {checklist.description && <p className="checklist-card-meta">{checklist.description}</p>}
+                <div className="checklist-card-bar"><div style={{ width: `${total > 0 ? Math.round((done / total) * 100) : 0}%` }} /></div>
+                {bloqueado && (
+                  <p className="checklist-card-lock">
+                    Termine primeiro: {checklist.prerequisitosPendentes.join(", ")}
+                  </p>
+                )}
               </Link>
             );
           })}

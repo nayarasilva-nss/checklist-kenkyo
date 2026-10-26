@@ -13,44 +13,44 @@
   --on-accent: #1c1917;
 
   /* Superfícies (cinza claro neutro, leve tom quente) */
-  --bg: #f2f1ed;
-  --bg-rail: #ffffff;
+  --bg: #f4f2ef;
+  --bg-rail: #fbfaf8;
   --surface: #ffffff;
-  --surface-raised: #f7f6f2;
+  --surface-raised: #f8f6f3;
   --surface-input: #ffffff;
-  --control: #eeece7;
-  --surface-sunken: #e7e5df;
-  --hover-fill: #f0efea;
-  --active-fill: #f5f0ea;
-  --neutral-bg: #e9e7e0;
+  --control: #ece9e4;
+  --surface-sunken: #e8e4de;
+  --hover-fill: #f1eeea;
+  --active-fill: #f6f1ec;
+  --neutral-bg: #ece9e4;
 
   /* Traços */
-  --border: #e3e1da;
-  --border-strong: #d3d1c8;
-  --border-rail: #e6e4dd;
-  --border-row: #ebe9e2;
-  --border-input: #c7c5bb;
+  --border: #e0dcd5;
+  --border-strong: #d2cdc4;
+  --border-rail: #e0dcd5;
+  --border-row: #e8e4dd;
+  --border-input: #c9c4bb;
 
   /* Texto (escuro sobre claro) */
-  --text: #2a2823;
-  --text-strong: #16140f;
-  --text-2: #3d3b35;
-  --text-3: #504e46;
-  --text-muted: #65635a;
-  --text-dim: #7a786d;
-  --text-faint: #8f8d81;
-  --text-label: #a19f92;
+  --text: #1b1d21;
+  --text-strong: #0f1013;
+  --text-2: #2b2e34;
+  --text-3: #3f434b;
+  --text-muted: #5f6570;
+  --text-dim: #6f7581;
+  --text-faint: #858b96;
+  --text-label: #9aa0aa;
 
   /* Semânticas */
-  --success: #16a34a;
-  --success-text: #15803d;
-  --success-bg: rgba(22, 163, 74, 0.1);
-  --danger: #dc2626;
-  --danger-text: #b91c1c;
-  --danger-bg: rgba(220, 38, 38, 0.08);
-  --warning: #d97706;
-  --warning-text: #92400e;
-  --warning-bg: rgba(217, 119, 6, 0.1);
+  --success: #12804f;
+  --success-text: #12804f;
+  --success-bg: rgba(18, 128, 79, 0.12);
+  --danger: #c42b2b;
+  --danger-text: #c42b2b;
+  --danger-bg: rgba(196, 43, 43, 0.1);
+  --warning: #a86b00;
+  --warning-text: #a86b00;
+  --warning-bg: rgba(200, 130, 0, 0.13);
   --info: #2563eb;
   --info-text: #1d4ed8;
   --info-bg: rgba(37, 99, 235, 0.08);
@@ -62,6 +62,99 @@
      no visual anterior até ser migrado tela por tela. */
   --kenkyo-red-dark: var(--kenkyo-red-deep);
   --kenkyo-dark-gradient: linear-gradient(135deg, #f2f1ed 0%, #ffffff 100%);
+}
+
+/* Tema escuro do desenho "Kenkyo Mobile": segue o aparelho, ou a escolha
+   feita no menu (data-theme). A marca de cada empresa continua vindo do layout. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f1115;
+    --bg-rail: #13161b;
+    --surface: #181b21;
+    --surface-raised: #1d2027;
+    --surface-input: #1c2027;
+    --control: #21252d;
+    --surface-sunken: #14171c;
+    --hover-fill: #1f232a;
+    --active-fill: #262b33;
+    --neutral-bg: #21252d;
+    --border: #2b303a;
+    --border-strong: #3a404c;
+    --border-rail: #2b303a;
+    --border-row: #262a33;
+    --border-input: #3a404c;
+    --text: #f2f3f5;
+    --text-strong: #ffffff;
+    --text-2: #e1e4e9;
+    --text-3: #cdd1d8;
+    --text-muted: #a0a7b3;
+    --text-dim: #8c93a0;
+    --text-faint: #767d8a;
+    --text-label: #6b7280;
+    --success: #3ecf8e;
+    --success-text: #3ecf8e;
+    --success-bg: rgba(62, 207, 142, 0.14);
+    --danger: #ff6b6b;
+    --danger-text: #ff6b6b;
+    --danger-bg: rgba(255, 107, 107, 0.13);
+    --warning: #f5b942;
+    --warning-text: #f5b942;
+    --warning-bg: rgba(245, 185, 66, 0.14);
+    --info: #6ea8ff;
+    --info-text: #8dbaff;
+    --info-bg: rgba(110, 168, 255, 0.12);
+    --violet: #a78bfa;
+    --violet-text: #b9a3fb;
+    --violet-bg: rgba(167, 139, 250, 0.14);
+    --kenkyo-on-tint: #ff8478;
+    --kenkyo-tint: rgba(255, 90, 74, 0.14);
+    --kenkyo-tint-soft: rgba(255, 90, 74, 0.08);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1115;
+  --bg-rail: #13161b;
+  --surface: #181b21;
+  --surface-raised: #1d2027;
+  --surface-input: #1c2027;
+  --control: #21252d;
+  --surface-sunken: #14171c;
+  --hover-fill: #1f232a;
+  --active-fill: #262b33;
+  --neutral-bg: #21252d;
+  --border: #2b303a;
+  --border-strong: #3a404c;
+  --border-rail: #2b303a;
+  --border-row: #262a33;
+  --border-input: #3a404c;
+  --text: #f2f3f5;
+  --text-strong: #ffffff;
+  --text-2: #e1e4e9;
+  --text-3: #cdd1d8;
+  --text-muted: #a0a7b3;
+  --text-dim: #8c93a0;
+  --text-faint: #767d8a;
+  --text-label: #6b7280;
+  --success: #3ecf8e;
+  --success-text: #3ecf8e;
+  --success-bg: rgba(62, 207, 142, 0.14);
+  --danger: #ff6b6b;
+  --danger-text: #ff6b6b;
+  --danger-bg: rgba(255, 107, 107, 0.13);
+  --warning: #f5b942;
+  --warning-text: #f5b942;
+  --warning-bg: rgba(245, 185, 66, 0.14);
+  --info: #6ea8ff;
+  --info-text: #8dbaff;
+  --info-bg: rgba(110, 168, 255, 0.12);
+  --violet: #a78bfa;
+  --violet-text: #b9a3fb;
+  --violet-bg: rgba(167, 139, 250, 0.14);
+  --kenkyo-on-tint: #ff8478;
+  --kenkyo-tint: rgba(255, 90, 74, 0.14);
+  --kenkyo-tint-soft: rgba(255, 90, 74, 0.08);
 }
 
 * {
@@ -78,7 +171,7 @@ body {
 
 body {
   font-family:
-    var(--font-archivo), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    var(--font-schibsted), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
   background: var(--bg);
   color: var(--text);
@@ -302,6 +395,23 @@ button {
   color: var(--text-strong);
   font-weight: 600;
   box-shadow: inset 2px 0 0 var(--kenkyo-red);
+}
+
+.app-nav-theme {
+  margin: 10px 8px 0;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.app-nav-theme:hover {
+  color: var(--text);
 }
 
 .app-nav-footer {
@@ -646,28 +756,35 @@ button {
 
 /* Checklist */
 .type-selector {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 15px;
+  background: var(--control);
+  margin-bottom: 16px;
 }
 
 .type-btn {
-  padding: 14px;
+  flex: 1;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
   border: none;
-  background: var(--surface);
+  background: transparent;
   color: var(--text-muted);
-  border-radius: 10px;
+  border-radius: 11px;
   cursor: pointer;
   font-weight: 700;
   font-size: 14px;
-  transition: all 0.3s;
+  white-space: nowrap;
 }
 
 .type-btn.active {
-  background: var(--kenkyo-gradient);
-  color: white;
-  box-shadow: 0 4px 16px rgba(230, 57, 70, 0.4);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .items-count {
@@ -684,16 +801,21 @@ button {
 
 .checklist-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  gap: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
+  border-radius: 18px;
+  padding: 16px;
   color: var(--text);
-  transition: all 0.3s;
 }
+.checklist-card-top { display: flex; align-items: center; gap: 10px; }
+.checklist-card-top h3 { flex: 1; font-size: 16px; font-weight: 800; }
+.checklist-card-meta { font-size: 13px; color: var(--text-muted); margin: 0; }
+.checklist-card-bar { height: 6px; border-radius: 3px; background: var(--control); overflow: hidden; }
+.checklist-card-bar > div { height: 100%; background: var(--kenkyo-gradient); border-radius: 3px; }
+.checklist-card.done .checklist-card-bar > div { background: var(--success); }
+.checklist-card-lock { font-size: 12.5px; font-weight: 600; color: var(--warning-text); margin: 0; }
 
 .checklist-card:hover {
   border-color: var(--kenkyo-red);
@@ -1371,7 +1493,7 @@ button {
 }
 
 .summary-card-value {
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-schibsted), sans-serif;
   font-size: 20px;
   font-weight: 700;
   color: var(--text-strong);
@@ -1448,7 +1570,7 @@ button {
 }
 
 .data-table-date {
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-schibsted), sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-dim);
@@ -1734,7 +1856,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-schibsted), sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--text-strong);
@@ -1946,7 +2068,7 @@ button {
 }
 
 .doc-category-count {
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-schibsted), sans-serif;
   font-size: 11px;
   color: var(--text-label);
 }
@@ -2046,7 +2168,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-schibsted), sans-serif;
   font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
@@ -2165,19 +2287,12 @@ button {
 }
 
 .mobile-nav-icon {
-  width: 20px;
-  height: 20px;
-  border: 1.5px solid #4a5058;
-  border-radius: 5px;
+  width: 24px;
+  height: 24px;
 }
 
 .mobile-nav-item.active {
-  color: var(--text-strong);
-}
-
-.mobile-nav-item.active .mobile-nav-icon {
-  background: var(--kenkyo-red);
-  border-color: var(--kenkyo-red);
+  color: var(--kenkyo-on-tint);
 }
 
 .mobile-nav-label {
@@ -2190,19 +2305,20 @@ button {
 }
 
 .mobile-nav-fab {
-  width: 48px;
-  height: 48px;
-  border-radius: 15px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 4px solid var(--bg);
   background: var(--kenkyo-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 24px;
-  font-weight: 700;
-  border: none;
-  box-shadow: 0 6px 18px rgba(255, 77, 61, 0.4);
-  margin-top: -20px;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+  box-shadow: 0 6px 18px rgba(255, 77, 61, 0.35);
+  margin-top: -26px;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -2504,7 +2620,7 @@ button {
   margin-bottom: 8px;
 }
 .tone-card .tone-value {
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-schibsted), sans-serif;
   font-size: 30px;
   font-weight: 800;
   line-height: 1.1;
@@ -2621,3 +2737,68 @@ button {
 :root[data-theme="dark"] .escala-grid td.feriado { background: #4a2024; }
 :root[data-theme="dark"] .escala-grid tr.titulo-grupo td { background: #1c242c; color: #cbd5e1; }
 :root[data-theme="dark"] .escala-grid .folga { background: #cbd5e1; color: #101820; }
+
+/* Hoje no desenho "Kenkyo Mobile": cartão de destaque com o próximo checklist e lista com marcadores */
+.turno-hero {
+  background: var(--kenkyo-gradient);
+  border-radius: 20px;
+  padding: 18px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--kenkyo-glow);
+}
+.turno-hero-top { display: flex; align-items: center; gap: 14px; }
+.turno-ring { flex: none; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.turno-ring-inner {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--kenkyo-red-deep);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 16px;
+}
+.turno-label { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; opacity: .95; }
+.turno-name { font-size: 19px; font-weight: 800; line-height: 1.2; }
+.turno-meta { font-size: 13px; opacity: .95; }
+.turno-cta {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 48px; border-radius: 14px;
+  background: #fff; color: var(--kenkyo-red-deep);
+  font-size: 16px; font-weight: 800;
+}
+.turno-ok {
+  background: var(--success-bg);
+  border-radius: 20px; padding: 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+.turno-ok-mark {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--success); color: #06210f;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 22px;
+}
+.turno-ok-title { font-weight: 800; font-size: 17px; color: var(--text); }
+.turno-ok-meta { font-size: 13px; color: var(--text-muted); }
+.turno-lista { display: flex; flex-direction: column; }
+.turno-linha {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; min-height: 56px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+}
+.turno-linha:first-child { border-top: 0; }
+.turno-linha-nome { display: block; font-weight: 700; font-size: 15px; }
+.turno-linha-meta { display: block; font-size: 12.5px; color: var(--text-muted); }
+.turno-marca {
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 15px;
+  border: 2px solid var(--border-strong); background: transparent;
+}
+.turno-marca.andamento { border-color: var(--warning); }
+.turno-marca.concluido { border-color: var(--success); background: var(--success); color: #06210f; }
+
+/* No celular o "+" da barra inferior já registra anomalia; o botão do topo só aparece na tela larga. */
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+}

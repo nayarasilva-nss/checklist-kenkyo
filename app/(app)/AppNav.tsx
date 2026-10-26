@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/auth/actions";
 import { isGestorProfile } from "@/lib/auth/profile";
+import { ThemeToggle } from "./ThemeToggle";
 
 type NavItem = { href: string; label: string; badge?: number };
 type NavGroup = { label: string; items: NavItem[] };
@@ -86,6 +87,21 @@ function buildGroups(
   }
 
   return groups;
+}
+
+const ICONES = {
+  hoje: "M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z",
+  checklists: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
+  diario: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM20 17v4H6.5A2.5 2.5 0 0 1 4 18.5",
+  mais: "M4 6h16M4 12h16M4 18h16",
+} as const;
+
+function Icone({ nome }: { nome: keyof typeof ICONES }) {
+  return (
+    <svg className="mobile-nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={ICONES[nome]} />
+    </svg>
+  );
 }
 
 function initials(name: string) {
@@ -285,6 +301,7 @@ export function AppNav({
           ))}
         </nav>
 
+        <ThemeToggle className="app-nav-theme" />
         <div className="app-nav-footer">
           <div className="app-nav-avatar">{initials(userName)}</div>
           <div className="app-nav-user">
@@ -303,14 +320,14 @@ export function AppNav({
 
       <nav className="mobile-bottom-bar">
         <Link href="/hoje" className={`mobile-nav-item${isActive("/hoje") ? " active" : ""}`}>
-          <span className="mobile-nav-icon" />
+          <Icone nome="hoje" />
           <span className="mobile-nav-label">Hoje</span>
         </Link>
         <Link
           href="/checklist"
           className={`mobile-nav-item${isActive("/checklist") ? " active" : ""}`}
         >
-          <span className="mobile-nav-icon" />
+          <Icone nome="checklists" />
           <span className="mobile-nav-label">Checklists</span>
         </Link>
         {registerOptions.length > 0 && (
@@ -327,11 +344,11 @@ export function AppNav({
           href="/diario-de-bordo"
           className={`mobile-nav-item${isActive("/diario-de-bordo") ? " active" : ""}`}
         >
-          <span className="mobile-nav-icon" />
+          <Icone nome="diario" />
           <span className="mobile-nav-label">Diário</span>
         </Link>
         <button type="button" className="mobile-nav-item" onClick={() => setMoreOpen(true)}>
-          <span className="mobile-nav-icon" />
+          <Icone nome="mais" />
           <span className="mobile-nav-label">Mais</span>
         </button>
       </nav>
@@ -349,6 +366,7 @@ export function AppNav({
           {moreOptions.map((opt) => (
             <SheetOption key={opt.href} {...opt} onNavigate={() => setMoreOpen(false)} />
           ))}
+          <ThemeToggle className="sheet-option" />
           <form action={logout}>
             <button type="submit" className="sheet-option" style={{ width: "100%" }}>
               <span className="sheet-option-icon" />
