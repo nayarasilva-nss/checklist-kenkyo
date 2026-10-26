@@ -30,6 +30,10 @@ export default async function CaixaPage({ searchParams }: { searchParams: Promis
     }
   }
   const link = (u: number | undefined, d: string) => `/caixa?${u ? `unidade=${u}&` : ""}data=${d}`;
+  // o ERP diz desde quando se fecha o caixa pelo app; antes disso, continua na planilha
+  const desde = dia?.desde ?? null;
+  const liberado = desde !== null && hoje >= desde;
+  const formatar = (d: string) => d.split("-").reverse().join("/");
 
   return (
     <>
@@ -43,8 +47,17 @@ export default async function CaixaPage({ searchParams }: { searchParams: Promis
         <div className="empty-state">Sua unidade ainda não está ligada ao ERP. Quem administra liga em Gerenciar › ERP.</div>
       ) : erro || !dia ? (
         <div className="empty-state">{erro}</div>
+      ) : !liberado ? (
+        <div className="empty-state">
+          {desde ? `O fechamento de caixa pelo app começa em ${formatar(desde)}. Até lá, continue na planilha.` : "O fechamento de caixa pelo app ainda não foi liberado. Continue na planilha."}
+        </div>
+      ) : data < desde ? (
+        <div className="empty-state">
+          O fechamento pelo app começa em {formatar(desde)}: os dias antes disso ficam na planilha.{" "}
+          <Link href={link(unidade.id, hoje)}>Ir para hoje</Link>
+        </div>
       ) : (
-        <CaixaForm key={`${unidade.id}-${data}`} unidadeId={unidade.id} data={data} hoje={hoje} dia={dia} />
+        <CaixaForm key={`${unidade.id}-${data}`} unidadeId={unidade.id} data={data} hoje={hoje} desde={desde} dia={dia} />
       )}
     </>
   );

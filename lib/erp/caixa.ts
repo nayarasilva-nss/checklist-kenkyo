@@ -13,7 +13,7 @@ export type FechamentoCaixa = {
   vouchers: { codigo: string; valor: string; situacao: string | null }[];
   saidas: { finalidade: string; valor: string }[];
 };
-export type CaixaDoDia = { unidade: string; data: string; linhas_maquininha: string[]; outras: string[]; fechamentos: FechamentoCaixa[] };
+export type CaixaDoDia = { unidade: string; data: string; desde?: string | null; linhas_maquininha: string[]; outras: string[]; fechamentos: FechamentoCaixa[] };
 export type EnvioCaixa = {
   id_externo: string; unidade_cnpj: string; data: string; caixa: string; quem: string; fundo_abertura: string | null;
   suprimento: string; sangria: string; troco_final: string; observacao: string;

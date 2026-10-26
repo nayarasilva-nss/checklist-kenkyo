@@ -51,7 +51,7 @@ function terminaisDe(f: FechamentoCaixa | undefined): Terminal[] {
  * Pix, o voucher com o código, o dinheiro das vendas, a cortesia, as saídas pagas com o dinheiro do caixa, o
  * suprimento, a sangria (vai para o cofre) e o troco final (fica na gaveta).
  */
-export function CaixaForm({ unidadeId, data, hoje, dia }: { unidadeId: number; data: string; hoje: string; dia: CaixaDoDia }) {
+export function CaixaForm({ unidadeId, data, hoje, desde, dia }: { unidadeId: number; data: string; hoje: string; desde: string; dia: CaixaDoDia }) {
   const router = useRouter();
   const enviado: FechamentoCaixa | undefined = dia.fechamentos[0];
   const [caixa, setCaixa] = useState(enviado?.caixa ?? "Caixa");
@@ -102,7 +102,7 @@ export function CaixaForm({ unidadeId, data, hoje, dia }: { unidadeId: number; d
   return (
     <>
       <div className="form-group" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <input type="date" defaultValue={data} max={hoje} aria-label="Dia do caixa"
+        <input type="date" defaultValue={data} min={desde} max={hoje} aria-label="Dia do caixa"
           onChange={(e) => e.target.value && router.push(`/caixa?unidade=${unidadeId}&data=${e.target.value}`)} style={{ width: "auto" }} />
         <input value={caixa} onChange={(e) => setCaixa(e.target.value)} aria-label="Qual caixa" placeholder="Caixa" style={{ width: 160 }} disabled={enviando || travado} />
         {enviado && <span className="items-count" style={{ margin: 0 }}>Enviado por {enviado.quem_fechou ?? "—"}{travado ? " · conferido pelo financeiro" : " · pode corrigir"}</span>}
