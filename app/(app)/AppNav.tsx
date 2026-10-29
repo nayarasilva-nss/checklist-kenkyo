@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/auth/actions";
 import { isGestorProfile } from "@/lib/auth/profile";
-import { ThemeToggle } from "./ThemeToggle";
+import { ThemeSegmented, ThemeToggle } from "./ThemeToggle";
 
 type NavItem = { href: string; label: string; badge?: number };
 type NavGroup = { label: string; items: NavItem[] };
@@ -131,10 +131,12 @@ function SheetOption({ href, title, description, onNavigate }: SheetOptionDef & 
 
 function BottomSheet({
   title,
+  header,
   onClose,
   children,
 }: {
-  title: string;
+  title?: string;
+  header?: React.ReactNode;
   onClose: () => void;
   children: React.ReactNode;
 }) {
@@ -143,7 +145,7 @@ function BottomSheet({
       <div className="sheet-backdrop" onClick={onClose} />
       <div className="bottom-sheet">
         <div className="bottom-sheet-handle" />
-        <div className="bottom-sheet-title">{title}</div>
+        {header ?? <div className="bottom-sheet-title">{title}</div>}
         <div className="sheet-options">{children}</div>
         <button type="button" className="sheet-cancel" onClick={onClose}>
           Cancelar
@@ -362,11 +364,25 @@ export function AppNav({
       )}
 
       {moreOpen && (
-        <BottomSheet title="Mais" onClose={() => setMoreOpen(false)}>
+        <BottomSheet
+          onClose={() => setMoreOpen(false)}
+          header={
+            <>
+              <div className="sheet-user">
+                <div className="sheet-user-avatar">{initials(userName)}</div>
+                <div>
+                  <div className="sheet-user-name">{userName}</div>
+                  <div className="sheet-user-meta">{PROFILE_LABELS[profile] ?? profile} · {scope}</div>
+                </div>
+              </div>
+              <div className="sheet-label">Tema</div>
+              <ThemeSegmented />
+            </>
+          }
+        >
           {moreOptions.map((opt) => (
             <SheetOption key={opt.href} {...opt} onNavigate={() => setMoreOpen(false)} />
           ))}
-          <ThemeToggle className="sheet-option" />
           <form action={logout}>
             <button type="submit" className="sheet-option" style={{ width: "100%" }}>
               <span className="sheet-option-icon" />

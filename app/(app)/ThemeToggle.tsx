@@ -29,6 +29,21 @@ function aplicar(t: Tema) {
   window.dispatchEvent(new Event(EVENTO));
 }
 
+/** Escolha do tema em três botões lado a lado (menu do celular). */
+export function ThemeSegmented() {
+  const tema = useSyncExternalStore(assinar, lerTema, () => "system" as Tema);
+  const opcoes: [Tema, string][] = [["system", "Aparelho"], ["light", "Claro"], ["dark", "Escuro"]];
+  return (
+    <div className="sheet-seg" role="group" aria-label="Tema">
+      {opcoes.map(([t, rotulo]) => (
+        <button key={t} type="button" className={tema === t ? "on" : ""} aria-pressed={tema === t} onClick={() => aplicar(t)}>
+          {rotulo}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Alterna o tema: segue o aparelho → claro → escuro. A escolha fica neste navegador. */
 export function ThemeToggle({ className }: { className?: string }) {
   const tema = useSyncExternalStore(assinar, lerTema, () => "system" as Tema);
