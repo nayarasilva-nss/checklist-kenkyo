@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canFecharCaixa } from "@/lib/auth/caixa";
+import { isGestorProfile } from "@/lib/auth/profile";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { unidadeDaContagem } from "@/lib/data/contagem";
 import { checklistDayForInstant } from "@/lib/date-utils";
@@ -47,6 +48,16 @@ export default async function CaixaPage({ searchParams }: { searchParams: Promis
         <div className="empty-state">Sua unidade ainda não está ligada ao ERP. Quem administra liga em Gerenciar › ERP.</div>
       ) : erro || !dia ? (
         <div className="empty-state">{erro}</div>
+      ) : !liberado && isGestorProfile(user.profile) ? (
+        <>
+          <div className="tone-card info" style={{ marginBottom: 16 }}>
+            <div className="tone-label">Prévia para o Gestor</div>
+            <div className="tone-meta">
+              {desde ? `O fechamento pelo app começa em ${formatar(desde)}.` : "O fechamento pelo app ainda não foi liberado."} Aqui você vê e preenche o formulário como ele vai ficar, mas nada é enviado ao ERP nem entra no cofre.
+            </div>
+          </div>
+          <CaixaForm key={`previa-${unidade.id}-${data}`} unidadeId={unidade.id} data={data} hoje={hoje} desde={desde ?? hoje} dia={dia} previa />
+        </>
       ) : !liberado ? (
         <div className="empty-state">
           {desde ? `O fechamento de caixa pelo app começa em ${formatar(desde)}. Até lá, continue na planilha.` : "O fechamento de caixa pelo app ainda não foi liberado. Continue na planilha."}

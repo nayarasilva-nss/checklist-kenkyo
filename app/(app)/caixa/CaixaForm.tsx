@@ -51,7 +51,7 @@ function terminaisDe(f: FechamentoCaixa | undefined): Terminal[] {
  * Pix, o voucher com o código, o dinheiro das vendas, a cortesia, as saídas pagas com o dinheiro do caixa, o
  * suprimento, a sangria (vai para o cofre) e o troco final (fica na gaveta).
  */
-export function CaixaForm({ unidadeId, data, hoje, desde, dia }: { unidadeId: number; data: string; hoje: string; desde: string; dia: CaixaDoDia }) {
+export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }: { unidadeId: number; data: string; hoje: string; desde: string; dia: CaixaDoDia; previa?: boolean }) {
   const router = useRouter();
   const enviado: FechamentoCaixa | undefined = dia.fechamentos[0];
   const [caixa, setCaixa] = useState(enviado?.caixa ?? "Caixa");
@@ -79,6 +79,7 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia }: { unidadeId: nu
   const mudarTerminal = (i: number, f: (t: Terminal) => Terminal) => setTerminais((ts) => ts.map((t, j) => (j === i ? f(t) : t)));
 
   function enviar() {
+    if (previa) return; // prévia: nada vai ao ERP
     if (trocoFinal.trim() === "") { setMsg({ erro: "Informe o troco final (o dinheiro que fica na gaveta)." }); return; }
     const nomes = terminais.map((t) => t.nome.trim());
     if (nomes.some((n) => !n) || new Set(nomes).size !== nomes.length) { setMsg({ erro: "Dê um número diferente a cada maquininha." }); return; }
@@ -181,8 +182,8 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia }: { unidadeId: nu
 
       {!travado && (
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <button type="button" className="btn-primary" disabled={enviando} onClick={enviar}>
-            {enviando ? "Enviando…" : enviado ? "Corrigir o fechamento" : "Fechar o caixa"}
+          <button type="button" className="btn-primary" disabled={enviando || previa} onClick={enviar}>
+            {previa ? "Prévia: o envio começa em " + desde.split("-").reverse().join("/") : enviando ? "Enviando…" : enviado ? "Corrigir o fechamento" : "Fechar o caixa"}
           </button>
           {msg?.erro && <span className="login-error">{msg.erro}</span>}
           {msg?.ok && <span className="items-count">{msg.ok}</span>}
