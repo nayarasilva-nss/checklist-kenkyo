@@ -45,17 +45,16 @@ export default async function ChecklistDetailPage({
 
   return (
     <>
-      <Link
-        href={`/checklist?type=${checklist.type}`}
-        className="btn-cancel"
-        style={{ display: "inline-block", marginBottom: 20 }}
-      >
-        ← Voltar
-      </Link>
+      <div className="checklist-top">
+        <Link href={`/checklist?type=${checklist.type}`} className="btn-cancel">
+          ‹ Voltar
+        </Link>
+        <div className="checklist-top-count">{done}/{total}</div>
+      </div>
 
       <div className="checklist-block-header">
         <div>
-          <h2>{checklist.name}</h2>
+          <h2 style={{ marginBottom: 4 }}>{checklist.name}</h2>
           {checklist.description && <p>{checklist.description}</p>}
           {checklist.assignedUserName && (
             <p className="items-count">
@@ -81,8 +80,8 @@ export default async function ChecklistDetailPage({
         </div>
       )}
 
-      <div className="today-checklist-progress-bar" style={{ maxWidth: "none", marginBottom: 22 }}>
-        <div className="today-checklist-progress-fill" style={{ width: `${pct}%` }} />
+      <div className="checklist-progress">
+        <div style={{ width: `${pct}%` }} />
       </div>
 
       <div className="hoje-layout">
@@ -97,6 +96,9 @@ export default async function ChecklistDetailPage({
               locked={bloqueado}
             />
           ))}
+          <Link href="/hoje" className={`checklist-finish${total > 0 && done === total ? " pronto" : ""}`}>
+            {total > 0 && done === total ? "✓ Checklist concluído · Voltar ao início" : "Continuar depois"}
+          </Link>
         </div>
 
         <div className="hoje-column">

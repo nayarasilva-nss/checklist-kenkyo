@@ -888,26 +888,23 @@ button {
 .checklist-item {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 11px;
-  padding: 14px 18px;
-  margin-bottom: 10px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  transition:
-    background 0.2s,
-    border-color 0.2s;
+  align-items: stretch;
+  gap: 0;
 }
 
 .checklist-item.status-conforme {
-  background: rgba(52, 211, 153, 0.07);
-  border-color: rgba(52, 211, 153, 0.26);
+  background: var(--success-bg);
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
 }
 
 .checklist-item.status-nao-conforme {
-  background: rgba(255, 107, 107, 0.07);
-  border-color: rgba(255, 107, 107, 0.3);
+  background: var(--danger-bg);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 .checklist-item.status-nao-se-aplica {
@@ -918,26 +915,27 @@ button {
 
 .item-marker-row {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px 10px;
   width: 100%;
 }
 
 .item-marker {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 800;
-  color: var(--on-accent);
+  color: #06210f;
 }
 
 .item-marker.pending {
-  border: 1.5px solid var(--border-input);
+  border: 2px solid var(--border-strong);
 }
 
 .item-marker.conforme {
@@ -953,23 +951,27 @@ button {
 }
 
 .item-button-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 0.6fr;
   gap: 8px;
   width: 100%;
-  align-items: center;
-  flex-wrap: wrap;
+  margin-top: 12px;
 }
 
 .btn-status {
-  padding: 7px 13px;
+  min-height: 48px;
+  padding: 0 8px;
   border: 1px solid var(--border-strong);
-  border-radius: 7px;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   background: transparent;
-  color: var(--text-dim);
-  transition: all 0.2s;
+  color: var(--text-muted);
+}
+.btn-status:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-status:hover {
@@ -979,64 +981,70 @@ button {
 .btn-status-conforme.active {
   background: var(--success);
   border-color: var(--success);
-  color: var(--on-accent);
+  color: #06210f;
 }
 
 .btn-status-nao-conforme.active {
   background: var(--danger);
   border-color: var(--danger);
-  color: var(--on-accent);
+  color: #fff;
 }
 
 .btn-status-nao-se-aplica.active {
-  background: var(--surface-sunken);
-  border-color: var(--surface-sunken);
-  color: var(--text-3);
+  background: var(--control);
+  border-color: var(--border-strong);
+  color: var(--text);
 }
 
 .requires-photo-badge {
-  font-size: 11px;
-  color: var(--warning-text);
+  display: inline-block;
+  font-size: 11.5px;
+  color: var(--text-muted);
   font-weight: 700;
-  background: var(--warning-bg);
+  background: var(--control);
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: 8px;
 }
 
 .item-text {
-  color: var(--text-2);
-  font-size: 13.5px;
-  font-weight: 500;
-  flex: 1;
+  color: var(--text);
+  font-size: 15.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .justification-box {
   width: 100%;
-  padding: 12px 14px;
-  background: var(--surface-raised);
-  border-left: 3px solid var(--danger);
-  border-radius: 8px;
-  font-size: 12.5px;
-  color: var(--text-2);
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--control);
+  border-radius: 12px;
+  font-size: 13.5px;
+  color: var(--text-muted);
 }
+.justification-box strong { color: var(--text); }
 
 .justification-form {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 12px;
 }
 
 .justification-form textarea {
   width: 100%;
-  min-height: 78px;
-  padding: 10px 12px;
-  background: var(--surface-input);
+  min-height: 84px;
+  padding: 12px;
+  background: var(--bg);
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--text);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 15px;
+  resize: none;
 }
 
 .justification-form textarea:focus {
@@ -1048,28 +1056,19 @@ button {
   display: flex;
   gap: 8px;
 }
+.justification-form-buttons .btn-cancel { flex: 1; min-height: 48px; border-radius: 12px; background: transparent; }
+.justification-form-buttons .btn-save { flex: 1.4; min-height: 48px; border-radius: 12px; font-size: 15px; font-weight: 800; }
 
 .anomaly-notice {
   width: 100%;
-  padding-top: 10px;
-  margin-top: 4px;
-  border-top: 1px solid rgba(255, 107, 107, 0.2);
-  font-size: 11.5px;
-  color: var(--text-3);
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--control);
+  font-size: 13px;
+  color: var(--text-muted);
 }
+.anomaly-notice strong { color: var(--text); }
 
-.anomaly-notice::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--danger);
-  flex-shrink: 0;
-  margin-top: 4px;
-}
 
 /* Histórico */
 .history-item {
@@ -2806,3 +2805,17 @@ button {
 @media (max-width: 768px) {
   .hide-mobile { display: none !important; }
 }
+
+/* Detalhe do checklist: topo com Voltar e contagem, barra de progresso e botão final */
+.checklist-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.checklist-top .btn-cancel { min-height: 44px; padding: 0 14px; border-radius: 12px; display: inline-flex; align-items: center; }
+.checklist-top-count { flex: 1; text-align: right; font-weight: 800; font-size: 15px; }
+.checklist-progress { height: 8px; border-radius: 4px; background: var(--control); overflow: hidden; margin-bottom: 14px; }
+.checklist-progress > div { height: 100%; background: var(--kenkyo-gradient); border-radius: 4px; }
+.checklist-finish {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 52px; border-radius: 14px; margin-top: 4px;
+  font-size: 16px; font-weight: 800;
+  background: var(--control); color: var(--text);
+}
+.checklist-finish.pronto { background: var(--success); color: #06210f; }
