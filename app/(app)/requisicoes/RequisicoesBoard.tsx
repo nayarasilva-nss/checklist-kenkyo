@@ -720,22 +720,19 @@ export function RequisicoesBoard({
             setEditingId(null);
           }}
         >
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="detail-panel-header">
-              <div className="detail-panel-title">
-                {editingRecord ? "Editar requisição" : "Nova requisição"}
-              </div>
+          <div className="modal-panel tela-cheia-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="tela-topo">
               <button
                 type="button"
-                className="detail-panel-close"
+                className="btn-cancel"
                 onClick={() => {
                   setCreating(false);
                   setEditingId(null);
                 }}
-                aria-label="Fechar"
               >
-                ×
+                Cancelar
               </button>
+              <div className="tela-titulo">{editingRecord ? "Editar requisição" : "Nova requisição"}</div>
             </div>
             <NovaRequisicaoForm
               tiposPermitidos={criarTiposPermitidos}

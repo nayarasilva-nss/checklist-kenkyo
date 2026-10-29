@@ -70,14 +70,14 @@ export function QuantidadeStepper({
         onClick={() => onChange(round(Math.max(0, value - step)))}
         aria-label={`Diminuir quantidade de ${unidade}`}
         style={{
-          width: 38,
-          height: 38,
+          width: 44,
+          height: 44,
           flexShrink: 0,
-          borderRadius: 7,
+          borderRadius: 12,
           border: "1px solid var(--border)",
-          background: "var(--surface)",
+          background: "var(--control)",
           color: "var(--text)",
-          fontSize: 18,
+          fontSize: 22,
           lineHeight: 1,
           cursor: "pointer",
         }}
@@ -91,21 +91,21 @@ export function QuantidadeStepper({
         value={text}
         onChange={(e) => handleTextChange(e.target.value)}
         onBlur={() => setText(toDisplay(value))}
-        style={{ width: 52, textAlign: "center", fontSize: 16, flexShrink: 0 }}
+        style={{ width: 56, textAlign: "center", fontSize: 17, fontWeight: 800, flexShrink: 0, padding: "0 4px" }}
       />
       <button
         type="button"
         onClick={() => onChange(round(value + step))}
         aria-label={`Aumentar quantidade de ${unidade}`}
         style={{
-          width: 38,
-          height: 38,
+          width: 44,
+          height: 44,
           flexShrink: 0,
-          borderRadius: 7,
-          border: "1px solid var(--kenkyo-red)",
-          background: "var(--kenkyo-red)",
+          borderRadius: 12,
+          border: "0",
+          background: "var(--kenkyo-red-deep)",
           color: "#fff",
-          fontSize: 16,
+          fontSize: 22,
           lineHeight: 1,
           cursor: "pointer",
         }}

@@ -251,19 +251,14 @@ export function AnomaliasBoard({
           )}
         </div>
 
-        <div className="detail-panel">
+        <div className={`detail-panel${creating ? " tela-cheia" : ""}`}>
           {creating ? (
             <>
-              <div className="detail-panel-header">
-                <div className="detail-panel-title">Nova anomalia</div>
-                <button
-                  type="button"
-                  className="detail-panel-close"
-                  onClick={() => setCreating(false)}
-                  aria-label="Fechar"
-                >
-                  ×
+              <div className="tela-topo">
+                <button type="button" className="btn-cancel" onClick={() => setCreating(false)}>
+                  Cancelar
                 </button>
+                <div className="tela-titulo">Nova anomalia</div>
               </div>
               <AnomaliaForm
                 defaultRelator={defaultRelator}

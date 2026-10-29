@@ -2874,3 +2874,56 @@ button {
 .sheet-seg { display: flex; gap: 4px; padding: 4px; border-radius: 15px; background: var(--control); margin-bottom: 12px; }
 .sheet-seg button { flex: 1; min-height: 44px; border: 0; border-radius: 11px; background: transparent; color: var(--text-muted); font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
 .sheet-seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+
+/* Telas cheias de anomalia e requisição (celular): topo com Cancelar e o título à direita, corpo que rola, botão grande */
+.tela-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.tela-topo .btn-cancel { min-height: 44px; padding: 0 14px; border-radius: 12px; display: inline-flex; align-items: center; }
+.tela-titulo { flex: 1; text-align: right; font-weight: 800; font-size: 18px; }
+
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-check { position: relative; }
+.chip-check input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+.chip-check label {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px;
+  border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--text); font-weight: 700; font-size: 14px; cursor: pointer; margin: 0;
+}
+.chip-check input:checked + label { background: var(--kenkyo-red-deep); border-color: var(--kenkyo-red-deep); color: #fff; }
+.chip-check input:focus-visible + label { outline: 2px solid var(--kenkyo-red); outline-offset: 2px; }
+
+.btn-grande { width: 100%; min-height: 54px; border-radius: 16px; font-size: 16px; }
+
+@media (max-width: 1080px) {
+  .detail-panel.tela-cheia {
+    position: fixed; inset: 0; z-index: 60;
+    border: 0; border-radius: 0; background: var(--bg);
+    overflow-y: auto; min-height: 0;
+    padding: 14px 18px calc(24px + env(safe-area-inset-bottom));
+  }
+  .detail-panel.tela-cheia .inline-form { background: none; border: 0; padding: 0; margin: 0; }
+  .detail-panel.tela-cheia .inline-form-buttons { display: block; margin-top: 8px; }
+}
+
+@media (max-width: 700px) {
+  .modal-backdrop { z-index: 60; background: var(--bg); }
+  .modal-panel.tela-cheia-modal {
+    position: fixed; inset: 0; max-height: none; max-width: none;
+    border-radius: 0; box-shadow: none; background: var(--bg);
+    overflow-y: auto; padding: 14px 18px 0;
+  }
+  .tela-cheia-modal .req-submit-footer {
+    position: sticky; bottom: 0; margin: 12px -18px 0;
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+    background: var(--bg); border-top: 1px solid var(--border);
+  }
+  .tela-cheia-modal .req-submit-footer .btn-save { flex: 1 1 100%; min-height: 54px; border-radius: 16px; font-size: 16px; }
+}
+
+/* Caixas de marcar e botões de opção não seguem a altura dos campos de texto */
+.form-group input[type="checkbox"],
+.form-group input[type="radio"] {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  accent-color: var(--kenkyo-red-deep);
+}

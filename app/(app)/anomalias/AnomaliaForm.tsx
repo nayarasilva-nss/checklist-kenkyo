@@ -71,22 +71,26 @@ export function AnomaliaForm({
 
       <div className="form-group">
         <label>Qual o tipo de anomalia?</label>
-        {ANOMALY_TYPES.map((tipo) => (
-          <div className="item-editor-row item-editor-checkbox" key={tipo}>
-            <input type="checkbox" name="tipos" value={tipo} id={`tipo-${tipo}`} />
-            <label htmlFor={`tipo-${tipo}`}>{tipo}</label>
-          </div>
-        ))}
+        <div className="chip-group">
+          {ANOMALY_TYPES.map((tipo) => (
+            <span className="chip-check" key={tipo}>
+              <input type="checkbox" name="tipos" value={tipo} id={`tipo-${tipo}`} />
+              <label htmlFor={`tipo-${tipo}`}>{tipo}</label>
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="form-group">
         <label>Quais os setores envolvidos?</label>
-        {ANOMALY_SETORES.map((setor) => (
-          <div className="item-editor-row item-editor-checkbox" key={setor}>
-            <input type="checkbox" name="setores" value={setor} id={`setor-${setor}`} />
-            <label htmlFor={`setor-${setor}`}>{setor}</label>
-          </div>
-        ))}
+        <div className="chip-group">
+          {ANOMALY_SETORES.map((setor) => (
+            <span className="chip-check" key={setor}>
+              <input type="checkbox" name="setores" value={setor} id={`setor-${setor}`} />
+              <label htmlFor={`setor-${setor}`}>{setor}</label>
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="form-group">
@@ -136,8 +140,8 @@ export function AnomaliaForm({
       {success && !error && <p className="empty-state">Anomalia registrada com sucesso.</p>}
 
       <div className="inline-form-buttons">
-        <button className="btn-save" type="submit" disabled={isPending}>
-          {isPending ? "Enviando..." : "Enviar"}
+        <button className="btn-save btn-grande" type="submit" disabled={isPending}>
+          {isPending ? "Enviando..." : "Enviar anomalia"}
         </button>
       </div>
     </form>
