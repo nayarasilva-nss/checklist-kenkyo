@@ -12,6 +12,8 @@ export type FechamentoCaixa = {
   valores: { terminal: string; grupo: string; valor: string }[];
   vouchers: { codigo: string; valor: string; situacao: string | null }[];
   saidas: { finalidade: string; valor: string }[];
+  // voucher VENDIDO neste caixa (a aquisição); um ERP mais antigo não manda este campo
+  vouchers_vendidos?: { codigo: string; valor: string; forma: string; cliente: string | null; validade: string | null; situacao: string | null }[];
 };
 export type CaixaDoDia = { unidade: string; data: string; desde?: string | null; linhas_maquininha: string[]; outras: string[]; fechamentos: FechamentoCaixa[] };
 export type EnvioCaixa = {
@@ -20,6 +22,7 @@ export type EnvioCaixa = {
   valores: { terminal: string; grupo: string; valor: string }[];
   vouchers: { codigo: string; valor: string }[];
   saidas: { finalidade: string; valor: string }[];
+  vouchers_vendidos: { codigo: string; valor: string; forma: string; cliente: string; validade: string }[];
 };
 
 async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {

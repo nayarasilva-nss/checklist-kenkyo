@@ -12,6 +12,7 @@ export type FechamentoForm = {
   valores: { terminal: string; grupo: string; valor: string }[];
   vouchers: { codigo: string; valor: string }[];
   saidas: { finalidade: string; valor: string }[];
+  vouchersVendidos: { codigo: string; valor: string; forma: string; cliente: string; validade: string }[];
 };
 
 const dinheiro = (t: string) => t.trim() === "" || /^\d{1,3}(\.\d{3})*(,\d{1,2})?$|^\d+([.,]\d{1,2})?$/.test(t.trim());
@@ -31,6 +32,9 @@ export async function enviarFechamentoCaixa(unidadeId: number, f: FechamentoForm
   if (invalido) return { error: `Valor inválido em ${invalido[0]}. Use números, como 1.250,40.` };
   if (f.vouchers.some((v) => v.valor.trim() !== "" && v.codigo.trim() === "")) return { error: "Informe o código de cada voucher." };
   if (f.saidas.some((s) => s.valor.trim() !== "" && s.finalidade.trim() === "")) return { error: "Informe a finalidade de cada saída." };
+  const vendidos = f.vouchersVendidos.filter((v) => v.codigo.trim() !== "" || v.valor.trim() !== "");
+  const vendaInvalida = vendidos.find((v) => v.codigo.trim() === "" || v.valor.trim() === "" || !dinheiro(v.valor) || !["Dinheiro", "Cartão", "Pix"].includes(v.forma));
+  if (vendaInvalida) return { error: "Em cada aquisição de voucher, informe o código, o valor e como o cliente pagou." };
   const caixa = f.caixa.trim().slice(0, 40) || "Caixa";
   try {
     await enviarCaixaAoErp({
@@ -41,6 +45,7 @@ export async function enviarFechamentoCaixa(unidadeId: number, f: FechamentoForm
       valores: f.valores.filter((v) => v.valor.trim() !== "").map((v) => ({ terminal: v.terminal.trim(), grupo: v.grupo, valor: v.valor.trim() })),
       vouchers: f.vouchers.filter((v) => v.valor.trim() !== "" || v.codigo.trim() !== "").map((v) => ({ codigo: v.codigo.trim(), valor: v.valor.trim() })),
       saidas: f.saidas.filter((s) => s.valor.trim() !== "" || s.finalidade.trim() !== "").map((s) => ({ finalidade: s.finalidade.trim(), valor: s.valor.trim() })),
+      vouchers_vendidos: vendidos.map((v) => ({ codigo: v.codigo.trim().toUpperCase(), valor: v.valor.trim(), forma: v.forma, cliente: v.cliente.trim(), validade: v.validade.trim() })),
       observacao: f.observacao.trim().slice(0, 1000),
     });
   } catch (e) {

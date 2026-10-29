@@ -19,7 +19,7 @@ const soma = (l: string[]) => l.reduce((s, v) => s + ler(v), 0);
 
 const estiloValor = (valor: string, largura = 120) => ({
   width: largura, textAlign: "right" as const, fontSize: 17, padding: "8px 10px", borderRadius: 8, flex: "none",
-  border: `1px solid ${Number.isNaN(ler(valor)) ? "#c9252b" : "#c9c9cd"}`, background: valor === "" ? "#fff" : "#f1f8f3",
+  border: `1px solid ${Number.isNaN(ler(valor)) ? "var(--danger)" : "var(--border-strong)"}`, background: valor === "" ? "var(--bg)" : "var(--success-bg)", color: "var(--text)",
 });
 
 function Campo({ rotulo, ajuda, valor, mudar, travado }: { rotulo: string; ajuda?: string; valor: string; mudar: (v: string) => void; travado: boolean }) {
@@ -37,6 +37,8 @@ function Campo({ rotulo, ajuda, valor, mudar, travado }: { rotulo: string; ajuda
 
 type Terminal = { nome: string; valores: Record<string, string> };
 type Par = { a: string; valor: string };
+type Venda = { codigo: string; valor: string; forma: string; cliente: string; validade: string; situacao: string | null };
+const FORMAS = ["Dinheiro", "Cartão", "Pix"];
 
 function terminaisDe(f: FechamentoCaixa | undefined): Terminal[] {
   const nomes = [...new Set((f?.valores ?? []).filter((v) => v.terminal !== "").map((v) => v.terminal))];
@@ -61,6 +63,10 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
     Object.fromEntries((enviado?.valores ?? []).filter((v) => v.terminal === "").map((v) => [v.grupo, paraTela(v.valor)])));
   const [vouchers, setVouchers] = useState<Par[]>(() => enviado?.vouchers.length ? enviado.vouchers.map((v) => ({ a: v.codigo, valor: paraTela(v.valor) })) : [{ a: "", valor: "" }]);
   const [saidas, setSaidas] = useState<Par[]>(() => enviado?.saidas.length ? enviado.saidas.map((s) => ({ a: s.finalidade, valor: paraTela(s.valor) })) : [{ a: "", valor: "" }]);
+  const [vendidos, setVendidos] = useState<Venda[]>(() =>
+    enviado?.vouchers_vendidos?.length
+      ? enviado.vouchers_vendidos.map((v) => ({ codigo: v.codigo, valor: paraTela(v.valor), forma: v.forma, cliente: v.cliente ?? "", validade: v.validade ?? "", situacao: v.situacao }))
+      : []);
   const [suprimento, setSuprimento] = useState(enviado && Number(enviado.troco_do_cofre) ? paraTela(enviado.troco_do_cofre) : "");
   const [sangria, setSangria] = useState(paraTela(enviado?.sangria));
   const [trocoFinal, setTrocoFinal] = useState(paraTela(enviado?.troco_final));
@@ -75,6 +81,7 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
   const pix = soma(terminais.map((t) => t.valores["Pix"] ?? ""));
   const totalVoucher = soma(vouchers.map((v) => v.valor));
   const totalSaidas = soma(saidas.map((s) => s.valor));
+  const totalVendidos = soma(vendidos.map((v) => v.valor));
 
   const mudarTerminal = (i: number, f: (t: Terminal) => Terminal) => setTerminais((ts) => ts.map((t, j) => (j === i ? f(t) : t)));
 
@@ -92,6 +99,7 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
         ],
         vouchers: vouchers.map((v) => ({ codigo: v.a, valor: v.valor })),
         saidas: saidas.map((s) => ({ finalidade: s.a, valor: s.valor })),
+        vouchersVendidos: vendidos.map((v) => ({ codigo: v.codigo, valor: v.valor, forma: v.forma, cliente: v.cliente, validade: v.validade })),
       });
       setMsg(r.error ? { erro: r.error } : { ok: r.ok });
       if (!r.error) router.refresh();
@@ -112,7 +120,7 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
 
       {titulo("Recebimentos nas maquininhas")}
       {terminais.map((t, i) => (
-        <div key={i} style={{ marginBottom: 12, padding: "8px 10px", border: "1px solid #e4e4e7", borderRadius: 10 }}>
+        <div key={i} style={{ marginBottom: 12, padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 12 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
             <strong style={{ fontSize: 14 }}>Nº do terminal</strong>
             <input value={t.nome} onChange={(e) => mudarTerminal(i, (x) => ({ ...x, nome: e.target.value }))} aria-label="Número do terminal"
@@ -140,7 +148,7 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
           mudar={(v) => setOutras((s) => ({ ...s, [g]: v }))} />
       ))}
 
-      {titulo("Voucher (Experience Card)")}
+      {titulo("Uso de voucher (cliente pagou com voucher)")}
       {vouchers.map((v, i) => (
         <div key={i} className="list-item" style={{ alignItems: "center", gap: 8 }}>
           <input value={v.a} onChange={(e) => setVouchers((l) => l.map((x, j) => (j === i ? { ...x, a: e.target.value.toUpperCase() } : x)))}
@@ -150,6 +158,34 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
         </div>
       ))}
       {!travado && <button type="button" className="btn-small" onClick={() => setVouchers((l) => [...l, { a: "", valor: "" }])}>+ Outro voucher</button>}
+
+      {titulo("Aquisição de voucher (voucher vendido neste caixa)")}
+      <p className="items-count" style={{ margin: "0 0 6px" }}>
+        Não é receita do dia: é dinheiro recebido por um voucher a servir depois. Pago em dinheiro, com cliente e validade, o ERP cadastra o voucher e conta o dinheiro na gaveta; em cartão ou Pix, o financeiro cadastra com a conta que recebeu.
+      </p>
+      {vendidos.map((v, i) => (
+        <div key={i} className="list-item" style={{ display: "block" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input value={v.codigo} onChange={(e) => setVendidos((l) => l.map((x, j) => (j === i ? { ...x, codigo: e.target.value.toUpperCase() } : x)))}
+              placeholder="Código (ex.: KEN1-015)" aria-label="Código do voucher vendido" disabled={travado} style={{ flex: 1, minWidth: 0 }} />
+            <input value={v.valor} onChange={(e) => setVendidos((l) => l.map((x, j) => (j === i ? { ...x, valor: e.target.value } : x)))}
+              inputMode="decimal" placeholder="R$ 0,00" aria-label="Valor do voucher vendido" disabled={travado} style={estiloValor(v.valor)} />
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
+            <select value={v.forma} onChange={(e) => setVendidos((l) => l.map((x, j) => (j === i ? { ...x, forma: e.target.value } : x)))}
+              aria-label="Como o cliente pagou" disabled={travado} style={{ width: "auto" }}>
+              {FORMAS.map((f) => <option key={f} value={f}>{f === "Cartão" ? "Pago no cartão" : f === "Pix" ? "Pago no Pix" : "Pago em dinheiro"}</option>)}
+            </select>
+            <input value={v.cliente} onChange={(e) => setVendidos((l) => l.map((x, j) => (j === i ? { ...x, cliente: e.target.value } : x)))}
+              placeholder="Cliente" aria-label="Cliente que comprou o voucher" disabled={travado} style={{ flex: 1, minWidth: 120 }} />
+            <input type="date" value={v.validade} onChange={(e) => setVendidos((l) => l.map((x, j) => (j === i ? { ...x, validade: e.target.value } : x)))}
+              aria-label="Validade do voucher" disabled={travado} style={{ width: "auto" }} />
+            {!travado && <button type="button" className="btn-small" onClick={() => setVendidos((l) => l.filter((_, j) => j !== i))}>Tirar</button>}
+          </div>
+          {v.situacao && <p className="items-count" style={{ margin: "6px 0 0" }}>ERP: {v.situacao}</p>}
+        </div>
+      ))}
+      {!travado && <button type="button" className="btn-small" onClick={() => setVendidos((l) => [...l, { codigo: "", valor: "", forma: "Dinheiro", cliente: "", validade: "", situacao: null }])}>+ Aquisição de voucher</button>}
 
       {titulo("Saídas (pagas com o dinheiro do caixa)")}
       {saidas.map((s, i) => (
@@ -170,7 +206,7 @@ export function CaixaForm({ unidadeId, data, hoje, desde, dia, previa = false }:
 
       <div className="list-item" style={{ display: "block" }}>
         <p className="items-count" style={{ margin: 0 }}>
-          Cartões {reais(cartoes)} · Pix {reais(pix)} · Voucher {reais(totalVoucher)} · Dinheiro {reais(ler(outras["Dinheiro"] ?? ""))}
+          Cartões {reais(cartoes)} · Pix {reais(pix)} · Voucher usado {reais(totalVoucher)} · Dinheiro {reais(ler(outras["Dinheiro"] ?? ""))}{totalVendidos ? ` · Voucher vendido ${reais(totalVendidos)}` : ""}
           {totalSaidas ? ` · Saídas ${reais(totalSaidas)}` : ""}
         </p>
       </div>
