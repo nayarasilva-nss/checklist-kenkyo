@@ -2679,6 +2679,7 @@ button {
 .info-row:last-of-type { border-bottom: none; }
 .info-row .ico { width: 22px; text-align: center; opacity: 0.8; }
 .info-row .k { color: var(--text-muted); min-width: 140px; }
+.summary-cards.cols-4 { grid-template-columns: repeat(4, 1fr); }
 @media (max-width: 720px) {
   .summary-cards.cols-4 { grid-template-columns: repeat(2, 1fr); }
   .summary-cards.cols-3 { grid-template-columns: 1fr; }

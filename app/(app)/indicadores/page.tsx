@@ -94,7 +94,7 @@ export default async function IndicadoresPage({
         <button className="btn-save" type="submit">Filtrar</button>
       </form>
 
-      <div className="summary-cards cols-4" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+      <div className="summary-cards cols-4">
         {kpis.map(([label, value, tone]) => (
           <div className={`tone-card ${tone}`} key={label}>
             <div className="tone-label">{label}</div>
