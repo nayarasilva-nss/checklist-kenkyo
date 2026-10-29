@@ -175,6 +175,7 @@ export function AppNav({
   showFormularios,
   showPlataforma,
   pendingAuditCount,
+  contexto,
 }: {
   userName: string;
   profile: string;
@@ -195,6 +196,8 @@ export function AppNav({
   showFormularios: boolean;
   showPlataforma: boolean;
   pendingAuditCount: number;
+  // Unidade de hoje e função de hoje: ficam aqui, no menu, e não numa faixa no topo da página.
+  contexto?: React.ReactNode;
 }) {
   const pathname = usePathname();
   const groups = buildGroups(profile, showRequisicoes, showContagem, showCaixa, showEscala, showEstoque, showSolicitacoes, showFormularios, showPlataforma, pendingAuditCount);
@@ -274,6 +277,8 @@ export function AppNav({
           <img src={orgLogoUrl} alt={orgName} width={28} height={28} />
           <span>{orgName}</span>
         </Link>
+
+        {contexto && <div className="app-nav-contexto">{contexto}</div>}
 
         <nav className="app-nav-groups">
           {groups.map((group) => (
@@ -377,6 +382,12 @@ export function AppNav({
               </div>
               <div className="sheet-label">Tema</div>
               <ThemeSegmented />
+              {contexto && (
+                <>
+                  <div className="sheet-label">Hoje</div>
+                  <div className="app-nav-contexto">{contexto}</div>
+                </>
+              )}
             </>
           }
         >

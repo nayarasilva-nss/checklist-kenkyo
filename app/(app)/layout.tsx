@@ -104,14 +104,18 @@ export default async function AppLayout({
         showFormularios={showFormularios}
         showPlataforma={showPlataforma}
         pendingAuditCount={pendingCoAudits.length}
+        contexto={
+          showCoveringUnitBanner || isGestor ? (
+            <>
+              {showCoveringUnitBanner && (
+                <CoveringUnitBanner units={units} homeUnitId={user.unitId} covering={covering} />
+              )}
+              {isGestor && <GestorFuncaoBanner jobFunctions={jobFunctions} atuando={atuando} />}
+            </>
+          ) : null
+        }
       />
       <div className="app-main">
-        {showCoveringUnitBanner && (
-          <CoveringUnitBanner units={units} homeUnitId={user.unitId} covering={covering} />
-        )}
-        {isGestor && (
-          <GestorFuncaoBanner jobFunctions={jobFunctions} atuando={atuando} />
-        )}
         <div className="content">
           <div className="tab-content">{children}</div>
         </div>

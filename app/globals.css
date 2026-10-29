@@ -2927,3 +2927,38 @@ button {
   padding: 0;
   accent-color: var(--kenkyo-red-deep);
 }
+
+/* Unidade de hoje e função de hoje no menu (lateral no computador, folha "Mais" no celular) */
+.app-nav-contexto {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 14px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.app-nav-contexto .covering-unit-banner {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.app-nav-contexto .covering-unit-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: normal;
+}
+.app-nav-contexto .covering-unit-label strong { color: var(--text); text-transform: none; letter-spacing: 0; }
+.app-nav-contexto .covering-unit-banner select {
+  width: 100%;
+  min-height: 40px;
+  font-size: 14px;
+}
+.sheet-label + .app-nav-contexto { margin-top: 0; }
