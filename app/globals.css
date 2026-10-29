@@ -2819,3 +2819,17 @@ button {
   background: var(--control); color: var(--text);
 }
 .checklist-finish.pronto { background: var(--success); color: #06210f; }
+
+/* Campos sem classe própria seguem o desenho (48 px, cantos 12, fundo do tema); as regras de cada tela, mais específicas, continuam valendo. */
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]), select, textarea) {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-input);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 0 12px;
+  min-height: 44px;
+}
+:where(textarea) {
+  padding: 12px;
+}
