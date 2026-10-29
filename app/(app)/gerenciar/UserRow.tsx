@@ -156,15 +156,15 @@ export function UserRow({
           ))}
         </select>
       </div>
-      {(user.profile === "gerente" || user.profile === "lider") && (
+      {user.profile !== "rh" && (
         <div className="form-group">
           <label htmlFor={`semChecklist-${user.id}`} style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <input type="checkbox" id={`semChecklist-${user.id}`} name="semChecklist" defaultChecked={!user.checklistObrigatorio} />
             Sem checklists obrigatórios
           </label>
           <p className="items-count">
-            Não aparece em atraso, em &quot;sem checklist hoje&quot; nem nos indicadores. Só passa a contar se a pessoa
-            começar um checklist (por exemplo, ao cobrir alguém na operação).
+            Não aparece em atraso, em &quot;sem checklist hoje&quot; nem nos indicadores, e não vê o card &quot;Checklists em atraso&quot; na
+            tela Hoje. Só passa a contar nos indicadores se a pessoa começar um checklist (por exemplo, ao cobrir alguém na operação).
           </p>
         </div>
       )}

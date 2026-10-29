@@ -70,7 +70,8 @@ export default async function HojePage({
     user.unitId || isGestor || isRh ? getUnits(user.organizationId!) : Promise.resolve([]),
     isRh ? Promise.resolve([]) : getChecklistsForUser("daily", viewer),
     isGestor ? getPendingCoAudits(user.organizationId!, user.id) : Promise.resolve([]),
-    (isGestor || user.profile === "gerente") && isPainelToday ? getAtrasosHoje(user.organizationId!, painelUnitId) : Promise.resolve([]),
+    // quem está marcado como "sem checklist obrigatório" não vê o card de atraso
+    (isGestor || user.profile === "gerente") && user.checklistObrigatorio && isPainelToday ? getAtrasosHoje(user.organizationId!, painelUnitId) : Promise.resolve([]),
     isGestor ? getRecebimentosComDiferenca(user.organizationId!) : Promise.resolve([]),
   ]);
   const unitName = units.find((u) => u.id === user.unitId)?.name ?? null;
