@@ -2962,3 +2962,27 @@ button {
   font-size: 14px;
 }
 .sheet-label + .app-nav-contexto { margin-top: 0; }
+
+/* Menu lateral agrupado por assunto: cada grupo abre e fecha */
+.app-nav-group-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.app-nav-group-toggle .app-nav-group-label { margin: 0; }
+.app-nav-group-chevron {
+  color: var(--text-faint);
+  font-size: 16px;
+  margin-right: 8px;
+  transition: transform 0.15s;
+}
+.app-nav-group-chevron.aberto { transform: rotate(90deg); }

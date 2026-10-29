@@ -43,31 +43,42 @@ function buildGroups(
     ];
   }
 
+  const gestor = isGestorProfile(profile);
   const groups: NavGroup[] = [
     {
-      label: "OPERAÇÃO",
+      label: "TURNO",
       items: [
         { href: "/hoje", label: "Hoje" },
         { href: "/checklist", label: "Checklists" },
         { href: "/diario-de-bordo", label: "Diário de bordo" },
-        { href: "/anomalias", label: "Anomalias" },
-        ...(showRequisicoes ? [{ href: "/requisicoes", label: "Requisições" }] : []),
-        ...(showEstoque ? [{ href: "/estoque", label: "Estoque" }] : []),
-        ...(showContagem ? [{ href: "/contagem", label: "Contagem" }] : []),
-        ...(showCaixa ? [{ href: "/caixa", label: "Fechamento de caixa" }] : []),
-        ...(showSolicitacoes ? [{ href: "/solicitacoes", label: "Solicitações" }] : []),
-        ...(showEscala ? [{ href: "/escala", label: "Escala" }] : []),
       ],
     },
     {
-      label: "INDICADORES",
+      label: "PEDIDOS E ESTOQUE",
       items: [
+        ...(showRequisicoes ? [{ href: "/requisicoes", label: "Requisições" }] : []),
+        ...(showSolicitacoes ? [{ href: "/solicitacoes", label: "Solicitações" }] : []),
+        ...(showEstoque ? [{ href: "/estoque", label: "Estoque" }] : []),
+        ...(showContagem ? [{ href: "/contagem", label: "Contagem" }] : []),
+      ],
+    },
+    {
+      label: "REGISTROS",
+      items: [
+        { href: "/anomalias", label: "Anomalias" },
         { href: "/perdas", label: "Perdas" },
+        ...(showCaixa ? [{ href: "/caixa", label: "Fechamento de caixa" }] : []),
         ...(showFormularios ? [{ href: "/formularios", label: "Formulários" }] : []),
-        ...(isGestorProfile(profile) ? [{ href: "/indicadores", label: "Indicadores" }] : []),
-        ...(isGestorProfile(profile) ? [{ href: "/auditorias", label: "Auditorias", badge: pendingAuditCount }] : []),
+      ],
+    },
+    {
+      label: "ACOMPANHAMENTO",
+      items: [
+        ...(gestor ? [{ href: "/indicadores", label: "Indicadores" }] : []),
+        ...(gestor ? [{ href: "/auditorias", label: "Auditorias", badge: pendingAuditCount }] : []),
         { href: "/relatorio", label: "Relatórios" },
         { href: "/historico", label: "Histórico" },
+        ...(showEscala ? [{ href: "/escala", label: "Escala" }] : []),
       ],
     },
     {
@@ -76,7 +87,7 @@ function buildGroups(
     },
   ];
 
-  if (isGestorProfile(profile)) {
+  if (gestor) {
     groups.push({
       label: "SISTEMA",
       items: [
@@ -86,7 +97,8 @@ function buildGroups(
     });
   }
 
-  return groups;
+  // grupo sem nenhum item para esta pessoa não aparece
+  return groups.filter((g) => g.items.length > 0);
 }
 
 const ICONES = {
@@ -213,6 +225,10 @@ export function AppNav({
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
+  // Cada grupo abre e fecha. Sem escolha da pessoa, ficam abertos o de "Turno" e o grupo da tela em que ela está.
+  const [abertos, setAbertos] = useState<Record<string, boolean>>({});
+  const grupoAtivo = (g: NavGroup) => g.label === "TURNO" || g.items.some((i) => isActive(i.href));
+
   const registerOptions: SheetOptionDef[] = [
     ...(canCreateAnomaly
       ? [{ href: "/anomalias", title: "Anomalia", description: "Registrar uma ocorrência" }]
@@ -281,31 +297,44 @@ export function AppNav({
         {contexto && <div className="app-nav-contexto">{contexto}</div>}
 
         <nav className="app-nav-groups">
-          {groups.map((group) => (
-            <div key={group.label}>
-              <div className="app-nav-group-label">{group.label}</div>
-              <div className="app-nav-items">
-                {group.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`app-nav-link${isActive(item.href) ? " active" : ""}`}
-                  >
-                    {item.label}
-                    {!!item.badge && (
-                      <span
-                        className="badge badge-brand"
-                        style={{ marginLeft: 8 }}
-                        aria-label={`${item.badge} pendente${item.badge > 1 ? "s" : ""}`}
+          {groups.map((group) => {
+            const aberto = abertos[group.label] ?? grupoAtivo(group);
+            return (
+              <div key={group.label}>
+                <button
+                  type="button"
+                  className="app-nav-group-toggle"
+                  aria-expanded={aberto}
+                  onClick={() => setAbertos((a) => ({ ...a, [group.label]: !aberto }))}
+                >
+                  <span className="app-nav-group-label">{group.label}</span>
+                  <span className={`app-nav-group-chevron${aberto ? " aberto" : ""}`} aria-hidden="true">›</span>
+                </button>
+                {aberto && (
+                  <div className="app-nav-items">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`app-nav-link${isActive(item.href) ? " active" : ""}`}
                       >
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                ))}
+                        {item.label}
+                        {!!item.badge && (
+                          <span
+                            className="badge badge-brand"
+                            style={{ marginLeft: 8 }}
+                            aria-label={`${item.badge} pendente${item.badge > 1 ? "s" : ""}`}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
 
         <ThemeToggle className="app-nav-theme" />
