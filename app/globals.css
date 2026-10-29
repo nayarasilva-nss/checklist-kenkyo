@@ -253,9 +253,12 @@ button {
 .form-group input,
 .form-group textarea {
   width: 100%;
+  min-height: 48px;
   padding: 12px;
-  border: 2px solid var(--border);
-  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
   /* 16px, not 14: iOS Safari auto-zooms the whole page on focus for any
      input under 16px, which on a form with several fields in a row (like
      Nova Requisição) makes the viewport zoom in and out constantly. */
@@ -274,7 +277,7 @@ button {
 .btn-login {
   width: 100%;
   padding: 12px;
-  background: var(--kenkyo-gradient);
+  background: var(--kenkyo-red-deep);
   color: white;
   border: none;
   border-radius: 8px;
@@ -817,7 +820,7 @@ button {
 .checklist-card-top h3 { flex: 1; font-size: 16px; font-weight: 800; }
 .checklist-card-meta { font-size: 13px; color: var(--text-muted); margin: 0; }
 .checklist-card-bar { height: 6px; border-radius: 3px; background: var(--control); overflow: hidden; }
-.checklist-card-bar > div { height: 100%; background: var(--kenkyo-gradient); border-radius: 3px; }
+.checklist-card-bar > div { height: 100%; background: var(--kenkyo-red-deep); border-radius: 3px; }
 .checklist-card.done .checklist-card-bar > div { background: var(--success); }
 .checklist-card-lock { font-size: 12.5px; font-weight: 600; color: var(--warning-text); margin: 0; }
 
@@ -870,7 +873,7 @@ button {
 
 .btn-pdf {
   padding: 8px 14px;
-  background: var(--kenkyo-gradient);
+  background: var(--kenkyo-red-deep);
   color: white;
   border: none;
   border-radius: 8px;
@@ -1142,7 +1145,7 @@ button {
 }
 
 .btn-add {
-  background: var(--kenkyo-gradient);
+  background: var(--kenkyo-red-deep);
   color: white;
   border: none;
   padding: 10px 16px;
@@ -1162,8 +1165,8 @@ button {
 .list-item {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 14px;
   margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
@@ -1198,14 +1201,17 @@ button {
 }
 
 .btn-small {
-  padding: 6px 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
   border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 6px;
+  background: var(--control);
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 12px;
-  color: var(--text-muted);
-  transition: all 0.3s;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .btn-small:hover {
@@ -1226,9 +1232,9 @@ button {
 /* Inline forms (replace modals) */
 .inline-form {
   background: var(--surface);
-  border: 1px solid var(--kenkyo-red);
-  border-radius: 12px;
-  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
   margin-bottom: 20px;
 }
 
@@ -1293,15 +1299,15 @@ button {
 }
 
 .btn-save {
-  padding: 10px 20px;
-  background: var(--kenkyo-gradient);
-  color: white;
+  min-height: 48px;
+  padding: 0 20px;
+  background: var(--kenkyo-red-deep);
+  color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
-  transition: transform 0.2s;
+  font-weight: 800;
+  font-size: 15px;
 }
 
 .btn-save:hover {
@@ -1320,15 +1326,17 @@ button {
 }
 
 .btn-primary {
-  background: var(--kenkyo-gradient);
-  color: white;
+  background: var(--kenkyo-red-deep);
+  color: #fff;
   border: none;
-  font-size: 12.5px;
-  font-weight: 700;
-  border-radius: 8px;
-  padding: 10px 16px;
-  box-shadow: var(--kenkyo-glow);
-  transition: transform 0.2s;
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: 14px;
+  min-height: 48px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
@@ -1397,24 +1405,22 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--control);
+  background: var(--surface);
   border: 1px solid var(--border);
-  color: var(--text-3);
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
   border-radius: 999px;
-  padding: 8px 14px;
+  min-height: 44px;
+  padding: 0 16px;
   cursor: pointer;
-  transition:
-    background 0.2s,
-    color 0.2s,
-    border-color 0.2s;
+  white-space: nowrap;
 }
 
 .pill.active {
-  background: var(--kenkyo-red);
-  color: var(--on-accent);
-  border-color: var(--kenkyo-red);
+  background: var(--kenkyo-red-deep);
+  border-color: var(--kenkyo-red-deep);
+  color: #fff;
 }
 
 .pill-count {
@@ -1597,27 +1603,43 @@ button {
   white-space: nowrap;
 }
 
-/* Below 700px, "Data" and "Unidade" drop out (they're still visible once
-   a row is opened in the detail panel) so Tipo/Solicitante/Status fit the
-   screen width without forcing the row into horizontal scroll. */
+/* Celular: cada requisição vira um cartão, como no desenho: tipo, data e situação em cima; solicitante e unidade embaixo. */
 @media (max-width: 700px) {
-  .data-table-cols-requisicoes {
-    grid-template-columns: 74px 1fr 96px;
+  .data-table:has(.data-table-cols-requisicoes) {
+    background: none;
+    border: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
-
-  .data-table-cols-requisicoes .col-data,
-  .data-table-cols-requisicoes .col-unidade {
+  .data-table-cols-requisicoes.data-table-head {
     display: none;
   }
+  .data-table-cols-requisicoes.data-table-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "tipo data status" "sol sol sol" "uni uni uni";
+    gap: 6px 10px;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+  }
+  .data-table-cols-requisicoes .col-tipo { grid-area: tipo; }
+  .data-table-cols-requisicoes .col-data { grid-area: data; display: block; font-size: 12.5px; color: var(--text-muted); }
+  .data-table-cols-requisicoes .col-status { grid-area: status; }
+  .data-table-cols-requisicoes .col-solicitante { grid-area: sol; font-weight: 700; font-size: 15px; }
+  .data-table-cols-requisicoes .col-unidade { grid-area: uni; display: block; font-size: 12.5px; color: var(--text-muted); }
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
-  border-radius: 5px;
-  padding: 2px 7px;
-  font-size: 10.5px;
-  font-weight: 700;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 800;
   white-space: nowrap;
 }
 
@@ -1678,9 +1700,10 @@ button {
 }
 
 .detail-panel {
-  background: var(--bg-rail);
-  border-radius: 13px;
-  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   min-height: 320px;
@@ -1811,8 +1834,8 @@ button {
 .today-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 13px;
-  padding: 22px 24px;
+  border-radius: 18px;
+  padding: 16px 18px;
 }
 
 .today-card-header {
@@ -1912,7 +1935,7 @@ button {
 
 .today-checklist-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--kenkyo-red), var(--kenkyo-red-light));
+  background: var(--kenkyo-red-deep);
 }
 
 .today-checklist-actions {
@@ -2312,7 +2335,7 @@ button {
   height: 58px;
   border-radius: 50%;
   border: 4px solid var(--bg);
-  background: var(--kenkyo-gradient);
+  background: var(--kenkyo-red-deep);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2743,7 +2766,7 @@ button {
 
 /* Hoje no desenho "Kenkyo Mobile": cartão de destaque com o próximo checklist e lista com marcadores */
 .turno-hero {
-  background: var(--kenkyo-gradient);
+  background: var(--kenkyo-red-deep);
   border-radius: 20px;
   padding: 18px;
   color: #fff;
@@ -2811,7 +2834,7 @@ button {
 .checklist-top .btn-cancel { min-height: 44px; padding: 0 14px; border-radius: 12px; display: inline-flex; align-items: center; }
 .checklist-top-count { flex: 1; text-align: right; font-weight: 800; font-size: 15px; }
 .checklist-progress { height: 8px; border-radius: 4px; background: var(--control); overflow: hidden; margin-bottom: 14px; }
-.checklist-progress > div { height: 100%; background: var(--kenkyo-gradient); border-radius: 4px; }
+.checklist-progress > div { height: 100%; background: var(--kenkyo-red-deep); border-radius: 4px; }
 .checklist-finish {
   display: flex; align-items: center; justify-content: center;
   min-height: 52px; border-radius: 14px; margin-top: 4px;
@@ -2832,4 +2855,16 @@ button {
 }
 :where(textarea) {
   padding: 12px;
+}
+
+/* Celular: abas e filtros numa linha só, que rola de lado (como nas abas de Perdas do desenho) */
+@media (max-width: 768px) {
+  .filter-pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .filter-pills::-webkit-scrollbar { display: none; }
+  .filter-pills > * { flex: none; }
 }
