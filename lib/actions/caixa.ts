@@ -5,6 +5,7 @@ import { canFecharCaixa } from "@/lib/auth/caixa";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { unidadeDaContagem } from "@/lib/data/contagem";
 import { enviarCaixaAoErp } from "@/lib/erp/caixa";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 
 export type ResultadoCaixa = { error?: string; ok?: string };
 export type FechamentoForm = {
@@ -47,7 +48,7 @@ export async function enviarFechamentoCaixa(unidadeId: number, f: FechamentoForm
       saidas: f.saidas.filter((s) => s.valor.trim() !== "" || s.finalidade.trim() !== "").map((s) => ({ finalidade: s.finalidade.trim(), valor: s.valor.trim() })),
       vouchers_vendidos: vendidos.map((v) => ({ codigo: v.codigo.trim().toUpperCase(), valor: v.valor.trim(), forma: v.forma, cliente: v.cliente.trim(), validade: v.validade.trim() })),
       observacao: f.observacao.trim().slice(0, 1000),
-    });
+    }, await ligacaoDaEmpresa(user.organizationId));
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Não foi possível enviar o fechamento." };
   }

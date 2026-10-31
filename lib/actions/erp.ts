@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
-import { catalogItems, jobFunctions, requisicoes, units } from "@/lib/db/schema";
+import { catalogItems, jobFunctions, organizations, requisicoes, units } from "@/lib/db/schema";
 import { enviarPendentesAoErp, enviarRequisicaoAoErp } from "@/lib/erp/integracao";
 import { enviarAcompanhamentoPendente } from "@/lib/erp/ocorrencias";
 import { aplicarEspelho, planoEspelho, type PlanoEspelho } from "@/lib/erp/espelho";
@@ -157,4 +157,24 @@ export async function aplicarEspelhoErp(): Promise<EstadoEspelho> {
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Não foi possível aplicar." };
   }
+}
+
+/**
+ * A ligação com o ERP, por empresa (fase multi-empresa): endereço e chave
+ * ficam na organizations. Em branco = desligar (a empresa usa o checklist
+ * sozinho). A chave nunca volta ao cliente: o form a guarda em password.
+ */
+export async function salvarLigacaoErp(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const gestor = await requireGestor();
+  if (!gestor.organizationId) return { error: "Conta sem empresa associada" };
+  const url = String(formData.get("erp_api_url") ?? "").trim().replace(/\/+$/, "");
+  const token = String(formData.get("erp_api_token") ?? "").trim();
+  if (url && !/^https:\/\/.+/.test(url)) return { error: "O endereço do ERP precisa ser https://…" };
+  if (!url !== !token) return { error: "Informe o endereço e a chave juntos (ou deixe os dois em branco para desligar)." };
+  await db
+    .update(organizations)
+    .set({ erpApiUrl: url || null, erpApiToken: token || null })
+    .where(eq(organizations.id, gestor.organizationId));
+  revalidatePath("/gerenciar");
+  return { ok: url ? "Ligação com o ERP salva." : "Ligação desligada: o checklist segue funcionando sozinho." };
 }

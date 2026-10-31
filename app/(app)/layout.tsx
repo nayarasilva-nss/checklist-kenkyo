@@ -17,7 +17,7 @@ import { isGestorProfile } from "@/lib/auth/profile";
 import { resolveBrandColors } from "@/lib/branding";
 import { canContar } from "@/lib/auth/contagem";
 import { canFecharCaixa } from "@/lib/auth/caixa";
-import { erpConfigurado } from "@/lib/erp/integracao";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 import { AppNav } from "./AppNav";
 import { CoveringUnitBanner } from "./CoveringUnitBanner";
 import { GestorFuncaoBanner } from "./GestorFuncaoBanner";
@@ -71,6 +71,9 @@ export default async function AppLayout({
   const showFormularios = orgFormDefinitions.length > 0;
   const showPlataforma = isPlatformOperator(user);
   const brand = resolveBrandColors(user.organizationPrimaryColor);
+  // Os módulos de ERP só existem para a empresa com a ligação dela (ou o servidor antigo com env vars).
+  const temErp = await ligacaoDaEmpresa(user.organizationId);
+  const modulosErp = Boolean(temErp);
 
   return (
     <div className="app-shell">
@@ -95,10 +98,10 @@ export default async function AppLayout({
         canSubmitRestoIngesta={canSubmitRestoIngesta(user)}
         canWriteShiftLog={user.profile === "gerente" || user.profile === "lider"}
         showRequisicoes={showRequisicoes}
-        showContagem={canContar(user) && erpConfigurado()}
-        showCaixa={canFecharCaixa(user) && erpConfigurado()}
+        showContagem={canContar(user) && modulosErp}
+        showCaixa={canFecharCaixa(user) && modulosErp}
         showEscala={canVerEscala(user)}
-        showEstoque={canVerEstoque(user) && erpConfigurado()}
+        showEstoque={canVerEstoque(user) && modulosErp}
         canCreateRequisicao={canCreateRequisicao}
         showSolicitacoes={showSolicitacoes}
         showFormularios={showFormularios}

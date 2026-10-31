@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
 import {
@@ -74,7 +74,10 @@ export async function getChecklistTypesWithCounts(organizationId: number) {
       checklistTypeId: checklistTypePrerequisites.checklistTypeId,
       requiresChecklistTypeId: checklistTypePrerequisites.requiresChecklistTypeId,
     })
-    .from(checklistTypePrerequisites);
+    .from(checklistTypePrerequisites)
+    // Só os pré-requisitos dos modelos desta empresa (os ids vêm do types,
+    // que já vem filtrado por organizationId acima).
+    .where(inArray(checklistTypePrerequisites.checklistTypeId, types.length ? types.map((t) => t.id) : [-1]));
   const prereqsByType = new Map<number, number[]>();
   for (const row of prereqRows) {
     const list = prereqsByType.get(row.checklistTypeId) ?? [];

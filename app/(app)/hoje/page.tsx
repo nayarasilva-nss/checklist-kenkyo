@@ -78,7 +78,7 @@ export default async function HojePage({
 
   const [pendencias, painelStats, ranking, filletingSummary, restoIngestaSummary, missingChecklist] =
     await Promise.all([
-      user.unitId ? getOpenPendenciasForUnit(user.unitId) : Promise.resolve([]),
+      user.unitId ? getOpenPendenciasForUnit(user.unitId, user.organizationId!) : Promise.resolve([]),
       getDashboardStats(painelUnitId, user.organizationId!, painelDate),
       getRanking(painelUnitId, user.organizationId!, painelDate),
       getFilletingMonthlySummary(painelUnitId, user.organizationId!, painelDate),

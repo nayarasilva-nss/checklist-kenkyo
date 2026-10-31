@@ -1,5 +1,5 @@
 import "server-only";
-import { chamarErp, erpConfigurado } from "./integracao";
+import { chamarErp, erpConfigurado, type LigacaoErp } from "./integracao";
 
 /** O estoque de uma unidade, lido do ERP (só leitura). Quantidades e valores já vêm como número. */
 export type ItemEstoque = {
@@ -13,11 +13,11 @@ export type AlertaEstoque = {
 export type LoteVencendo = { item: string; unidade_uso: string; lote: string; validade: string; local: string; quantidade: number; dias_para_vencer: number };
 export type EstoqueDaUnidade = { unidade: string; itens: ItemEstoque[]; alertas: AlertaEstoque[]; vencendo: LoteVencendo[] };
 
-export async function estoqueNoErp(cnpj: string): Promise<EstoqueDaUnidade> {
-  if (!erpConfigurado()) throw new Error("A ligação com o ERP não está configurada.");
+export async function estoqueNoErp(cnpj: string, ligacao?: LigacaoErp | null): Promise<EstoqueDaUnidade> {
+  if (!ligacao && !erpConfigurado()) throw new Error("A ligação com o ERP não está configurada para esta empresa.");
   let r: Response;
   try {
-    r = await chamarErp(`/api/estoque?cnpj=${cnpj}`);
+    r = await chamarErp(`/api/estoque?cnpj=${cnpj}`, undefined, ligacao);
   } catch {
     throw new Error("Não foi possível falar com o ERP agora. Tente de novo em instantes.");
   }

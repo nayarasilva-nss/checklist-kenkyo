@@ -4,7 +4,7 @@ import { canContar } from "@/lib/auth/contagem";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { unidadeDaContagem } from "@/lib/data/contagem";
 import { contagensNoErp, type ContagemDevida, type ContagemResumo, type LocalLivre } from "@/lib/erp/contagens";
-import { erpConfigurado } from "@/lib/erp/integracao";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 import { BotaoComecar } from "./BotaoComecar";
 
 const CURVA: Record<string, string> = { A: "itens mais importantes (curva A)", B: "itens da curva B", C: "itens da curva C" };
@@ -21,10 +21,10 @@ export default async function ContagemPage({ searchParams }: { searchParams: Pro
   const { lista, unidade } = await unidadeDaContagem(user, Number(escolhida) || null);
 
   let contagens: ContagemResumo[] = [], devidas: ContagemDevida[] = [], locais: LocalLivre[] = [], erro: string | null = null;
-  if (!erpConfigurado()) erro = "A ligação com o ERP não está configurada.";
+  if (!(await ligacaoDaEmpresa(user.organizationId))) erro = "A ligação com o ERP não está configurada para esta empresa (Gerenciar › ERP).";
   else if (unidade) {
     try {
-      ({ contagens, devidas, locais = [] } = await contagensNoErp(unidade.cnpj));
+      ({ contagens, devidas, locais = [] } = await contagensNoErp(unidade.cnpj, await ligacaoDaEmpresa(user.organizationId)));
     } catch (e) {
       erro = e instanceof Error ? e.message : "Não foi possível falar com o ERP.";
     }

@@ -1,5 +1,5 @@
 import "server-only";
-import { chamarErp, erpConfigurado } from "./integracao";
+import { chamarErp, erpConfigurado, type LigacaoErp } from "./integracao";
 
 /**
  * Fechamento de caixa no ERP, pelo app. O fechamento mora lá: aqui se lê o que preencher (as formas de pagamento que
@@ -25,11 +25,11 @@ export type EnvioCaixa = {
   vouchers_vendidos: { codigo: string; valor: string; forma: string; cliente: string; validade: string }[];
 };
 
-async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {
-  if (!erpConfigurado()) throw new Error("A ligação com o ERP não está configurada.");
+async function pedir<T>(caminho: string, init?: RequestInit, ligacao?: LigacaoErp | null): Promise<T> {
+  if (!ligacao && !erpConfigurado()) throw new Error("A ligação com o ERP não está configurada para esta empresa.");
   let r: Response;
   try {
-    r = await chamarErp(caminho, init);
+    r = await chamarErp(caminho, init, ligacao);
   } catch {
     throw new Error("Não foi possível falar com o ERP agora. Tente de novo em instantes.");
   }
@@ -38,10 +38,10 @@ async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {
   return corpo;
 }
 
-export function caixaNoErp(cnpj: string, data: string) {
-  return pedir<CaixaDoDia>(`/api/caixa?cnpj=${cnpj}&data=${data}`);
+export function caixaNoErp(cnpj: string, data: string, ligacao?: LigacaoErp | null) {
+  return pedir<CaixaDoDia>(`/api/caixa?cnpj=${cnpj}&data=${data}`, undefined, ligacao);
 }
 
-export function enviarCaixaAoErp(envio: EnvioCaixa) {
-  return pedir<{ id: number }>("/api/caixa", { method: "POST", body: JSON.stringify(envio) });
+export function enviarCaixaAoErp(envio: EnvioCaixa, ligacao?: LigacaoErp | null) {
+  return pedir<{ id: number }>("/api/caixa", { method: "POST", body: JSON.stringify(envio) }, ligacao);
 }

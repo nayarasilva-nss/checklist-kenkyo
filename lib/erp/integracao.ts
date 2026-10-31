@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { catalogItems, jobFunctions, requisicaoItens, requisicoes, units, users } from "@/lib/db/schema";
+import { catalogItems, jobFunctions, organizations, requisicaoItens, requisicoes, units, users } from "@/lib/db/schema";
 import { checklistDayForInstant } from "@/lib/date-utils";
 import type { ItemErp } from "./sugestao";
 
@@ -12,11 +12,35 @@ import type { ItemErp } from "./sugestao";
  * excluída é cancelada lá. Nada aqui depende do ERP: se ele estiver fora do
  * ar, a requisição fica "pendente" e vai na próxima vez.
  *
- * Configuração (variáveis de ambiente): ERP_API_URL (ex.:
- * https://erp-kenkyo.vercel.app) e ERP_API_TOKEN (o mesmo valor de
- * API_REQUISICOES_TOKEN no ERP). Sem as duas, nada é enviado.
+ * Configuração (fase multi-empresa): cada empresa tem a sua ligação
+ * (organizations.erp_api_url / erp_api_token, Gerenciar › ERP). Sem a dela,
+ * cai nas env vars do servidor (ERP_API_URL / ERP_API_TOKEN) — o jeito antigo,
+ * que a Kenkyo segue usando. Sem nenhuma das duas, a empresa não tem ERP:
+ * os módulos de ERP somem e as requisições ficam pendentes aqui.
  */
 
+export type LigacaoErp = { url: string; token: string };
+
+/**
+ * A ligação da empresa: o que está cadastrado nela, ou as env vars do
+ * servidor (jeito antigo, uma empresa só). Null = esta empresa não tem ERP.
+ */
+export async function ligacaoDaEmpresa(organizationId: number | null | undefined): Promise<LigacaoErp | null> {
+  if (organizationId) {
+    const [org] = await db
+      .select({ url: organizations.erpApiUrl, token: organizations.erpApiToken })
+      .from(organizations)
+      .where(eq(organizations.id, organizationId))
+      .limit(1);
+    if (org?.url && org.token) return { url: org.url, token: org.token };
+  }
+  if (process.env.ERP_API_URL && process.env.ERP_API_TOKEN) {
+    return { url: process.env.ERP_API_URL, token: process.env.ERP_API_TOKEN };
+  }
+  return null;
+}
+
+/** Sem empresa informada (caminhos do jeito antigo), vale o servidor. */
 export type ErpCatalogo = {
   itens: ItemErp[];
   setores?: string[];
@@ -28,22 +52,25 @@ export function erpConfigurado(): boolean {
   return Boolean(process.env.ERP_API_URL && process.env.ERP_API_TOKEN);
 }
 
-export async function chamarErp(caminho: string, init?: RequestInit): Promise<Response> {
-  const base = (process.env.ERP_API_URL ?? "").replace(/\/+$/, "");
+export async function chamarErp(caminho: string, init?: RequestInit, ligacao?: LigacaoErp | null): Promise<Response> {
+  const l = ligacao ?? (await ligacaoDaEmpresa(null));
+  if (!l) throw new Error("A ligação com o ERP não está configurada.");
+  const base = l.url.replace(/\/+$/, "");
   return fetch(`${base}${caminho}`, {
     ...init,
     cache: "no-store",
     signal: init?.signal ?? AbortSignal.timeout(15_000),
-    headers: { Authorization: `Bearer ${process.env.ERP_API_TOKEN ?? ""}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${l.token}`, "Content-Type": "application/json" },
   });
 }
 
 /** Itens, empresas e locais de estoque do ERP, para a tela de ligação. */
-export async function lerCatalogoErp(): Promise<ErpCatalogo> {
-  if (!erpConfigurado()) throw new Error("A ligação com o ERP não está configurada (faltam ERP_API_URL e ERP_API_TOKEN).");
+export async function lerCatalogoErp(organizationId?: number): Promise<ErpCatalogo> {
+  const ligacao = await ligacaoDaEmpresa(organizationId ?? null);
+  if (!ligacao) throw new Error("A ligação com o ERP não está configurada para esta empresa (Gerenciar › ERP).");
   let resposta: Response;
   try {
-    resposta = await chamarErp("/api/catalogo");
+    resposta = await chamarErp("/api/catalogo", undefined, ligacao);
   } catch {
     throw new Error("Não foi possível falar com o ERP agora. Tente de novo em instantes.");
   }
@@ -58,20 +85,20 @@ export async function lerCatalogoErp(): Promise<ErpCatalogo> {
  * cache por 5 minutos e com tempo curto: se o ERP não responder, devolve
  * null e a requisição mostra o catálogo inteiro — nunca trava o pedido.
  */
-export async function setoresDosItensErp(): Promise<Map<string, string[]> | null> {
-  const catalogo = await catalogoErpEmCache();
+export async function setoresDosItensErp(organizationId: number): Promise<Map<string, string[]> | null> {
+  const catalogo = await catalogoErpEmCache(organizationId);
   return catalogo ? new Map(catalogo.itens.map((i) => [i.codigo, i.setores ?? []])) : null;
 }
 
 /** O catálogo do ERP guardado por 5 minutos, com tempo curto; null se o ERP não responder. */
-async function catalogoErpEmCache(): Promise<ErpCatalogo | null> {
-  if (!erpConfigurado()) return null;
+async function catalogoErpEmCache(organizationId: number): Promise<ErpCatalogo | null> {
+  const ligacao = await ligacaoDaEmpresa(organizationId);
+  if (!ligacao) return null;
   try {
-    const base = (process.env.ERP_API_URL ?? "").replace(/\/+$/, "");
-    const resposta = await fetch(`${base}/api/catalogo`, {
+    const resposta = await fetch(`${ligacao.url.replace(/\/+$/, "")}/api/catalogo`, {
       next: { revalidate: 300 },
       signal: AbortSignal.timeout(5_000),
-      headers: { Authorization: `Bearer ${process.env.ERP_API_TOKEN ?? ""}` },
+      headers: { Authorization: `Bearer ${ligacao.token}` },
     });
     if (!resposta.ok) return null;
     return (await resposta.json()) as ErpCatalogo;
@@ -103,10 +130,11 @@ export function destinoDoItem(
  * Grava o destino dos itens de uma requisição: na externa, Empório ou Compras;
  * na interna, nada (sai toda do estoque local). Nunca lança.
  */
-export async function definirDestinos(requisicaoId: number): Promise<void> {
+export async function definirDestinos(requisicaoId: number, organizationId?: number): Promise<void> {
   try {
-    const [req] = await db.select({ tipo: requisicoes.tipo }).from(requisicoes).where(eq(requisicoes.id, requisicaoId)).limit(1);
+    const [req] = await db.select({ tipo: requisicoes.tipo, organizationId: requisicoes.organizationId }).from(requisicoes).where(eq(requisicoes.id, requisicaoId)).limit(1);
     if (!req) return;
+    const orgId = organizationId ?? req.organizationId;
     if (req.tipo !== "externa") {
       await db.update(requisicaoItens).set({ destino: null }).where(eq(requisicaoItens.requisicaoId, requisicaoId));
       return;
@@ -116,7 +144,7 @@ export async function definirDestinos(requisicaoId: number): Promise<void> {
       .from(requisicaoItens)
       .leftJoin(catalogItems, eq(catalogItems.id, requisicaoItens.catalogItemId))
       .where(eq(requisicaoItens.requisicaoId, requisicaoId));
-    const catalogo = await catalogoErpEmCache();
+    const catalogo = await catalogoErpEmCache(orgId);
     const abastecimento = catalogo ? new Map(catalogo.itens.map((i) => [i.codigo, i.abastecimento ?? "central"])) : null;
     for (const i of itens) {
       await db.update(requisicaoItens).set({ destino: destinoDoItem(i, abastecimento) }).where(eq(requisicaoItens.id, i.id));
@@ -127,12 +155,14 @@ export async function definirDestinos(requisicaoId: number): Promise<void> {
 }
 
 /** A situação no ERP das solicitações de compra destas requisições (id → situação), para a tela acompanhar. */
-export async function situacaoComprasNoErp(requisicaoIds: number[]): Promise<Record<number, { numero: string; status: string; pedido: string | null }>> {
-  if (!erpConfigurado() || requisicaoIds.length === 0) return {};
+export async function situacaoComprasNoErp(requisicaoIds: number[], organizationId: number): Promise<Record<number, { numero: string; status: string; pedido: string | null }>> {
+  if (requisicaoIds.length === 0) return {};
+  const ligacao = await ligacaoDaEmpresa(organizationId);
+  if (!ligacao) return {};
   try {
     const ids = requisicaoIds.map((id) => `checklist-${id}`).join(",");
     // tempo curto: a tela não espera o ERP
-    const resposta = await chamarErp(`/api/solicitacoes-compra?ids=${encodeURIComponent(ids)}`, { signal: AbortSignal.timeout(4_000) });
+    const resposta = await chamarErp(`/api/solicitacoes-compra?ids=${encodeURIComponent(ids)}`, { signal: AbortSignal.timeout(4_000) }, ligacao);
     if (!resposta.ok) return {};
     const dados = (await resposta.json()) as { solicitacoes: { id_externo: string; numero: string; status: string; pedido: string | null }[] };
     return Object.fromEntries(dados.solicitacoes.map((s) => [Number(s.id_externo.replace("checklist-", "")), { numero: s.numero, status: s.status, pedido: s.pedido }]));
@@ -176,13 +206,13 @@ async function gravar(id: number, r: ResultadoEnvio) {
 }
 
 /** Cancela no ERP (requisição cancelada ou excluída aqui). */
-async function cancelarNoErp(requisicaoId: number): Promise<ResultadoEnvio> {
+async function cancelarNoErp(requisicaoId: number, ligacao?: LigacaoErp | null): Promise<ResultadoEnvio> {
   let resposta: Response;
   try {
     resposta = await chamarErp("/api/requisicoes", {
       method: "POST",
       body: JSON.stringify({ id_externo: `checklist-${requisicaoId}`, situacao: "cancelada" }),
-    });
+    }, ligacao);
   } catch {
     return { status: "pendente", mensagem: "O ERP não respondeu. Vai de novo na próxima tentativa.", numero: null };
   }
@@ -195,13 +225,13 @@ async function cancelarNoErp(requisicaoId: number): Promise<ResultadoEnvio> {
 }
 
 /** Cancela no ERP a solicitação de compra (a parte que ia por Compras). */
-async function cancelarSolicitacaoNoErp(requisicaoId: number): Promise<ResultadoEnvio> {
+async function cancelarSolicitacaoNoErp(requisicaoId: number, ligacao?: LigacaoErp | null): Promise<ResultadoEnvio> {
   let resposta: Response;
   try {
     resposta = await chamarErp("/api/solicitacoes-compra", {
       method: "POST",
       body: JSON.stringify({ id_externo: `checklist-${requisicaoId}`, situacao: "cancelada" }),
-    });
+    }, ligacao);
   } catch {
     return { status: "pendente", mensagem: "O ERP não respondeu. Vai de novo na próxima tentativa.", numero: null };
   }
@@ -232,8 +262,10 @@ const ENVIADA: ResultadoEnvio = { status: "enviada", mensagem: null, numero: nul
 
 /** A requisição foi excluída aqui: cancela no ERP a aberta e a solicitação de compra (não há mais onde gravar o resultado). */
 export async function cancelarExcluidaNoErp(requisicaoId: number): Promise<void> {
-  if (!erpConfigurado()) return;
-  const r = combinar(await cancelarNoErp(requisicaoId), await cancelarSolicitacaoNoErp(requisicaoId));
+  const [req] = await db.select({ organizationId: requisicoes.organizationId }).from(requisicoes).where(eq(requisicoes.id, requisicaoId)).limit(1);
+  const ligacao = await ligacaoDaEmpresa(req?.organizationId);
+  if (!ligacao) return;
+  const r = combinar(await cancelarNoErp(requisicaoId, ligacao), await cancelarSolicitacaoNoErp(requisicaoId, ligacao));
   if (r.status !== "enviada") console.error(`Requisição ${requisicaoId} excluída, mas o ERP não cancelou: ${r.mensagem}`);
 }
 
@@ -256,6 +288,7 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
   const [req] = await db
     .select({
       id: requisicoes.id,
+      organizationId: requisicoes.organizationId,
       tipo: requisicoes.tipo,
       status: requisicoes.status,
       observacao: requisicoes.observacao,
@@ -273,7 +306,8 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
     .where(eq(requisicoes.id, requisicaoId))
     .limit(1);
   if (!req) return { status: "erro", mensagem: "Requisição não encontrada.", numero: null };
-  if (!erpConfigurado()) return gravar(req.id, { status: "pendente", mensagem: "A ligação com o ERP ainda não está configurada.", numero: null });
+  const ligacao = await ligacaoDaEmpresa(req.organizationId);
+  if (!ligacao) return gravar(req.id, { status: "pendente", mensagem: "A ligação com o ERP ainda não está configurada.", numero: null });
   const externa = req.tipo === "externa";
   if (req.status === "cancelada") {
     return gravar(req.id, combinar(await cancelarNoErp(req.id), externa ? await cancelarSolicitacaoNoErp(req.id) : ENVIADA));
@@ -283,7 +317,7 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
   }
 
   // destino ainda não decidido (o ERP não respondeu na hora): decide agora
-  if (externa) await definirDestinos(req.id);
+  if (externa) await definirDestinos(req.id, req.organizationId);
   const itens: ItemEnvio[] = await db
     .select({
       id: requisicaoItens.id,
@@ -306,8 +340,8 @@ export async function enviarRequisicaoAoErp(requisicaoId: number): Promise<Resul
   // (baixa na conferência); a de Compras, solicitação de compra.
   const doEmporio = externa ? itens.filter((i) => i.destino !== "compras") : itens;
   const deCompras = externa ? itens.filter((i) => i.destino === "compras") : [];
-  const parteEmporio = doEmporio.length > 0 ? await enviarParteEstoque(r, doEmporio) : await cancelarNoErp(req.id);
-  const parteCompras = !externa ? ENVIADA : deCompras.length > 0 ? await enviarParteCompras(r, deCompras) : await cancelarSolicitacaoNoErp(req.id);
+  const parteEmporio = doEmporio.length > 0 ? await enviarParteEstoque(r, doEmporio) : await cancelarNoErp(req.id, ligacao);
+  const parteCompras = !externa ? ENVIADA : deCompras.length > 0 ? await enviarParteCompras(r, deCompras, ligacao) : await cancelarSolicitacaoNoErp(req.id, ligacao);
   return gravar(req.id, combinar(parteEmporio, parteCompras));
 }
 
@@ -390,7 +424,7 @@ async function enviarParteEstoque(req: ReqEnvio, itens: ItemEnvio[]): Promise<Re
  * ERP, para o comprador. Produto ligado vai pelo código, na unidade do ERP;
  * avulso, como foi escrito. Depois que o comprador pega, editar aqui não muda lá.
  */
-async function enviarParteCompras(req: ReqEnvio, itens: ItemEnvio[]): Promise<ResultadoEnvio> {
+async function enviarParteCompras(req: ReqEnvio, itens: ItemEnvio[], ligacao?: LigacaoErp | null): Promise<ResultadoEnvio> {
   const arredondar = (n: number) => Math.round(n * 10_000) / 10_000;
   const linhas = itens.map((i) => {
     const conversao = converterMedida(i.unidadePedida, i.unidadeProduto);
@@ -412,7 +446,7 @@ async function enviarParteCompras(req: ReqEnvio, itens: ItemEnvio[]): Promise<Re
   };
   let resposta: Response;
   try {
-    resposta = await chamarErp("/api/solicitacoes-compra", { method: "POST", body: JSON.stringify(corpo) });
+    resposta = await chamarErp("/api/solicitacoes-compra", { method: "POST", body: JSON.stringify(corpo) }, ligacao);
   } catch {
     return { status: "pendente", mensagem: "O ERP não respondeu. Vai de novo na próxima tentativa.", numero: null };
   }
@@ -426,7 +460,7 @@ async function enviarParteCompras(req: ReqEnvio, itens: ItemEnvio[]): Promise<Re
  * dado não volta sozinho — o gestor corrige e manda reenviar.
  */
 export async function enviarPendentesAoErp(organizationId: number, limite = 20): Promise<number> {
-  if (!erpConfigurado()) return 0;
+  if (!(await ligacaoDaEmpresa(organizationId))) return 0;
   const fila = await db
     .select({ id: requisicoes.id })
     .from(requisicoes)

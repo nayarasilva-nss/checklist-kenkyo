@@ -66,8 +66,8 @@ export default async function RequisicoesPage({
     await Promise.all(
       unitIdsParaVinculo.map(async (unitId) => {
         const [interna, externa] = await Promise.all([
-          criarTiposPermitidos.includes("interna") ? getRequisicoesForLink(unitId, "interna") : Promise.resolve([]),
-          criarTiposPermitidos.includes("externa") ? getRequisicoesForLink(unitId, "externa") : Promise.resolve([]),
+          criarTiposPermitidos.includes("interna") ? getRequisicoesForLink(unitId, "interna", user.organizationId!) : Promise.resolve([]),
+          criarTiposPermitidos.includes("externa") ? getRequisicoesForLink(unitId, "externa", user.organizationId!) : Promise.resolve([]),
         ]);
         linkCandidatesByUnit[unitId] = { interna, externa };
       }),
@@ -76,7 +76,7 @@ export default async function RequisicoesPage({
 
   // a parte que vai por Compras: a fase dela no ERP (aguardando, em cotação, pedido feito, recebida)
   const comCompras = records.filter((r) => r.tipo === "externa" && r.itens.some((i) => i.destino === "compras")).map((r) => r.id);
-  const situacaoCompras = await situacaoComprasNoErp(comCompras.slice(0, 200));
+  const situacaoCompras = await situacaoComprasNoErp(comCompras.slice(0, 200), user.organizationId!);
 
   return (
     <RequisicoesBoard

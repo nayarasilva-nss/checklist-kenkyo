@@ -2,7 +2,8 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { catalogItems, jobFunctions, requisicoes, units } from "@/lib/db/schema";
 import { reenviarRequisicaoErp } from "@/lib/actions/erp";
-import { erpConfigurado, lerCatalogoErp, type ErpCatalogo } from "@/lib/erp/integracao";
+import { ligacaoDaEmpresa, lerCatalogoErp, type ErpCatalogo } from "@/lib/erp/integracao";
+import { LigacaoErpForm } from "./LigacaoErpForm";
 import { EnviarAntigas, EspelharCatalogo, ProdutosErp, SetoresFuncoes, TentarPendentes, UnidadesErp } from "./ErpLigacao";
 
 const SITUACAO: Record<string, [string, string]> = {
@@ -18,11 +19,13 @@ const SITUACAO: Record<string, [string, string]> = {
  * produtos e a fila do que não foi.
  */
 export async function ErpPainel({ organizationId }: { organizationId: number }) {
-  if (!erpConfigurado()) {
+  const ligacao = await ligacaoDaEmpresa(organizationId);
+  if (!ligacao) {
     return (
       <div className="today-card">
         <div className="today-card-title">Ligação com o ERP</div>
-        <p className="items-count">A ligação ainda não está configurada neste servidor: faltam as variáveis ERP_API_URL e ERP_API_TOKEN. Enquanto isso, as requisições ficam guardadas como pendentes e vão ao ERP quando a ligação existir.</p>
+        <p className="items-count">Esta empresa ainda não tem ERP ligado. Configure abaixo, ou deixe sem: o checklist funciona sozinho e as requisições ficam guardadas como pendentes, saindo quando a ligação existir.</p>
+        <LigacaoErpForm organizationId={organizationId} />
       </div>
     );
   }
@@ -30,7 +33,7 @@ export async function ErpPainel({ organizationId }: { organizationId: number }) 
   let catalogo: ErpCatalogo | null = null;
   let erroCatalogo: string | null = null;
   try {
-    catalogo = await lerCatalogoErp();
+    catalogo = await lerCatalogoErp(organizationId);
   } catch (e) {
     erroCatalogo = e instanceof Error ? e.message : "Não foi possível ler o ERP.";
   }

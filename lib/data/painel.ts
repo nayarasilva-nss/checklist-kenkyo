@@ -48,7 +48,7 @@ function eachDay(from: string, to: string) {
  * dela, ou geral). Não há agenda por horário: o dia inteiro é a janela.
  * Checklists semanais ficam de fora.
  */
-type Inst = { userId: number; userName: string; unitName: string | null; typeName: string; deadlineTime: string | null; answered: number; total: number; date: string; state: "none" | "partial" | "done"; p: number | null; e: number | null; q: number | null };
+type Inst = { userId: number; userName: string; unitId: number | null; unitName: string | null; typeName: string; deadlineTime: string | null; answered: number; total: number; date: string; state: "none" | "partial" | "done"; p: number | null; e: number | null; q: number | null };
 
 async function loadInstances(organizationId: number, from: string, to: string, unitId: number | null, jobFunctionId: number | null = null) {
   const people = await db
@@ -112,6 +112,7 @@ async function loadInstances(organizationId: number, from: string, to: string, u
         insts.push({
           userId: p.id,
           userName: p.name,
+          unitId: p.unitId,
           unitName: p.unitName,
           typeName: t.name,
           deadlineTime: t.deadlineTime,
@@ -181,7 +182,25 @@ export async function getPainelGestor(organizationId: number, from: string, to: 
     };
   });
 
-  return { totals, ranking, evolution };
+  // A mesma leitura, por unidade: qual loja está deixando escapar. É o que
+  // o dono compara (e o que um cliente de outro nicho entende sem ajuda).
+  const unidades = [...new Map(insts.filter((i) => i.unitId).map((i) => [i.unitId!, i.unitName ?? ""])).entries()]
+    .map(([unitId, unitName]) => {
+      const mine = insts.filter((i) => i.unitId === unitId);
+      const concluded = mine.filter((i) => i.state === "done").length;
+      return {
+        unitId,
+        unitName,
+        expected: mine.length,
+        concluded,
+        completionRate: mine.length ? Math.round((concluded / mine.length) * 100) : 0,
+        punctuality: avg(mine.map((i) => i.p)),
+      };
+    })
+    .filter((r) => r.expected > 0)
+    .sort((a, b) => a.completionRate - b.completionRate); // pior primeiro: é o que pede atenção
+
+  return { totals, ranking, evolution, unidades };
 }
 
 export type Atraso = { typeName: string; userName: string; unitName: string | null; deadlineTime: string; answered: number; total: number; minutesLate: number };

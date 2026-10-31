@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canContar, canEntregarContagem } from "@/lib/auth/contagem";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 import { setorDeQuemConta, unidadeDaContagem } from "@/lib/data/contagem";
 import { contagemNoErp } from "@/lib/erp/contagens";
 import { ContagemForm } from "./ContagemForm";
@@ -15,7 +16,7 @@ export default async function ContagemFolhaPage({ params, searchParams }: { para
   if (!unidade || !Number.isInteger(id)) redirect("/contagem");
   let contagem;
   try {
-    contagem = await contagemNoErp(id, unidade.cnpj);
+    contagem = await contagemNoErp(id, unidade.cnpj, await ligacaoDaEmpresa(user.organizationId));
   } catch (e) {
     return (
       <>

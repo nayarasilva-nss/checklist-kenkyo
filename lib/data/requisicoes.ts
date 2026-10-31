@@ -147,7 +147,7 @@ export async function getRequisicoesByScope(
  * seletor na Nova Requisição. Não trava no dia de checklist atual: o
  * pedido normalmente foi enviado no dia anterior e só é separado/
  * conferido no dia seguinte. */
-export async function getRequisicoesForLink(unitId: number, tipo: string) {
+export async function getRequisicoesForLink(unitId: number, tipo: string, organizationId: number) {
   if (tipo !== "interna" && tipo !== "externa") return [];
   return db
     .select({
@@ -159,6 +159,7 @@ export async function getRequisicoesForLink(unitId: number, tipo: string) {
     .innerJoin(users, eq(users.id, requisicoes.requesterId))
     .where(
       and(
+        eq(requisicoes.organizationId, organizationId),
         eq(requisicoes.unitId, unitId),
         eq(requisicoes.tipo, tipo),
         ne(requisicoes.status, "cancelada"),

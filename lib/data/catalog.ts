@@ -53,7 +53,7 @@ export async function getCatalogItemsParaRequisicao(organizationId: number, jobF
       : Promise.resolve([]),
   ]);
   const setor = funcao[0]?.erpSetor ?? null;
-  const mapa = setor ? await setoresDosItensErp() : null;
+  const mapa = setor ? await setoresDosItensErp(organizationId) : null;
   return {
     setor: mapa ? setor : null,
     itens: itens.map(({ erpItemCodigo, ...item }) => ({

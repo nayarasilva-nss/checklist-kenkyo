@@ -109,7 +109,7 @@ export type OpenPendencia = {
 };
 
 /** Open (não concluídas) pendências from any shift log in the unit, oldest deadline first. */
-export async function getOpenPendenciasForUnit(unitId: number): Promise<OpenPendencia[]> {
+export async function getOpenPendenciasForUnit(unitId: number, organizationId: number): Promise<OpenPendencia[]> {
   const rows = await db
     .select({
       id: shiftLogPendencias.id,
@@ -121,7 +121,14 @@ export async function getOpenPendenciasForUnit(unitId: number): Promise<OpenPend
     })
     .from(shiftLogPendencias)
     .innerJoin(shiftLogs, eq(shiftLogs.id, shiftLogPendencias.shiftLogId))
-    .where(and(eq(shiftLogs.unitId, unitId), eq(shiftLogPendencias.concluida, false)))
+    .where(
+      and(
+        // A unidade é da empresa do usuário: o id sozinho não autoriza nada.
+        eq(shiftLogs.organizationId, organizationId),
+        eq(shiftLogs.unitId, unitId),
+        eq(shiftLogPendencias.concluida, false),
+      ),
+    )
     .orderBy(asc(shiftLogPendencias.prazo), desc(shiftLogs.date))
     .limit(50);
 
@@ -131,7 +138,7 @@ export async function getOpenPendenciasForUnit(unitId: number): Promise<OpenPend
 export type MyPendencia = OpenPendencia & { concluida: boolean };
 
 /** Every pendência the user has opened across their own shift logs, open first. */
-export async function getMyPendencias(userId: number): Promise<MyPendencia[]> {
+export async function getMyPendencias(userId: number, organizationId: number): Promise<MyPendencia[]> {
   const rows = await db
     .select({
       id: shiftLogPendencias.id,
@@ -144,7 +151,9 @@ export async function getMyPendencias(userId: number): Promise<MyPendencia[]> {
     })
     .from(shiftLogPendencias)
     .innerJoin(shiftLogs, eq(shiftLogs.id, shiftLogPendencias.shiftLogId))
-    .where(eq(shiftLogs.userId, userId))
+    // O diário é da pessoa, mas o escopo continua preso à empresa dela:
+    // id de usuário de outra empresa não lê nada daqui.
+    .where(and(eq(shiftLogs.organizationId, organizationId), eq(shiftLogs.userId, userId)))
     .orderBy(asc(shiftLogPendencias.concluida), asc(shiftLogPendencias.prazo))
     .limit(30);
 

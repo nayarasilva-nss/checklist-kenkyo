@@ -1,7 +1,7 @@
 import "server-only";
-import { count, eq } from "drizzle-orm";
+import { and, count, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { organizations, users } from "@/lib/db/schema";
+import { checklistCompletions, organizations, users } from "@/lib/db/schema";
 
 export type OrganizationStatus = "pending" | "active" | "suspended";
 
@@ -41,4 +41,26 @@ export async function getAllOrganizationsWithStats() {
   const countByOrg = new Map(userCounts.map((r) => [r.organizationId, r.total]));
 
   return orgs.map((org) => ({ ...org, userCount: countByOrg.get(org.id) ?? 0 }));
+}
+
+/**
+ * O uso de cada empresa nos últimos 14 dias — o sinal de churn precoce:
+ * empresa sem execução nenhuma na quinzena está esfriando, mesmo com
+ * status "active". Complementa a lista (não a substitui).
+ */
+export async function getUsoRecente(): Promise<Map<number, { ultimos14: number; ultimaExecucao: string | null }>> {
+  const desde = new Date();
+  desde.setDate(desde.getDate() - 14);
+  const desdeISO = desde.toISOString().slice(0, 10);
+  const rows = await db
+    .select({
+      organizationId: users.organizationId,
+      total: count(),
+      ultima: sql<string | null>`max(${checklistCompletions.date})`,
+    })
+    .from(checklistCompletions)
+    .innerJoin(users, eq(users.id, checklistCompletions.userId))
+    .where(and(gte(checklistCompletions.date, desdeISO), sql`${users.organizationId} is not null`))
+    .groupBy(users.organizationId);
+  return new Map(rows.filter((r) => r.organizationId !== null).map((r) => [r.organizationId!, { ultimos14: r.total, ultimaExecucao: r.ultima }]));
 }

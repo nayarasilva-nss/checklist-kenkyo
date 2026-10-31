@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser, requireGestor } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
@@ -126,6 +126,7 @@ export async function createShiftLog(
   if (pendencias.length > 0) {
     await db.insert(shiftLogPendencias).values(
       pendencias.map((p) => ({
+        organizationId: user.organizationId!,
         shiftLogId: inserted.id,
         descricao: p.descricao,
         responsavel: p.responsavel || null,
@@ -150,13 +151,22 @@ export async function deleteShiftLog(formData: FormData) {
 }
 
 export async function resolvePendencia(formData: FormData) {
-  await getCurrentUser();
+  const user = await getCurrentUser();
   const id = Number(formData.get("id"));
-  if (!id) return;
+  if (!id || !user.organizationId) return;
   await db
     .update(shiftLogPendencias)
     .set({ concluida: true })
-    .where(eq(shiftLogPendencias.id, id));
+    // Só pendência de um diário da própria empresa — o id do form não decide.
+    .where(
+      and(
+        eq(shiftLogPendencias.id, id),
+        inArray(
+          shiftLogPendencias.shiftLogId,
+          db.select({ id: shiftLogs.id }).from(shiftLogs).where(eq(shiftLogs.organizationId, user.organizationId)),
+        ),
+      ),
+    );
   revalidatePath("/hoje");
   revalidatePath("/diario-de-bordo");
 }

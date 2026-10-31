@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { canContar, canEntregarContagem } from "@/lib/auth/contagem";
 import { getCurrentUser } from "@/lib/auth/dal";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 import { unidadeDaContagem } from "@/lib/data/contagem";
 import { abrirContagemNoErp, abrirContagemTotalNoErp, gravarContagemNoErp } from "@/lib/erp/contagens";
 
@@ -15,7 +16,7 @@ export async function abrirContagem(unidadeId: number, agendaId: number): Promis
   const { unidade } = await unidadeDaContagem(user, unidadeId);
   if (!unidade || unidade.id !== unidadeId) return { error: "Unidade sem ligação com o ERP." };
   try {
-    const r = await abrirContagemNoErp(unidade.cnpj, agendaId);
+    const r = await abrirContagemNoErp(unidade.cnpj, agendaId, await ligacaoDaEmpresa(user.organizationId));
     revalidatePath("/contagem");
     return { ok: `Contagem do ${r.local} aberta.`, id: r.id };
   } catch (e) {
@@ -31,7 +32,7 @@ export async function abrirContagemTotal(unidadeId: number, localId: number): Pr
   if (!unidade || unidade.id !== unidadeId) return { error: "Unidade sem ligação com o ERP." };
   if (!Number.isInteger(localId)) return { error: "Local inválido." };
   try {
-    const r = await abrirContagemTotalNoErp(unidade.cnpj, localId);
+    const r = await abrirContagemTotalNoErp(unidade.cnpj, localId, await ligacaoDaEmpresa(user.organizationId));
     revalidatePath("/contagem");
     return { ok: `Contagem do ${r.local} aberta.`, id: r.id };
   } catch (e) {
@@ -51,7 +52,7 @@ export async function salvarContagem(unidadeId: number, contagemId: number, iten
   if (!unidade || unidade.id !== unidadeId) return { error: "Unidade sem ligação com o ERP." };
   const limpos = itens.filter((i) => Number.isInteger(i.linha_id)).map((i) => ({ linha_id: i.linha_id, qtd: i.qtd === null || i.qtd.trim() === "" ? null : i.qtd.trim() }));
   try {
-    const r = await gravarContagemNoErp(contagemId, unidade.cnpj, user.name, limpos, entregar);
+    const r = await gravarContagemNoErp(contagemId, unidade.cnpj, user.name, limpos, entregar, await ligacaoDaEmpresa(user.organizationId));
     revalidatePath("/contagem");
     revalidatePath(`/contagem/${contagemId}`);
     if (entregar) return { ok: "Contagem entregue. O gerente confere e fecha no ERP.", falta: 0, entregue: true };

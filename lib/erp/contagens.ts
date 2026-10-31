@@ -1,5 +1,5 @@
 import "server-only";
-import { chamarErp, erpConfigurado } from "./integracao";
+import { chamarErp, erpConfigurado, type LigacaoErp } from "./integracao";
 
 /**
  * Contagem de estoque no ERP, pelo app. A contagem mora lá: aqui só se lê o
@@ -19,11 +19,11 @@ export type ItemContagem = {
 };
 export type ContagemDetalhe = { id: number; local: string; status: string; escopo: string; data: string; unidade: string; itens: ItemContagem[] };
 
-async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {
-  if (!erpConfigurado()) throw new Error("A ligação com o ERP não está configurada.");
+async function pedir<T>(caminho: string, init?: RequestInit, ligacao?: LigacaoErp | null): Promise<T> {
+  if (!ligacao && !erpConfigurado()) throw new Error("A ligação com o ERP não está configurada para esta empresa.");
   let r: Response;
   try {
-    r = await chamarErp(caminho, init);
+    r = await chamarErp(caminho, init, ligacao);
   } catch {
     throw new Error("Não foi possível falar com o ERP agora. Tente de novo em instantes.");
   }
@@ -32,27 +32,27 @@ async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {
   return corpo;
 }
 
-export function contagensNoErp(cnpj: string) {
+export function contagensNoErp(cnpj: string, ligacao?: LigacaoErp | null) {
   // `locais` (locais sem contagem aberta) só vem de um ERP atualizado; sem ele, a lista fica vazia.
-  return pedir<{ unidade: string; contagens: ContagemResumo[]; devidas: ContagemDevida[]; locais?: LocalLivre[]; semana?: ContagemDaSemana }>(`/api/contagens?cnpj=${cnpj}`);
+    return pedir<{ unidade: string; contagens: ContagemResumo[]; devidas: ContagemDevida[]; locais?: LocalLivre[]; semana?: ContagemDaSemana }>(`/api/contagens?cnpj=${cnpj}`, undefined, ligacao);
 }
 
-export function abrirContagemNoErp(cnpj: string, agendaId: number) {
-  return pedir<{ id: number; local: string }>("/api/contagens", { method: "POST", body: JSON.stringify({ cnpj, agenda_id: agendaId }) });
+export function abrirContagemNoErp(cnpj: string, agendaId: number, ligacao?: LigacaoErp | null) {
+    return pedir<{ id: number; local: string }>("/api/contagens", { method: "POST", body: JSON.stringify({ cnpj, agenda_id: agendaId }) }, ligacao);
 }
 
 /** Abre a contagem de todos os itens de um local, fora da agenda. */
-export function abrirContagemTotalNoErp(cnpj: string, localId: number) {
-  return pedir<{ id: number; local: string }>("/api/contagens", { method: "POST", body: JSON.stringify({ cnpj, local_id: localId, escopo: "total" }) });
+export function abrirContagemTotalNoErp(cnpj: string, localId: number, ligacao?: LigacaoErp | null) {
+    return pedir<{ id: number; local: string }>("/api/contagens", { method: "POST", body: JSON.stringify({ cnpj, local_id: localId, escopo: "total" }) }, ligacao);
 }
 
-export function contagemNoErp(id: number, cnpj: string) {
-  return pedir<ContagemDetalhe>(`/api/contagens/${id}?cnpj=${cnpj}`);
+export function contagemNoErp(id: number, cnpj: string, ligacao?: LigacaoErp | null) {
+    return pedir<ContagemDetalhe>(`/api/contagens/${id}?cnpj=${cnpj}`, undefined, ligacao);
 }
 
-export function gravarContagemNoErp(id: number, cnpj: string, quem: string, itens: { linha_id: number; qtd: string | null }[], terminar: boolean) {
+export function gravarContagemNoErp(id: number, cnpj: string, quem: string, itens: { linha_id: number; qtd: string | null }[], terminar: boolean, ligacao?: LigacaoErp | null) {
   return pedir<{ ok: boolean; gravadas: number; falta: number; status: string }>(`/api/contagens/${id}`, {
     method: "POST",
     body: JSON.stringify({ cnpj, quem, itens, terminar }),
-  });
+  }, ligacao);
 }

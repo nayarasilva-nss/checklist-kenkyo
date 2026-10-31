@@ -4,7 +4,7 @@ import { canVerEstoque } from "@/lib/auth/estoque";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { unidadeDaContagem } from "@/lib/data/contagem";
 import { estoqueNoErp, type EstoqueDaUnidade } from "@/lib/erp/estoque";
-import { erpConfigurado } from "@/lib/erp/integracao";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 
 const SITUACAO = {
   sem_estoque: { rotulo: "Sem estoque", classe: "bad" },
@@ -34,10 +34,10 @@ export default async function EstoquePage({
 
   let dados: EstoqueDaUnidade | null = null;
   let erro: string | null = null;
-  if (!erpConfigurado()) erro = "A ligação com o ERP não está configurada.";
+  if (!(await ligacaoDaEmpresa(user.organizationId))) erro = "A ligação com o ERP não está configurada para esta empresa (Gerenciar › ERP).";
   else if (unidade) {
     try {
-      dados = await estoqueNoErp(unidade.cnpj);
+      dados = await estoqueNoErp(unidade.cnpj, await ligacaoDaEmpresa(user.organizationId));
     } catch (e) {
       erro = e instanceof Error ? e.message : "Não foi possível falar com o ERP.";
     }

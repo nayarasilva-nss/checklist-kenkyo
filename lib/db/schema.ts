@@ -103,6 +103,12 @@ export const organizations = pgTable(
     // Kenkyo (vermelho + logo genérica) em vez de quebrar.
     logoUrl: text("logo_url"),
     primaryColor: varchar("primary_color", { length: 7 }),
+    // Ligação com o ERP Kenkyo, por empresa (antes eram env vars globais do
+    // servidor — a Kenkyo continua funcionando por causa do fallback na
+    // leitura). Nulos = empresa sem ERP: os módulos de ERP ficam escondidos
+    // e as requisições ficam pendentes aqui.
+    erpApiUrl: text("erp_api_url"),
+    erpApiToken: text("erp_api_token"),
     // Escala de folgas (ex.: 5x2): só vale a partir desta data. Antes dela,
     // todo mundo é esperado todo dia, como sempre foi. Null = sem escala.
     escalaVigenteDesde: date("escala_vigente_desde", { mode: "string" }),
@@ -495,6 +501,8 @@ export const shiftLogs = pgTable("shift_logs", {
 
 export const shiftLogPendencias = pgTable("shift_log_pendencias", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" }),
   shiftLogId: integer("shift_log_id")
     .notNull()
     .references(() => shiftLogs.id, { onDelete: "cascade" }),

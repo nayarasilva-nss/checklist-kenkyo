@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth/dal";
 import { unidadeDaContagem } from "@/lib/data/contagem";
 import { checklistDayForInstant } from "@/lib/date-utils";
 import { caixaNoErp, type CaixaDoDia } from "@/lib/erp/caixa";
-import { erpConfigurado } from "@/lib/erp/integracao";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 import { CaixaForm } from "./CaixaForm";
 
 /**
@@ -22,10 +22,11 @@ export default async function CaixaPage({ searchParams }: { searchParams: Promis
   const data = dataPedida && /^\d{4}-\d{2}-\d{2}$/.test(dataPedida) && dataPedida <= hoje ? dataPedida : hoje;
 
   let dia: CaixaDoDia | null = null, erro: string | null = null;
-  if (!erpConfigurado()) erro = "A ligação com o ERP não está configurada.";
+  const ligacao = await ligacaoDaEmpresa(user.organizationId);
+  if (!ligacao) erro = "A ligação com o ERP não está configurada para esta empresa (Gerenciar › ERP).";
   else if (unidade) {
     try {
-      dia = await caixaNoErp(unidade.cnpj, data);
+      dia = await caixaNoErp(unidade.cnpj, data, ligacao);
     } catch (e) {
       erro = e instanceof Error ? e.message : "Não foi possível falar com o ERP.";
     }

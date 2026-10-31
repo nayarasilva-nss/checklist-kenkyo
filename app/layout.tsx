@@ -9,8 +9,8 @@ const schibsted = Schibsted_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Checklist Kenkyo",
-  description: "Sistema de checklists interno da operação Kenkyo",
+  title: "Checklist",
+  description: "Sistema de checklists da sua operação",
 };
 
 export default function RootLayout({

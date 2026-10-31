@@ -18,7 +18,7 @@ import { guessSetorFromText } from "@/lib/anomaly-constants";
 import { resolveEffectiveUnitId } from "@/lib/auth/covering-unit";
 import { checklistDayForInstant } from "@/lib/date-utils";
 import { contagensNoErp } from "@/lib/erp/contagens";
-import { erpConfigurado } from "@/lib/erp/integracao";
+import { ligacaoDaEmpresa } from "@/lib/erp/integracao";
 
 const STATUS_VALUES = ["conforme", "nao-conforme", "nao-se-aplica"] as const;
 type Status = (typeof STATUS_VALUES)[number];
@@ -127,12 +127,12 @@ export async function setChecklistItemStatus(
     const [unidade] = effectiveUnitId
       ? await db.select({ cnpj: units.erpCnpj }).from(units).where(eq(units.id, effectiveUnitId)).limit(1)
       : [];
-    if (!unidade?.cnpj || !erpConfigurado()) {
+    if (!unidade?.cnpj || !(await ligacaoDaEmpresa(user.organizationId))) {
       return { error: "Esta unidade não está ligada ao ERP: a contagem do estoque não tem como ser conferida." };
     }
     let semana;
     try {
-      ({ semana } = await contagensNoErp(unidade.cnpj));
+      ({ semana } = await contagensNoErp(unidade.cnpj, await ligacaoDaEmpresa(user.organizationId)));
     } catch (e) {
       return { error: e instanceof Error ? e.message : "Não foi possível falar com o ERP agora." };
     }

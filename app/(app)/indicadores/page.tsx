@@ -49,7 +49,7 @@ export default async function IndicadoresPage({
   const unitId = sp.unit ? Number(sp.unit) : null;
   const funcaoId = sp.funcao ? Number(sp.funcao) : null;
 
-  const [units, jobFunctions, { totals, ranking, evolution }] = await Promise.all([
+  const [units, jobFunctions, { totals, ranking, evolution, unidades }] = await Promise.all([
     getUnits(orgId),
     getJobFunctions(orgId),
     getPainelGestor(orgId, from, to, unitId, funcaoId),
@@ -92,6 +92,8 @@ export default async function IndicadoresPage({
           </select>
         </div>
         <button className="btn-save" type="submit">Filtrar</button>
+        {/* O resumo da semana passada em PDF: o que o dono assina ou arquiva. */}
+        <a className="btn-save" href="/api/resumo-semanal" style={{ textDecoration: "none", display: "inline-block" }}>Resumo da semana (PDF)</a>
       </form>
 
       <div className="summary-cards cols-4">
@@ -107,6 +109,23 @@ export default async function IndicadoresPage({
       </div>
 
       <div className="painel-grid">
+        <div className="today-card">
+          <div className="today-card-title" style={{ marginBottom: 12 }}>Por unidade · pior primeiro</div>
+          {unidades.length === 0 && <p className="empty-state">Nenhuma unidade com checklist esperado no período.</p>}
+          {unidades.map((u) => (
+            <div key={u.unitId} style={{ borderTop: u.unitId !== unidades[0]?.unitId ? "1px solid var(--border)" : "none", padding: "10px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                <strong>{u.unitName}</strong>
+                <strong style={{ color: scoreColor(u.completionRate) }}>{u.completionRate}%</strong>
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: "var(--border)", margin: "6px 0", overflow: "hidden" }}>
+                <div style={{ width: `${u.completionRate}%`, height: "100%", background: scoreColor(u.completionRate) }} />
+              </div>
+              <div className="items-count">{u.concluded}/{u.expected} concluídos · pontualidade {u.punctuality ?? "—"}%</div>
+            </div>
+          ))}
+        </div>
+
         <div className="today-card">
           <div className="today-card-title" style={{ marginBottom: 12 }}>Taxa de conclusão</div>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>

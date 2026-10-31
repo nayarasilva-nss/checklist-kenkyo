@@ -72,7 +72,7 @@ export default async function DiarioDeBordoPage({
     );
   }
 
-  const myPendencias = await getMyPendencias(user.id);
+  const myPendencias = await getMyPendencias(user.id, user.organizationId!);
   const timeline = records.slice(0, 8);
 
   return (
