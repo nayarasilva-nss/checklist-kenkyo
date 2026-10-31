@@ -330,6 +330,13 @@
       "when": 1793043977622,
       "tag": "0046_round_namora",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793482662886,
+      "tag": "0047_melted_loa",
+      "breakpoints": true
     }
   ]
 }
