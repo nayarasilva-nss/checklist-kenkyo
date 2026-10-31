@@ -28,7 +28,7 @@ export function AuditTemplateEditor({ groups }: { groups: Group[] }) {
 
         {groups.map((group) => (
           <div key={group.id} style={{ borderTop: "1px solid var(--border)", paddingTop: 12, marginTop: 12 }}>
-            <form action={renameAuditGroup} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <form action={renameAuditGroup} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
               <input type="hidden" name="id" value={group.id} />
               <input name="name" defaultValue={group.name} aria-label="Nome do grupo" style={{ flex: 1, fontWeight: 600 }} />
               <button className="btn-small" type="submit">Renomear</button>
@@ -51,7 +51,7 @@ export function AuditTemplateEditor({ groups }: { groups: Group[] }) {
                 <DeleteButton action={deleteAuditItem} id={item.id} confirmText="Remover esse critério?" />
               </div>
             ))}
-            <form action={addAuditItem} style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <form action={addAuditItem} style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
               <input type="hidden" name="groupId" value={group.id} />
               <input name="label" placeholder="Novo critério do grupo" style={{ flex: 1 }} />
               <select name="weight" defaultValue={1} aria-label="Peso">

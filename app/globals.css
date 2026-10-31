@@ -2848,6 +2848,8 @@ button {
   border-radius: 12px;
   padding: 0 12px;
   min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
 }
 :where(textarea) {
   padding: 12px;

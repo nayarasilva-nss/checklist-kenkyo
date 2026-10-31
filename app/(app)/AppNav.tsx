@@ -101,6 +101,25 @@ function buildGroups(
   return groups.filter((g) => g.items.length > 0);
 }
 
+const DESCRICOES: Record<string, string> = {
+  "/requisicoes": "Pedidos de estoque",
+  "/solicitacoes": "Itens avulsos, com aprovação",
+  "/estoque": "Saldo e alertas da unidade",
+  "/contagem": "Contar o estoque da unidade",
+  "/anomalias": "Ocorrências registradas",
+  "/perdas": "Filetagem, resto ingesta, quebras e pedidos com erro",
+  "/caixa": "Fechar o caixa do dia",
+  "/formularios": "Registros personalizados",
+  "/indicadores": "Conclusão, ranking e evolução",
+  "/auditorias": "Visitas técnicas às unidades",
+  "/relatorio": "Dia e semana",
+  "/historico": "Atividades registradas",
+  "/escala": "Folgas do mês",
+  "/documentos": "Fichas técnicas e procedimentos",
+  "/gerenciar": "Usuários, unidades e modelos",
+  "/plataforma": "Empresas da plataforma",
+};
+
 const ICONES = {
   hoje: "M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z",
   checklists: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
@@ -250,40 +269,20 @@ export function AppNav({
       : []),
   ];
 
-  const moreOptions: SheetOptionDef[] = [
-    { href: "/relatorio", title: "Relatórios", description: "Dia e semana" },
-    { href: "/historico", title: "Histórico", description: "Atividades registradas" },
-    { href: "/documentos", title: "Fichas e POPs", description: "Fichas técnicas e procedimentos" },
-    ...(showRequisicoes
-      ? [{ href: "/requisicoes", title: "Requisições", description: "Pedidos de estoque" }]
-      : []),
-    ...(showEstoque ? [{ href: "/estoque", title: "Estoque", description: "Saldo e alertas da unidade" }] : []),
-    ...(showEscala ? [{ href: "/escala", title: "Escala", description: "Folgas do mês" }] : []),
-    ...(showSolicitacoes
-      ? [{ href: "/solicitacoes", title: "Solicitações", description: "Itens avulsos, com aprovação" }]
-      : []),
-    ...(showFormularios
-      ? [{ href: "/formularios", title: "Formulários", description: "Registros personalizados" }]
-      : []),
-    ...(isGestorProfile(profile)
-      ? [{ href: "/indicadores", title: "Indicadores", description: "Conclusão, ranking e evolução" }]
-      : []),
-    ...(isGestorProfile(profile)
-      ? [
-          {
-            href: "/auditorias",
-            title: pendingAuditCount > 0 ? `Auditorias (${pendingAuditCount})` : "Auditorias",
-            description:
-              pendingAuditCount > 0
-                ? `${pendingAuditCount} em conjunto com você`
-                : "Visitas técnicas às unidades",
-          },
-        ]
-      : []),
-    ...(isGestorProfile(profile)
-      ? [{ href: "/gerenciar", title: "Gerenciar", description: "Usuários, unidades e modelos" }]
-      : []),
-  ];
+  // A folha "Mais" espelha os mesmos grupos do menu lateral. Hoje, Checklists e Diário já estão na barra de baixo.
+  const NA_BARRA = ["/hoje", "/checklist", "/diario-de-bordo"];
+  const maisGrupos = groups
+    .map((g) => ({
+      label: g.label,
+      options: g.items
+        .filter((i) => !NA_BARRA.includes(i.href))
+        .map((i): SheetOptionDef => ({
+          href: i.href,
+          title: i.badge ? `${i.label} (${i.badge})` : i.label,
+          description: i.badge ? `${i.badge} em conjunto com você` : (DESCRICOES[i.href] ?? ""),
+        })),
+    }))
+    .filter((g) => g.options.length > 0);
 
   return (
     <>
@@ -420,8 +419,13 @@ export function AppNav({
             </>
           }
         >
-          {moreOptions.map((opt) => (
-            <SheetOption key={opt.href} {...opt} onNavigate={() => setMoreOpen(false)} />
+          {maisGrupos.map((g) => (
+            <div key={g.label}>
+              <div className="sheet-label" style={{ margin: "14px 0 2px" }}>{g.label}</div>
+              {g.options.map((opt) => (
+                <SheetOption key={opt.href} {...opt} onNavigate={() => setMoreOpen(false)} />
+              ))}
+            </div>
           ))}
           <form action={logout}>
             <button type="submit" className="sheet-option" style={{ width: "100%" }}>
